@@ -52,7 +52,9 @@ test('real adapter uses list, stats, detail and review endpoints', async ({ page
   })
   await page.goto('/')
   await expect(page.locator('.alerts-table tbody tr')).toHaveCount(1)
-  await expect(page.getByText('API Test Group', { exact: true })).toBeVisible()
+  await expect(
+    page.locator('.alerts-table').getByText('API Test Group', { exact: true }),
+  ).toBeVisible()
   await page.getByRole('link', { name: 'Открыть сообщение api-1' }).click()
   await expect(page.locator('.explanation')).toHaveText('Тест объяснения из API.')
   await page.getByLabel('Статус проверки', { exact: true }).selectOption('REVIEWED')
@@ -166,6 +168,8 @@ test('settings switch to API, validate URL and remember selected mode', async ({
   await expect(page.getByRole('status')).toContainText('Подключение работает')
   await page.getByRole('button', { name: 'Сохранить', exact: true }).click()
   await page.goto('/')
-  await expect(page.getByText('API Test Group', { exact: true })).toBeVisible()
+  await expect(
+    page.locator('.alerts-table').getByText('API Test Group', { exact: true }),
+  ).toBeVisible()
   await expect(page.locator('.source-pill')).toHaveText('Backend API')
 })

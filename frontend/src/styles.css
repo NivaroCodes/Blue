@@ -3518,76 +3518,378 @@ mark {
 }
 
 /* Keep the dense workspace readable at standard browser zoom. */
-.nav-link { font-size: 13px; }
-.breadcrumb { font-size: 12px; }
-.page-heading p { font-size: 13px; }
-.button { font-size: 12px; }
-.panel-head p, .alerts-heading p { font-size: 11px; }
-.stat-label { font-size: 12px; }
-.stat-sub { font-size: 10px; }
-.context-strip { font-size: 11px; }
-.context-strip .context-update { font-size: 10px; }
-.queue-insight b { font-size: 12px; }
-.queue-insight > div > span { font-size: 10px; }
-.feed-tabs button { font-size: 11px; }
-.filters select, .search-field input { font-size: 11px; }
-.alerts-table th, .alerts-table th button { font-size: 10px; }
-.message-source b { font-size: 12px; }
-.message-source > span { font-size: 9px; }
-.message-preview { font-size: 11px; }
-.reason-tags > span { font-size: 8px; }
-.risk-badge { font-size: 10px; }
-.review-badge { font-size: 10px; }
-.date-cell b { font-size: 11px; }
-.date-cell span { font-size: 9px; }
-.table-footer { font-size: 10px; }
-.chat-source-caption, .chat-count > span, .chat-levels { font-size: 10px; }
-.original-message { font-size: 16px; }
-.explanation { font-size: 13px; }
-.evidence-item h3, .evidence-item blockquote { font-size: 13px; }
-.integration-guide { font-size: 12px; }
-.settings-field p, .mode-card p, .polling-setting p { font-size: 11px; }
-.settings-field input, .review-form textarea { font-size: 14px; }
-.toast { bottom: max(25px, env(safe-area-inset-bottom)); }
-.stat-card > strong, .score-number, .date-cell, .analytics-summary strong { font-variant-numeric: tabular-nums; }
-button, a, input, select, textarea, summary { touch-action: manipulation; }
+.table-scroll {
+  position: relative;
+}
+.nav-link {
+  font-size: 13px;
+}
+.breadcrumb {
+  font-size: 12px;
+}
+.page-heading p {
+  font-size: 13px;
+}
+.button {
+  font-size: 12px;
+}
+.panel-head p,
+.alerts-heading p {
+  font-size: 11px;
+}
+.stat-label {
+  font-size: 12px;
+}
+.stat-sub {
+  font-size: 10px;
+}
+.context-strip {
+  font-size: 11px;
+}
+.context-strip .context-update {
+  font-size: 10px;
+}
+.queue-insight b {
+  font-size: 12px;
+}
+.queue-insight > div > span {
+  font-size: 10px;
+}
+.feed-tabs button {
+  font-size: 11px;
+}
+.filters select,
+.search-field input {
+  font-size: 11px;
+}
+.alerts-table th,
+.alerts-table th button {
+  font-size: 10px;
+}
+.message-source b {
+  font-size: 12px;
+}
+.message-source > span {
+  font-size: 9px;
+}
+.message-preview {
+  font-size: 11px;
+}
+.reason-tags > span {
+  font-size: 8px;
+}
+.risk-badge {
+  font-size: 10px;
+}
+.review-badge {
+  font-size: 10px;
+}
+.date-cell b {
+  font-size: 11px;
+}
+.date-cell span {
+  font-size: 9px;
+}
+.table-footer {
+  font-size: 10px;
+}
+.chat-source-caption,
+.chat-count > span,
+.chat-levels {
+  font-size: 10px;
+}
+.original-message {
+  font-size: 16px;
+}
+.explanation {
+  font-size: 13px;
+}
+.evidence-item h3,
+.evidence-item blockquote {
+  font-size: 13px;
+}
+.integration-guide {
+  font-size: 12px;
+}
+.settings-field p,
+.mode-card p,
+.polling-setting p {
+  font-size: 11px;
+}
+.settings-field input,
+.review-form textarea {
+  font-size: 14px;
+}
+.toast {
+  bottom: max(25px, env(safe-area-inset-bottom));
+}
+.stat-card > strong,
+.score-number,
+.date-cell,
+.analytics-summary strong {
+  font-variant-numeric: tabular-nums;
+}
+button,
+a,
+input,
+select,
+textarea,
+summary {
+  touch-action: manipulation;
+}
 
 @media (max-width: 1050px) and (min-width: 761px) {
-  .nav-link { font-size: 11px; }
-  .button { font-size: 10px; }
-  .stat-sub { font-size: 9px; }
+  .nav-link {
+    font-size: 11px;
+  }
+  .button {
+    font-size: 10px;
+  }
+  .stat-sub {
+    font-size: 9px;
+  }
 }
 @media (max-width: 760px) {
-  .nav-link { font-size: 13px; }
-  .button { font-size: 12px; }
-  .heading-actions .button { font-size: 11px; }
-  .stat-label { font-size: 11px; }
-  .stat-sub { font-size: 9px; }
-  .context-strip { font-size: 10px; }
-  .context-strip > div > span:not(.live-dot, .strip-divider) { font-size: 9px; }
-  .page-heading p { font-size: 12px; }
-  .queue-insight b { font-size: 11px; }
-  .queue-insight > div > span { font-size: 10px; }
-  .feed-tabs button { font-size: 11px; }
-  .search-field { min-height: 44px; }
-  .search-field input { font-size: 16px; min-height: 44px; }
-  .filters select, .feed-tools select { min-height: 44px; font-size: 11px; }
-  .filters .filter-select { min-width: 0; padding-left: 7px; }
-  .filters > select { min-width: 120px; }
-  .filters > .filter-select select { font-size: 11px; }
-  .original-message { font-size: 16px; }
-  .review-form textarea, .settings-field input, .review-form select { font-size: 16px; }
-  .icon-button { min-width: 44px; min-height: 44px; }
-  .feed-tools .icon-button { min-height: 44px; min-width: 35px; }
-  .pagination button { min-width: 40px; min-height: 40px; }
-  .table-footer { font-size: 10px; }
-  .source-summary > div { gap: 9px; }
-  .source-summary > div > span:last-child { font-size: 10px; }
-  .mode-card p, .settings-field p, .polling-setting p { font-size: 12px; }
-  .polling-setting b, .mode-card b { font-size: 13px; }
-  .settings-save > span { font-size: 10px; }
-  .switch { width: 42px; height: 25px; }
-  .switch > span:before { width: 19px; height: 19px; }
-  .switch input:checked + span:before { transform: translateX(17px); }
-  .toast { bottom: max(15px, env(safe-area-inset-bottom)); }
+  .sidebar {
+    visibility: hidden;
+  }
+  .sidebar.is-open {
+    visibility: visible;
+  }
+  .nav-link {
+    font-size: 13px;
+  }
+  .button {
+    font-size: 12px;
+  }
+  .heading-actions .button {
+    font-size: 11px;
+  }
+  .stat-label {
+    font-size: 11px;
+  }
+  .stat-sub {
+    font-size: 9px;
+  }
+  .context-strip {
+    font-size: 10px;
+  }
+  .context-strip > div > span:not(.live-dot, .strip-divider) {
+    font-size: 9px;
+  }
+  .page-heading p {
+    font-size: 12px;
+  }
+  .queue-insight b {
+    font-size: 11px;
+  }
+  .queue-insight > div > span {
+    font-size: 10px;
+  }
+  .feed-tabs button {
+    font-size: 11px;
+  }
+  .search-field {
+    min-height: 44px;
+  }
+  .search-field input {
+    font-size: 16px;
+    min-height: 44px;
+  }
+  .filters select,
+  .feed-tools select {
+    min-height: 44px;
+    font-size: 11px;
+  }
+  .filters .filter-select {
+    min-width: 0;
+    padding-left: 7px;
+  }
+  .filters > select {
+    min-width: 120px;
+  }
+  .filters > .filter-select select {
+    font-size: 11px;
+  }
+  .original-message {
+    font-size: 16px;
+  }
+  .review-form textarea,
+  .settings-field input,
+  .review-form select {
+    font-size: 16px;
+  }
+  .icon-button {
+    min-width: 44px;
+    min-height: 44px;
+  }
+  .feed-tools .icon-button {
+    min-height: 44px;
+    min-width: 35px;
+  }
+  .pagination button {
+    min-width: 40px;
+    min-height: 40px;
+  }
+  .table-footer {
+    font-size: 10px;
+  }
+  .source-summary > div {
+    gap: 9px;
+  }
+  .source-summary > div > span:last-child {
+    font-size: 10px;
+  }
+  .mode-card p,
+  .settings-field p,
+  .polling-setting p {
+    font-size: 12px;
+  }
+  .polling-setting b,
+  .mode-card b {
+    font-size: 13px;
+  }
+  .settings-save > span {
+    font-size: 10px;
+  }
+  .switch {
+    width: 42px;
+    height: 25px;
+  }
+  .switch > span:before {
+    width: 19px;
+    height: 19px;
+  }
+  .switch input:checked + span:before {
+    transform: translateX(17px);
+  }
+  .toast {
+    bottom: max(15px, env(safe-area-inset-bottom));
+  }
+  .alerts-heading {
+    flex-wrap: wrap;
+    gap: 14px;
+  }
+  .feed-tools {
+    width: 100%;
+    justify-content: space-between;
+  }
+  .feed-tools select {
+    max-width: none;
+    flex: 1;
+  }
+  .filters {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  }
+  .filters .search-field {
+    grid-column: 1 / -1;
+  }
+  .filters select,
+  .filters > .filter-select:nth-last-child(2) {
+    max-width: 100%;
+  }
+  .filters > select {
+    min-width: 0;
+  }
+  .filters .filter-select:last-of-type {
+    min-width: 0;
+  }
+  .filters .reset-filters {
+    justify-self: start;
+  }
+  .queue-insight .text-button {
+    padding-left: 43px;
+    width: 100%;
+    justify-content: flex-start;
+  }
+  .alerts-table {
+    min-width: 0;
+    width: 100%;
+    display: block;
+  }
+  .alerts-table thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+  }
+  .alerts-table tbody {
+    display: block;
+  }
+  .alerts-table tbody tr {
+    display: grid;
+    grid-template-columns: auto 1fr 34px;
+    gap: 11px 9px;
+    padding: 17px 15px;
+    border-bottom: 1px solid var(--border);
+  }
+  .alerts-table tbody tr:last-child {
+    border-bottom: 0;
+  }
+  .alerts-table td {
+    border: 0;
+    padding: 0;
+    min-width: 0;
+  }
+  .alerts-table td:first-child {
+    padding: 0;
+    grid-column: 1 / -1;
+  }
+  .alerts-table td:nth-child(2) {
+    grid-column: 1;
+    grid-row: 2;
+  }
+  .alerts-table td:nth-child(3) {
+    grid-column: 2;
+    grid-row: 2;
+  }
+  .alerts-table td:nth-child(4) {
+    grid-column: 1 / 3;
+    grid-row: 3;
+    display: flex;
+    align-items: center;
+    gap: 7px;
+  }
+  .alerts-table td:last-child {
+    grid-column: 3;
+    grid-row: 2 / 4;
+    padding: 0;
+    align-self: center;
+  }
+  .alerts-table .row-open {
+    width: 34px;
+    height: 44px;
+    background: #f2f6fe;
+    color: var(--blue);
+  }
+  .message-preview {
+    white-space: normal;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    line-height: 1.8;
+    font-size: 12px;
+  }
+  .message-source {
+    flex-wrap: wrap;
+    gap: 3px 7px;
+  }
+  .date-cell span {
+    margin: 0;
+  }
+  .date-cell b {
+    font-size: 10px;
+  }
+  .risk-badge {
+    font-size: 11px;
+  }
+  .review-badge {
+    font-size: 10px;
+  }
+  .reason-tags > span {
+    font-size: 9px;
+  }
 }

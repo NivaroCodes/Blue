@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import {
   ArrowDown,
   ArrowDownToLine,
@@ -41,7 +41,13 @@ export function Dashboard({
   monitor: Monitor
   onDemoMessage: () => void
 }) {
-  const [params, setParams] = useSearchParams()
+  const [urlParams, setUrlParams] = useSearchParams()
+  const [params, setParams] = useState(urlParams)
+  const paramsRef = useRef(urlParams)
+  useEffect(() => {
+    paramsRef.current = urlParams
+    setParams(urlParams)
+  }, [urlParams])
   const search = params.get('q') || '',
     level = params.get('level') || '',
     platform = params.get('platform') || '',
@@ -51,17 +57,20 @@ export function Dashboard({
   const [page, setPage] = useState(1)
   const [sort, setSort] = useState<'latest' | 'risk'>('latest')
   const [settingsError, setSettingsError] = useState('')
-  function filter(name: string, value: string) {
-    setParams(
-      (previous) => {
-        const next = new URLSearchParams(previous)
-        if (value) next.set(name, value)
-        else next.delete(name)
-        return next
-      },
-      { replace: true },
-    )
+  function applyParams(values: URLSearchParams | Record<string, string>) {
+    const next = new URLSearchParams(values)
+    paramsRef.current = next
+    setParams(next)
+    setUrlParams(next, { replace: true })
     setPage(1)
+  }
+  function filter(name: string, value: string) {
+    // React Router URL updates are transitions, not queued React state updates.
+    // Preserve the latest interaction even before the previous URL commits.
+    const next = new URLSearchParams(paramsRef.current)
+    if (value) next.set(name, value)
+    else next.delete(name)
+    applyParams(next)
   }
   const chats = Array.from(new Map(m.alerts.map((a) => [a.chat_id, a.chat_name])))
   const filtered = useMemo(
@@ -251,7 +260,7 @@ export function Dashboard({
         <button
           className="text-button"
           onClick={() => {
-            setParams({ level: 'HIGH', review: 'NEW', period: 'all' })
+            applyParams({ level: 'HIGH', review: 'NEW', period: 'all' })
             setPage(1)
           }}
         >
@@ -359,7 +368,7 @@ export function Dashboard({
             <button
               className="text-button reset-filters"
               onClick={() => {
-                setParams({ period })
+                applyParams({ period })
                 setPage(1)
               }}
             >
@@ -383,7 +392,7 @@ export function Dashboard({
               <button
                 className="button"
                 onClick={() => {
-                  setParams({ period: 'all' })
+                  applyParams({ period: 'all' })
                   setPage(1)
                 }}
               >

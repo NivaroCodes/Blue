@@ -22,7 +22,8 @@ test('risk, text, chat and platform filters work together; pagination and empty 
   await expect(page.getByRole('heading', { name: 'Сообщений не найдено' })).toBeVisible()
   await page.getByRole('button', { name: 'Сбросить фильтры', exact: true }).click()
   await page.getByLabel('Поиск сообщений').fill('Бесплатная лекция')
-  await expect(page.locator('.alerts-table tbody tr')).toHaveCount(1)
+  // The text occurs in a processed low-risk example and a processing example.
+  await expect(page.locator('.alerts-table tbody tr')).toHaveCount(2)
   await expect(page.locator('.alerts-table .risk-badge.low')).toBeVisible()
 })
 
