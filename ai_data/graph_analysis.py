@@ -107,16 +107,93 @@ def analyze_network_graph(session: Session) -> Dict[str, Any]:
                 "description": "Синхронная рассылка одинакового текста разными аккаунтами (признак сетки ботов)"
             })
 
+    # 4. Financial & Contact Entity Cross-Linking (Syndicates)
+    entity_records = session.query(EntityRecord).all()
+    entity_to_senders: Dict[str, Set[str]] = defaultdict(set)
+    msg_id_to_sender = {m.id: m.sender_hash for m in messages}
+
+    for ent in entity_records:
+        sender = msg_id_to_sender.get(ent.message_id)
+        if sender:
+            entity_to_senders[ent.normalized_value].add(sender)
+
+    syndicates = []
+    for val, senders in entity_to_senders.items():
+        if len(senders) > 1:
+            syndicates.append({
+                "shared_entity": val,
+                "senders": list(senders),
+                "type": "FINANCIAL_OR_NETWORK_SYNDICATE",
+                "description": f"Общий реквизит/контакт '{val}' используется {len(senders)} разными аккаунтами."
+            })
+
+    # 5. Build standard D3 / Cytoscape Graph Nodes & Links
+    nodes = []
+    links = []
+    node_ids = set()
+
+    for sender, chats in sender_to_chats.items():
+        msgs = sender_to_messages[sender]
+        high_cnt = sum(1 for m in msgs if m.analysis and m.analysis.risk_level == "HIGH")
+        nodes.append({
+            "id": f"sender_{sender}",
+            "label": sender,
+            "type": "sender",
+            "risk_level": "HIGH" if high_cnt > 0 else "LOW",
+            "message_count": len(msgs)
+        })
+        node_ids.add(f"sender_{sender}")
+
+    for chat_id, msgs in chat_to_messages.items():
+        c_name = msgs[0].chat_name if msgs else chat_id
+        nodes.append({
+            "id": f"chat_{chat_id}",
+            "label": c_name,
+            "type": "chat",
+            "message_count": len(msgs)
+        })
+        node_ids.add(f"chat_{chat_id}")
+
+        for m in msgs:
+            links.append({
+                "source": f"sender_{m.sender_hash}",
+                "target": f"chat_{chat_id}",
+                "relationship": "POSTED_IN"
+            })
+
+    # Add shared entities as nodes and link them to senders
+    for ent in entity_records:
+        sender = msg_id_to_sender.get(ent.message_id)
+        ent_node_id = f"ent_{ent.normalized_value}"
+        if ent_node_id not in node_ids:
+            nodes.append({
+                "id": ent_node_id,
+                "label": ent.normalized_value,
+                "type": "entity",
+                "entity_type": ent.entity_type
+            })
+            node_ids.add(ent_node_id)
+        if sender:
+            links.append({
+                "source": f"sender_{sender}",
+                "target": ent_node_id,
+                "relationship": "USES_ENTITY"
+            })
+
     return {
-        "total_nodes": len(sender_to_chats) + len(chat_to_messages),
+        "total_nodes": len(nodes),
+        "total_links": len(links),
         "total_senders": len(sender_to_chats),
         "total_chats": len(chat_to_messages),
         "cross_chat_senders": cross_chat_senders,
         "high_risk_chats": high_risk_chats,
         "bot_clusters": bot_clusters,
+        "syndicates": syndicates,
+        "nodes": nodes,
+        "links": links,
         "summary": (
             f"Проанализировано {len(messages)} сообщений, {len(sender_to_chats)} авторов, {len(chat_to_messages)} групп. "
-            f"Выявлено {sum(1 for s in cross_chat_senders if s['is_bot_pattern'])} подозрительных ботов/рассыльщиков "
-            f"и {sum(1 for c in high_risk_chats if c['is_scam_hub'])} групп-кластеров высокого риска."
+            f"Выявлено {sum(1 for s in cross_chat_senders if s['is_bot_pattern'])} ботов/рассыльщиков, "
+            f"{sum(1 for c in high_risk_chats if c['is_scam_hub'])} скам-хабов и {len(syndicates)} финансовых синдикатов."
         )
     }

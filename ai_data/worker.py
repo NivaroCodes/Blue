@@ -5,9 +5,10 @@ from datetime import datetime, timezone
 from typing import Optional, List
 
 from sqlalchemy.orm import Session
-from .db.models import init_db, MessageRecord, AnalysisRecord, ReviewRecord
+from .db.models import init_db, MessageRecord, AnalysisRecord, ReviewRecord, EntityRecord
 from .analyzer import analyze_message
 from .context import build_context_block
+from .entity_extractor import extract_entities
 from .llm_client import AIAnalysisError
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(name)s: %(message)s")
@@ -76,6 +77,19 @@ def process_pending_messages(session: Session, limit: int = 10, api_key: Optiona
 
             session.add(analysis_record)
             session.add(review_record)
+
+            # Extract financial and contact entities (phones, cards, Telegram handles)
+            entities = extract_entities(msg.text)
+            for idx, ent in enumerate(entities):
+                ent_rec = EntityRecord(
+                    id=f"ent_{msg.id}_{idx}",
+                    message_id=msg.id,
+                    entity_type=ent["type"],
+                    normalized_value=ent["value"],
+                    created_at=datetime.now(timezone.utc)
+                )
+                session.add(ent_rec)
+
             msg.status = "PROCESSED"
             session.commit()
 

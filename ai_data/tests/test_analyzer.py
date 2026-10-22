@@ -10,7 +10,7 @@ from ai_data.models import (
 from ai_data.llm_client import _parse_and_validate_llm_json, AIAnalysisError
 from ai_data.analyzer import analyze_message
 from ai_data.context import get_sender_context, get_chat_context, build_context_block
-from ai_data.db.models import init_db, MessageRecord, AnalysisRecord, ReviewRecord, serialize_to_alert_dict
+from ai_data.db.models import init_db, MessageRecord, AnalysisRecord, ReviewRecord, EntityRecord, serialize_to_alert_dict
 from ai_data.worker import process_pending_messages
 
 
@@ -211,6 +211,44 @@ class TestGraphAnalysis(unittest.TestCase):
         self.assertEqual(graph["cross_chat_senders"][0]["sender_hash"], "spammer_bot_99")
         self.assertTrue(graph["cross_chat_senders"][0]["is_bot_pattern"])
         self.assertGreaterEqual(len(graph["high_risk_chats"]), 2)
+        self.assertIn("nodes", graph)
+        self.assertIn("links", graph)
+
+    def test_entity_extraction_and_syndicates(self):
+        from ai_data.entity_extractor import extract_entities
+        from ai_data.graph_analysis import analyze_network_graph
+
+        # 1. Direct entity extraction
+        ents = extract_entities("Kaspi: +7 707 555-44-33, карта 4400 1234 5678 9999, контакт @scam_boss")
+        types = [e["type"] for e in ents]
+        self.assertIn("PHONE", types)
+        self.assertIn("CARD", types)
+        self.assertIn("TELEGRAM_USER", types)
+
+        # 2. Syndicate detection across senders
+        Session = init_db("sqlite:///:memory:")
+        session = Session()
+
+        # Two different senders posting the same phone number
+        for i, s_hash in enumerate(["bot_alpha", "bot_beta"]):
+            m = MessageRecord(
+                id=f"syn_msg_{i}", platform="telegram", chat_id=f"chat_{i}", chat_name="Chat",
+                message_id=f"syn_msg_{i}", sender_hash=s_hash,
+                text="Kaspi: +7 707 999-88-77", timestamp=datetime.now(timezone.utc), status="PROCESSED"
+            )
+            session.add(m)
+            session.commit()
+            ent = EntityRecord(
+                id=f"syn_ent_{i}", message_id=m.id, entity_type="PHONE",
+                normalized_value="+77079998877", created_at=datetime.now(timezone.utc)
+            )
+            session.add(ent)
+            session.commit()
+
+        graph = analyze_network_graph(session)
+        self.assertGreaterEqual(len(graph["syndicates"]), 1)
+        self.assertEqual(graph["syndicates"][0]["shared_entity"], "+77079998877")
+        self.assertEqual(len(graph["syndicates"][0]["senders"]), 2)
 
 
 if __name__ == "__main__":

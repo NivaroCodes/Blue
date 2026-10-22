@@ -1,8 +1,11 @@
 import os
+import csv
+import io
 from typing import List, Optional
 from datetime import datetime, timezone
 
 from fastapi import FastAPI, HTTPException, Depends
+from fastapi.responses import Response
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
@@ -190,6 +193,66 @@ def ingest_message(req: MessageCreateRequest, db: Session = Depends(get_db)):
 
     db.refresh(rec)
     return {"message_id": rec.id, "status": rec.status}
+
+
+class ImageAnalyzeRequest(BaseModel):
+    image_base64: str = Field(..., description="Base64 encoded JPEG or PNG image")
+    text_caption: Optional[str] = Field(default="", description="Optional message caption or OCR context")
+
+
+@app.post("/api/analyze-image")
+def analyze_image_endpoint(req: ImageAnalyzeRequest):
+    """
+    Multimodal AI endpoint: Analyzes payment screenshots, fake bank receipts,
+    or fraudulent promotional graphics using Gemini Vision (Hackathon Criterion 3).
+    """
+    from .analyzer import analyze_message
+    from .llm_client import AIAnalysisError
+
+    try:
+        result = analyze_message(
+            req.text_caption or "Проанализируй приложенный скриншот на признаки финансовой пирамиды или поддельного чека.",
+            image_base64=req.image_base64
+        )
+        return result.model_dump()
+    except AIAnalysisError as e:
+        raise HTTPException(status_code=502, detail=f"AI Vision analysis error: {e}")
+
+
+@app.get("/api/export")
+def export_alerts(format: str = "json", db: Session = Depends(get_db)):
+    """
+    Exports surveillance dataset as JSON or CSV for regulatory / forensic reporting (АФМ / АРРФР).
+    """
+    records = db.query(MessageRecord).order_by(MessageRecord.timestamp.desc()).all()
+    alerts = [serialize_to_alert_dict(rec) for rec in records]
+
+    if format.lower() == "csv":
+        output = io.StringIO()
+        writer = csv.writer(output)
+        writer.writerow(["id", "platform", "chat_name", "chat_url", "sender_hash", "status", "risk_score", "risk_level", "reasons", "explanation", "timestamp"])
+        for a in alerts:
+            reasons_str = "; ".join(f"{r.get('code')}: {r.get('evidence')}" for r in a.get("reasons", []))
+            writer.writerow([
+                a.get("id"),
+                a.get("platform"),
+                a.get("chat_name"),
+                a.get("chat_url") or "",
+                a.get("sender_hash"),
+                a.get("status"),
+                a.get("risk_score") or "",
+                a.get("risk_level") or "",
+                reasons_str,
+                a.get("explanation") or "",
+                a.get("timestamp")
+            ])
+        return Response(
+            content=output.getvalue().encode("utf-8-sig"),
+            media_type="text/csv",
+            headers={"Content-Disposition": "attachment; filename=safenet_alerts_export.csv"}
+        )
+
+    return alerts
 
 
 if __name__ == "__main__":

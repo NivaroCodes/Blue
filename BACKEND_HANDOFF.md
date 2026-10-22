@@ -13,7 +13,7 @@
 4. **Скрытые схемы**: Детектирует таск-скамы («работа на дому/лайки» с залогом) и фейковую помощь («бесплатная еда/продукты» с оплатой доставки на Kaspi).
 5. **Динамическая эскалация**: Если автор спамит в разные чаты или чат признан скам-хабом — ИИ автоматически повышает риск.
 6. **Схема БД (SQLAlchemy)**: [`ai_data/db/models.py`](file:///c:/Users/LOQ/Downloads/blue/ai_data/db/models.py) (таблицы `messages`, `analyses`, `reviews`, `entities`).
-7. **AI-воркер**: [`ai_data/worker.py`](file:///c:/Users/LOQ/Downloads/blue/ai_data/worker.py) — слушает `PENDING`, прогоняет через ИИ и пишет `PROCESSED`.
+7. **AI-воркер**: [`ai_data/worker.py`](file:///c:/Users/LOQ/Downloads/blue/ai_data/worker.py) — слушает `PENDING`, прогоняет через ИИ, вычленяет сущности и пишет `PROCESSED`.
 8. **Готовый API-сервер**: [`ai_data/api_server.py`](file:///c:/Users/LOQ/Downloads/blue/ai_data/api_server.py) — полностью рабочий эталон на FastAPI.
 
 ---
@@ -105,11 +105,18 @@
 
 #### 5. `GET /api/network-graph` (Хакатон Критерий 3: Граф синдикатов)
 * Готовая логика уже лежит в [`ai_data/graph_analysis.py`](file:///c:/Users/LOQ/Downloads/blue/ai_data/graph_analysis.py).
-* Просто вызвать:
+* Возвращает стандартную структуру `nodes` и `links` для визуализации D3.js/Cytoscape, список скам-хабов, ботов и выявленные финансовые синдикаты (боты с общими номерами телефонов/картами Kaspi).
+* Вызов:
   ```python
-  from ai_data.graph_analysis import build_network_graph
-  return build_network_graph(session)
+  from ai_data.graph_analysis import analyze_network_graph
+  return analyze_network_graph(session)
   ```
+
+#### 6. `GET /api/export?format=csv` (Экспорт отчёта для АФМ / АРРФР)
+* Выгружает полный реестр выявленных инцидентов в формате CSV или JSON со всеми уликами и ссылками на чаты (`chat_url`).
+
+#### 7. `POST /api/analyze-image` (Мультимодальный анализ скриншотов)
+* Принимает `{ "image_base64": "...", "text_caption": "..." }` и прогоняет чек Kaspi или фальшивый баланс через Gemini Vision.
 
 ---
 
@@ -151,6 +158,6 @@ python run.py worker
 # Засеять базу 25 реалистичными сценариями (боты, скам-хабы, казахский язык)
 python run.py seed
 
-# Прогнать 13 модульных тестов
+# Прогнать 14 модульных тестов
 python run.py test
 ```
