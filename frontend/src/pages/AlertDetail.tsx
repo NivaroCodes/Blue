@@ -151,7 +151,10 @@ export function AlertDetail({
               </div>
             </Panel>
             {alert.explanation && (
-              <Panel title="Контекст оценки" action={<Sparkles size={17} className="blue-text" />}>
+              <Panel
+                title="Контекст оценки"
+                action={<Sparkles size={17} className="accent-text" />}
+              >
                 <p className="explanation">{alert.explanation}</p>
                 <div className="model-meta">
                   <span>

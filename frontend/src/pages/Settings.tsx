@@ -85,7 +85,7 @@ export function SettingsPage({
       <div className="page-heading">
         <div>
           <div className="eyebrow">
-            <span className="tiny-blue-line" /> РАБОЧЕЕ ПРОСТРАНСТВО
+            <span className="tiny-accent-line" /> РАБОЧЕЕ ПРОСТРАНСТВО
           </div>
           <h1>
             Настройки подключения<span className="heading-dot">.</span>
@@ -95,7 +95,7 @@ export function SettingsPage({
       </div>
       <div className="settings-grid">
         <div>
-          <Panel title="Источник данных" description="Выберите режим работы Blue">
+          <Panel title="Источник данных" description="Выберите режим работы Kraken">
             <form className="settings-form" onSubmit={save}>
               <fieldset className="mode-options">
                 <legend className="sr-only">Режим данных</legend>
@@ -200,7 +200,7 @@ export function SettingsPage({
           </Panel>
         </div>
         <aside>
-          <Panel title="Для команды" action={<Code2 size={17} className="blue-text" />}>
+          <Panel title="Для команды" action={<Code2 size={17} className="accent-text" />}>
             <div className="integration-guide">
               <p>Интерфейс уже обращается к согласованным точкам API:</p>
               <code>GET /api/alerts</code>

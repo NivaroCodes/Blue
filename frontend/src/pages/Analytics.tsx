@@ -30,7 +30,7 @@ export function Analytics({ monitor: m }: { monitor: Monitor }) {
       <div className="page-heading">
         <div>
           <div className="eyebrow">
-            <span className="tiny-blue-line" /> ПОНЯТНАЯ КАРТИНА
+            <span className="tiny-accent-line" /> ПОНЯТНАЯ КАРТИНА
           </div>
           <h1>
             Аналитика сигналов<span className="heading-dot">.</span>

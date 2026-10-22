@@ -1,6 +1,11 @@
 import { expect, test } from '@playwright/test'
 import { readFile } from 'node:fs/promises'
 
+// Functional scenarios begin in the workspace; brand.spec.ts covers the modal entrance.
+test.beforeEach(async ({ page }) => {
+  await page.addInitScript(() => sessionStorage.setItem('kraken.intro.seen.v1', '1'))
+})
+
 test('risk, text, chat and platform filters work together; pagination and empty state', async ({
   page,
 }) => {

@@ -1,4 +1,4 @@
-# Blue frontend API contract v1
+# Kraken frontend API contract v1
 
 Основан на четырёхдневном MVP-плане команды. Это конкретизированный контракт frontend для согласования с backend, а не утверждение о наличии готового сервера.
 

@@ -35,7 +35,7 @@ export function Chats({ monitor: m }: { monitor: Monitor }) {
       <div className="page-heading">
         <div>
           <div className="eyebrow">
-            <span className="tiny-blue-line" /> ИСТОЧНИКИ ДАННЫХ
+            <span className="tiny-accent-line" /> ИСТОЧНИКИ ДАННЫХ
           </div>
           <h1>
             Чаты под наблюдением<span className="heading-dot">.</span>
@@ -152,8 +152,8 @@ export function Chats({ monitor: m }: { monitor: Monitor }) {
           <h3>Источник начинается с разрешения</h3>
           <p>
             Telegram подключается через бота команды в разрешённой тестовой группе. Для WhatsApp в
-            MVP предусмотрен демонстрационный импорт на стороне backend. Blue не собирает сообщения
-            из произвольных закрытых чатов.
+            MVP предусмотрен демонстрационный импорт на стороне backend. Kraken не собирает
+            сообщения из произвольных закрытых чатов.
           </p>
         </div>
       </div>

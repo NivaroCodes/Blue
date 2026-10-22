@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" fill="none" color="#ff8247"><title>Kraken</title><g  stroke="currentColor" stroke-width="8" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M46 49C29 53 20 43 20 28M47 59H32C18 59 10 65 10 81M55 64L45 81C40 92 30 98 19 92M61 65V88C61 103 50 111 39 108" />
+        <path d="M82 49C99 53 108 43 108 28M81 59H96C110 59 118 65 118 81M73 64L83 81C88 92 98 98 109 92M67 65V88C67 103 78 111 89 108" />
+      </g>
+      <path  fill="currentColor" fill-rule="evenodd" d="M64 8C49 13 38 25 38 40L43 57L55 68H73L85 57L90 40C90 25 79 13 64 8ZM47 41L59 46V52L49 48L47 41ZM81 41L69 46V52L79 48L81 41Z" clip-rule="evenodd" />
+    </svg>

@@ -33,8 +33,8 @@ export function ActivityChart({ alerts, large = false }: { alerts: Alert[]; larg
       >
         <defs>
           <linearGradient id={id} x1="0" x2="0" y1="0" y2="1">
-            <stop stopColor="#3972f4" stopOpacity=".17" />
-            <stop offset="1" stopColor="#3972f4" stopOpacity=".005" />
+            <stop stopColor="var(--accent)" stopOpacity=".17" />
+            <stop offset="1" stopColor="var(--accent)" stopOpacity=".005" />
           </linearGradient>
         </defs>
         {[0, 1, 2, 3].map((i) => (
@@ -44,7 +44,7 @@ export function ActivityChart({ alerts, large = false }: { alerts: Alert[]; larg
               x2="696"
               y1={29 + i * 38.33}
               y2={29 + i * 38.33}
-              stroke="#e8edf4"
+              stroke="var(--border)"
               strokeDasharray="3 5"
             />
             <text x="22" y={33 + i * 38.33} textAnchor="end">
@@ -56,7 +56,7 @@ export function ActivityChart({ alerts, large = false }: { alerts: Alert[]; larg
         <polyline
           points={points}
           fill="none"
-          stroke="#386ff1"
+          stroke="var(--accent)"
           strokeWidth="2.6"
           strokeLinejoin="round"
           strokeLinecap="round"
@@ -64,7 +64,7 @@ export function ActivityChart({ alerts, large = false }: { alerts: Alert[]; larg
         <polyline
           points={high}
           fill="none"
-          stroke="#ef9b74"
+          stroke="var(--high)"
           strokeWidth="2"
           strokeLinejoin="round"
           strokeLinecap="round"
@@ -76,8 +76,8 @@ export function ActivityChart({ alerts, large = false }: { alerts: Alert[]; larg
               cx={45 + i * 58}
               cy={144 - (b.total / max) * 115}
               r="3.5"
-              fill="white"
-              stroke="#386ff1"
+              fill="var(--surface)"
+              stroke="var(--accent)"
               strokeWidth="2"
             >
               <title>
@@ -129,8 +129,8 @@ export function RiskDonut({ stats }: { stats: Stats }) {
         aria-label={`Обработано: ${total}. ${levels.map((l) => `${levelLabels[l]}: ${stats.by_level[l]}`).join(', ')}`}
         style={{
           background: total
-            ? `conic-gradient(#eb887c 0 ${high}%, #e9bd66 ${high}% ${high + medium}%, #71bfa4 ${high + medium}% 100%)`
-            : '#e7ecf2',
+            ? `conic-gradient(var(--high) 0 ${high}%, var(--medium) ${high}% ${high + medium}%, var(--low) ${high + medium}% 100%)`
+            : 'var(--surface-raised)',
         }}
       >
         <div>

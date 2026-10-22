@@ -1,3 +1,4 @@
+import { KrakenMark } from './KrakenMark'
 import {
   AlertCircle,
   ArrowUpRight,
@@ -14,12 +15,8 @@ import type { ReactNode } from 'react'
 export function Logo({ small = false }: { small?: boolean }) {
   return (
     <span className={`brand ${small ? 'brand-small' : ''}`}>
-      <img src="/favicon.svg" alt="" />
-      {!small && (
-        <span>
-          blue<span className="brand-dot">.</span>
-        </span>
-      )}
+      <KrakenMark />
+      {!small && <span className="brand-wordmark">kraken</span>}
     </span>
   )
 }

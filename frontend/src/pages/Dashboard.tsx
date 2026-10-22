@@ -1,3 +1,4 @@
+import { KrakenMark } from '../components/KrakenMark'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import {
   ArrowDown,
@@ -119,7 +120,7 @@ export function Dashboard({
     const url = URL.createObjectURL(blob),
       anchor = document.createElement('a')
     anchor.href = url
-    anchor.download = `blue-alerts-${new Date().toISOString().slice(0, 10)}.json`
+    anchor.download = `kraken-alerts-${new Date().toISOString().slice(0, 10)}.json`
     anchor.click()
     setTimeout(() => URL.revokeObjectURL(url), 1000)
   }
@@ -128,10 +129,25 @@ export function Dashboard({
   ).length
   return (
     <>
+      <section className="kraken-banner" aria-label="Kraken — видеть глубже">
+        <div className="banner-copy">
+          <span className="banner-kicker">KRAKEN / SIGNAL INTELLIGENCE</span>
+          <h2>
+            Видеть <em>глубже.</em>
+          </h2>
+          <p>Находите скрытые риски. Принимайте осознанные решения.</p>
+        </div>
+        <div className="banner-art" aria-hidden="true">
+          <span className="banner-orbit" />
+          <KrakenMark />
+          <span className="banner-coordinate">SAFENET KZ / 2026</span>
+        </div>
+        <span className="banner-index">01 — ОБНАРУЖЕНИЕ</span>
+      </section>
       <div className="page-heading">
         <div>
           <div className="eyebrow">
-            <span className="tiny-blue-line" /> ОБЗОР БЕЗОПАСНОСТИ
+            <span className="tiny-accent-line" /> ОБЗОР БЕЗОПАСНОСТИ
           </div>
           <h1>
             Мониторинг рисков<span className="heading-dot">.</span>
@@ -229,7 +245,7 @@ export function Dashboard({
           action={
             <div className="chart-legend">
               <span>
-                <i className="legend-dot blue" />
+                <i className="legend-dot accent" />
                 Все сообщения
               </span>
               <span>

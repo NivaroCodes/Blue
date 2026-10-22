@@ -1,4 +1,9 @@
 import { expect, test } from '@playwright/test'
+
+// Inputs behind the native intro dialog are intentionally inert until it closes.
+test.beforeEach(async ({ page }) => {
+  await page.addInitScript(() => sessionStorage.setItem('kraken.intro.seen.v1', '1'))
+})
 import type { Page } from '@playwright/test'
 
 const fixture = {
