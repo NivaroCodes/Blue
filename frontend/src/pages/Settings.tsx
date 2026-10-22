@@ -3,14 +3,12 @@ import type { FormEvent } from 'react'
 import {
   CheckCircle2,
   CircleAlert,
-  Code2,
   Database,
   FlaskConical,
   Globe,
   Plug,
   RefreshCw,
   Save,
-  ShieldCheck,
 } from 'lucide-react'
 import { getStats } from '../lib/api'
 import type { Settings } from '../lib/model'
@@ -84,13 +82,8 @@ export function SettingsPage({
     <>
       <div className="page-heading">
         <div>
-          <div className="eyebrow">
-            <span className="tiny-accent-line" /> РАБОЧЕЕ ПРОСТРАНСТВО
-          </div>
-          <h1>
-            Настройки подключения<span className="heading-dot">.</span>
-          </h1>
-          <p>Готовый интерфейс сегодня. Реальные данные, когда готова команда.</p>
+          <h1>Настройки</h1>
+          <p>Источник данных и обновление сообщений.</p>
         </div>
       </div>
       <div className="settings-grid">
@@ -199,39 +192,6 @@ export function SettingsPage({
             </form>
           </Panel>
         </div>
-        <aside>
-          <Panel title="Для команды" action={<Code2 size={17} className="accent-text" />}>
-            <div className="integration-guide">
-              <p>Интерфейс уже обращается к согласованным точкам API:</p>
-              <code>GET /api/alerts</code>
-              <code>GET /api/alerts/:id</code>
-              <code>GET /api/stats</code>
-              <code>POST /api/alerts/:id/review</code>
-              <hr />
-              <h3>Как подключиться</h3>
-              <ol>
-                <li>Запустите FastAPI-сервер.</li>
-                <li>
-                  Сверьте JSON со схемой в <b>docs/API.md</b>.
-                </li>
-                <li>Выберите Backend API и укажите адрес.</li>
-                <li>Проверьте соединение и сохраните.</li>
-              </ol>
-              <p>
-                При отдельном домене backend должен разрешать CORS для origin интерфейса. В
-                локальной разработке можно использовать встроенный прокси.
-              </p>
-            </div>
-          </Panel>
-          <div className="analyst-reminder">
-            <ShieldCheck size={21} />
-            <b>Источник должен быть разрешён</b>
-            <p>
-              Подключение Telegram-бота, импорт WhatsApp и AI-анализ выполняются в backend.
-              Деморежим работает полностью в браузере.
-            </p>
-          </div>
-        </aside>
       </div>
     </>
   )

@@ -1,102 +1,68 @@
 import { useLayoutEffect, useRef } from 'react'
-import { ArrowUpRight } from 'lucide-react'
+import { ArrowRight } from 'lucide-react'
 import { KrakenMark } from './KrakenMark'
 
-const seenKey = 'kraken.intro.seen.v1'
-
+// Every full page entry gets the entrance. SPA navigation never replays it.
 export function shouldShowIntro() {
-  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return false
-  try {
-    return sessionStorage.getItem(seenKey) !== '1'
-  } catch {
-    return true
-  }
-}
-
-export function rememberIntro() {
-  try {
-    sessionStorage.setItem(seenKey, '1')
-  } catch {
-    /* Storage restrictions must not block entry. */
-  }
+  return true
 }
 
 export function BrandIntro({ active, onComplete }: { active: boolean; onComplete: () => void }) {
   const dialog = useRef<HTMLDialogElement>(null)
   const complete = useRef(onComplete)
   complete.current = onComplete
-
   useLayoutEffect(() => {
     if (!active) return
     const element = dialog.current!
     const previousFocus =
       document.activeElement instanceof HTMLElement ? document.activeElement : null
-    const previousOverflow = document.body.style.overflow
-    const previousScroll = { left: window.scrollX, top: window.scrollY }
+    const overflow = document.body.style.overflow
     const reduced = window.matchMedia('(prefers-reduced-motion: reduce)')
     element.showModal()
     document.body.style.overflow = 'hidden'
-    const finish = () => complete.current()
-    const timer = window.setTimeout(finish, reduced.matches ? 1000 : 3300)
-    const handleMotionChange = () => {
-      if (reduced.matches) finish()
+    const timer = window.setTimeout(() => complete.current(), reduced.matches ? 650 : 2100)
+    const motionChange = () => {
+      if (reduced.matches) complete.current()
     }
-    reduced.addEventListener('change', handleMotionChange)
+    reduced.addEventListener('change', motionChange)
     return () => {
       clearTimeout(timer)
-      reduced.removeEventListener('change', handleMotionChange)
+      reduced.removeEventListener('change', motionChange)
       element.close()
-      document.body.style.overflow = previousOverflow
-      if (previousFocus?.isConnected && previousFocus !== document.body) previousFocus.focus()
+      document.body.style.overflow = overflow
+      if (previousFocus?.isConnected && previousFocus !== document.body)
+        previousFocus.focus({ preventScroll: true })
       else document.querySelector<HTMLElement>('#main')?.focus({ preventScroll: true })
-      window.scrollTo({ ...previousScroll, behavior: 'instant' })
     }
   }, [active])
-
   if (!active) return null
   return (
     <dialog
       ref={dialog}
       className="brand-intro"
       aria-labelledby="intro-title"
-      aria-describedby="intro-description"
-      onCancel={(event) => {
-        event.preventDefault()
+      onCancel={(e) => {
+        e.preventDefault()
         onComplete()
       }}
     >
-      <div className="intro-topline">
-        <span>K / SAFENET KZ</span>
-        <span>THREAT INTELLIGENCE</span>
-      </div>
-      <div className="intro-atmosphere" aria-hidden="true" />
+      <span className="intro-corner">Kraken / SafeNet KZ</span>
       <div className="intro-center">
-        <div className="intro-emblem">
-          <div className="intro-orbit" aria-hidden="true" />
+        <div className="intro-symbol">
           <KrakenMark />
         </div>
         <h1 id="intro-title" className="intro-wordmark" aria-label="Kraken">
-          {'KRAKEN'.split('').map((letter, index) => (
-            <span
-              key={index}
-              aria-hidden="true"
-              style={{ animationDelay: `${360 + index * 65}ms` }}
-            >
-              {letter}
+          {'KRAKEN'.split('').map((letter, i) => (
+            <span className="intro-letter-mask" key={i} aria-hidden="true">
+              <span style={{ animationDelay: `${180 + i * 65}ms` }}>{letter}</span>
             </span>
           ))}
         </h1>
-        <p id="intro-description">Видеть глубже. Реагировать раньше.</p>
-        <div className="intro-progress" aria-hidden="true">
-          <span />
-        </div>
+        <p>Сигналы. Контекст. Решение.</p>
       </div>
-      <div className="intro-bottomline">
-        <span>ОБНАРУЖЕНИЕ ФИНАНСОВЫХ ПИРАМИД</span>
-        <button autoFocus onClick={onComplete} className="intro-skip">
-          Пропустить <ArrowUpRight size={17} />
-        </button>
-      </div>
+      <button autoFocus className="intro-skip" onClick={onComplete}>
+        Пропустить <ArrowRight size={16} />
+      </button>
     </dialog>
   )
 }

@@ -1,9 +1,7 @@
-import { useId } from 'react'
 import { levelLabels, levels } from '../lib/model'
 import type { Alert, Stats } from '../lib/model'
 
 export function ActivityChart({ alerts, large = false }: { alerts: Alert[]; large?: boolean }) {
-  const id = useId().replace(/:/g, '')
   const end = Date.now()
   const bins = Array.from({ length: 12 }, (_, i) => {
     const start = end - (12 - i) * 2 * 3_600_000
@@ -31,12 +29,6 @@ export function ActivityChart({ alerts, large = false }: { alerts: Alert[]; larg
         role="img"
         aria-label={`Активность за 24 часа: ${bins.reduce((n, b) => n + b.total, 0)} сообщений. Числа по интервалам доступны в таблице.`}
       >
-        <defs>
-          <linearGradient id={id} x1="0" x2="0" y1="0" y2="1">
-            <stop stopColor="var(--accent)" stopOpacity=".17" />
-            <stop offset="1" stopColor="var(--accent)" stopOpacity=".005" />
-          </linearGradient>
-        </defs>
         {[0, 1, 2, 3].map((i) => (
           <g key={i}>
             <line
@@ -52,7 +44,6 @@ export function ActivityChart({ alerts, large = false }: { alerts: Alert[]; larg
             </text>
           </g>
         ))}
-        <polygon points={`45,144 ${points} 683,144`} fill={`url(#${id})`} />
         <polyline
           points={points}
           fill="none"

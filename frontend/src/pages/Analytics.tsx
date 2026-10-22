@@ -1,22 +1,11 @@
-import {
-  Activity,
-  ArrowUpRight,
-  CheckCheck,
-  CircleAlert,
-  Clock3,
-  Layers,
-  ShieldCheck,
-} from 'lucide-react'
-import { Link } from 'react-router-dom'
-import { ActivityChart, RiskDonut } from '../components/charts'
-import { ErrorBox, Panel, Platform } from '../components/ui'
-import { reasonLabels } from '../lib/model'
+import { ActivityChart } from '../components/charts'
+import { ErrorBox } from '../components/ui'
+import { levelLabels, levels, reasonLabels } from '../lib/model'
 import type { Monitor } from '../lib/useMonitor'
 
 export function Analytics({ monitor: m }: { monitor: Monitor }) {
   const processed = m.alerts.filter((a) => a.status === 'PROCESSED')
   const reviewed = processed.filter((a) => a.review_status !== 'NEW')
-  const falsePositives = processed.filter((a) => a.review_status === 'FALSE_POSITIVE').length
   const reasons = Object.entries(
     m.alerts
       .flatMap((a) => [...new Set(a.reasons.map((r) => r.code))])
@@ -29,136 +18,89 @@ export function Analytics({ monitor: m }: { monitor: Monitor }) {
     <>
       <div className="page-heading">
         <div>
-          <div className="eyebrow">
-            <span className="tiny-accent-line" /> ПОНЯТНАЯ КАРТИНА
-          </div>
-          <h1>
-            Аналитика сигналов<span className="heading-dot">.</span>
-          </h1>
-          <p>Что происходит в загруженной выборке и что уже проверено.</p>
+          <h1>Аналитика</h1>
+          <p>По загруженной выборке · время UTC+5</p>
         </div>
-        <span className="date-chip">
-          <Layers size={15} /> Вся загруженная выборка
-        </span>
       </div>
       {m.error && <ErrorBox message={m.error} retry={m.refresh} />}
-      <div className="analytics-summary">
-        <Panel>
-          <span className="analytics-icon">
-            <Activity size={19} />
-          </span>
-          <p>Обработано сообщений</p>
-          <strong>{processed.length}</strong>
-          <span>из {m.alerts.length} загруженных</span>
-        </Panel>
-        <Panel>
-          <span className="analytics-icon">
-            <CheckCheck size={19} />
-          </span>
-          <p>Проверено аналитиком</p>
-          <strong>{reviewed.length}</strong>
-          <span>
-            {processed.length ? Math.round((reviewed.length / processed.length) * 100) : 0}%
-            обработанных сообщений
-          </span>
-        </Panel>
-        <Panel>
-          <span className="analytics-icon">
-            <ShieldCheck size={19} />
-          </span>
-          <p>Отмечено как ложные</p>
-          <strong>{falsePositives}</strong>
-          <span>Решения аналитика, не метрика модели</span>
-        </Panel>
-      </div>
-      <div className="chart-grid">
-        <Panel title="Поток сообщений" description="Последние 24 часа · время Казахстана (UTC+5)">
-          <ActivityChart alerts={m.alerts} large />
-        </Panel>
-        <Panel title="Распределение рисков" description="Агрегаты Backend API или демоданных">
-          <RiskDonut stats={m.stats} />
-        </Panel>
-      </div>
-      <div className="analytics-columns">
-        <Panel
-          title="Какие признаки встречаются чаще"
-          description="Количество сообщений с каждым признаком"
-        >
-          <div className="reason-chart">
-            {reasons.length ? (
-              reasons.map(([code, count]) => (
-                <div key={code}>
-                  <div>
-                    <span>{reasonLabels[code] || code}</span>
-                    <b>{count}</b>
-                  </div>
-                  <div className="bar-track">
-                    <span style={{ width: `${(count / (reasons[0]?.[1] || 1)) * 100}%` }} />
-                  </div>
-                </div>
-              ))
-            ) : (
-              <p className="subtle">В загруженной выборке пока нет выделенных признаков.</p>
-            )}
-          </div>
-        </Panel>
-        <Panel title="Источники сообщений" description="Доля платформ в загруженной выборке">
-          <div className="platform-stats">
-            {(['telegram', 'whatsapp'] as const).map((platform) => {
-              const count = m.alerts.filter((a) => a.platform === platform).length
-              return (
-                <div key={platform}>
-                  <div>
-                    <Platform platform={platform} label />
-                    <strong>{count}</strong>
-                  </div>
-                  <div className="bar-track">
-                    <span
-                      style={{ width: `${m.alerts.length ? (count / m.alerts.length) * 100 : 0}%` }}
-                    />
-                  </div>
-                  <p>
-                    {m.alerts.length ? Math.round((count / m.alerts.length) * 100) : 0}% сообщений
-                  </p>
-                </div>
-              )
-            })}
-          </div>
-          <div className="pipeline-stats">
-            <h3>
-              <Clock3 size={15} /> Состояние обработки
-            </h3>
-            <div>
-              <span>В очереди</span>
-              <b>{m.stats.pending}</b>
-            </div>
-            <div>
-              <span>Анализируются</span>
-              <b>{m.stats.processing}</b>
-            </div>
-            <div>
-              <span>Ошибки</span>
-              <b className="error-text">{m.stats.errors}</b>
-            </div>
-          </div>
-        </Panel>
-      </div>
-      <div className="metrics-note">
-        <span>
-          <CircleAlert size={22} />
-        </span>
+      <dl className="analytics-totals">
         <div>
-          <h3>Точность измеряется на отдельном тестовом наборе</h3>
-          <p>
-            Precision, recall и false-positive rate появятся после оценки AI-модуля на размеченных
-            данных. Счётчики и решения аналитика на этой странице не заменяют такую проверку.
-            {m.settings.mode === 'demo' && ' Оценки риска в деморежиме заданы вручную.'}
-          </p>
+          <dt>Сообщений</dt>
+          <dd>{m.alerts.length}</dd>
         </div>
-        <Link to="/">
-          К сообщениям <ArrowUpRight size={15} />
-        </Link>
+        <div>
+          <dt>Обработано</dt>
+          <dd>{processed.length}</dd>
+        </div>
+        <div>
+          <dt>Проверено человеком</dt>
+          <dd>{reviewed.length}</dd>
+        </div>
+      </dl>
+      <section className="activity-section">
+        <div className="section-heading">
+          <h2>Активность за 24 часа</h2>
+          <div className="chart-legend">
+            <span>
+              <i className="legend-line" />
+              Все сообщения
+            </span>
+            <span>
+              <i className="legend-line high" />
+              Высокий риск
+            </span>
+          </div>
+        </div>
+        <ActivityChart alerts={m.alerts} large />
+      </section>
+      <div className="analysis-columns">
+        <section>
+          <h2>Распределение рисков</h2>
+          <div className="analysis-list">
+            {levels.map((l) => (
+              <div key={l}>
+                <span>
+                  <i className={`risk-tick ${l.toLowerCase()}`} />
+                  {levelLabels[l]}
+                </span>
+                <b>{m.stats.by_level[l]}</b>
+              </div>
+            ))}
+          </div>
+          <details className="plain-disclosure">
+            <summary>Очередь обработки</summary>
+            <dl>
+              <div>
+                <dt>В очереди</dt>
+                <dd>{m.stats.pending}</dd>
+              </div>
+              <div>
+                <dt>Анализируются</dt>
+                <dd>{m.stats.processing}</dd>
+              </div>
+              <div>
+                <dt>Ошибки</dt>
+                <dd>{m.stats.errors}</dd>
+              </div>
+            </dl>
+          </details>
+        </section>
+        <section>
+          <h2>Частые признаки</h2>
+          <div className="analysis-list">
+            {reasons.slice(0, 5).map(([code, count]) => (
+              <div key={code}>
+                <span>{reasonLabels[code] || code}</span>
+                <b>{count}</b>
+              </div>
+            ))}
+          </div>
+        </section>
       </div>
+      <p className="metrics-note page-note">
+        Счётчики описывают выборку и не заменяют такую проверку, как оценка precision и recall на
+        отдельном размеченном наборе. В демо оценки заданы вручную.
+      </p>
     </>
   )
 }

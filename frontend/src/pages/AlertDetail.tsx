@@ -4,15 +4,12 @@ import {
   ArrowLeft,
   CheckCheck,
   CheckCircle2,
-  ChevronRight,
-  Clock3,
   FileText,
   Fingerprint,
   Info,
   MessageSquare,
   RefreshCw,
   ShieldCheck,
-  Sparkles,
 } from 'lucide-react'
 import { Link, useParams } from 'react-router-dom'
 import { getAlert, saveReview } from '../lib/api'
@@ -74,13 +71,8 @@ export function AlertDetail({
       </Link>
       <div className="page-heading detail-heading">
         <div>
-          <div className="eyebrow">
-            ПРОВЕРКА СООБЩЕНИЯ <ChevronRight size={12} /> <span className="mono">{id}</span>
-          </div>
-          <h1>
-            За каждым сигналом — контекст<span className="heading-dot">.</span>
-          </h1>
-          <p>Изучите признаки и сохраните своё решение.</p>
+          <h1>Проверка сообщения</h1>
+          <p>Изучите контекст и сохраните решение.</p>
         </div>
       </div>
       {loading && (
@@ -151,10 +143,8 @@ export function AlertDetail({
               </div>
             </Panel>
             {alert.explanation && (
-              <Panel
-                title="Контекст оценки"
-                action={<Sparkles size={17} className="accent-text" />}
-              >
+              <details className="explanation-disclosure">
+                <summary>Объяснение и данные модели</summary>
                 <p className="explanation">{alert.explanation}</p>
                 <div className="model-meta">
                   <span>
@@ -167,7 +157,7 @@ export function AlertDetail({
                     </span>
                   )}
                 </div>
-              </Panel>
+              </details>
             )}
           </div>
           <aside className="detail-aside">
@@ -178,23 +168,12 @@ export function AlertDetail({
                   <span>/ 100</span>
                 </div>
                 <RiskBadge level={alert.risk_level} />
-                <div className="score-scale">
-                  <span style={{ width: `${alert.risk_score ?? 0}%` }} />
-                </div>
+                {alert.status !== 'PROCESSED' && <ProcessingBadge status={alert.status} />}
                 <p>
                   {alert.status === 'PROCESSED'
-                    ? 'Индикатор для ручной проверки'
+                    ? 'Требует оценки аналитика'
                     : 'Оценка ещё не получена'}
                 </p>
-              </div>
-              <div className="score-thresholds">
-                <span>0–29 Низкий</span>
-                <span>30–59 Средний</span>
-                <span>60–100 Высокий</span>
-              </div>
-              <div className="detail-processing">
-                <Clock3 size={15} />
-                <ProcessingBadge status={alert.status} />
               </div>
             </Panel>
             <ReviewForm
@@ -210,14 +189,9 @@ export function AlertDetail({
                 )
               }}
             />
-            <div className="analyst-reminder">
-              <ShieldCheck size={21} />
-              <b>Признаки — не вердикт</b>
-              <p>
-                Система помогает оценить контекст. Она не устанавливает факт нарушения и не
-                объявляет человека мошенником.
-              </p>
-            </div>
+            <p className="page-note">
+              Оценка показывает признаки риска и не устанавливает факт нарушения.
+            </p>
           </aside>
         </div>
       )}

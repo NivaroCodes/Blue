@@ -1,21 +1,18 @@
 import { expect, test } from '@playwright/test'
 import { readFile } from 'node:fs/promises'
 
-// Functional scenarios begin in the workspace; brand.spec.ts covers the modal entrance.
-test.beforeEach(async ({ page }) => {
-  await page.addInitScript(() => sessionStorage.setItem('kraken.intro.seen.v1', '1'))
-})
-
 test('risk, text, chat and platform filters work together; pagination and empty state', async ({
   page,
 }) => {
   await page.goto('/')
+  await expect(page.locator('.brand-intro')).not.toBeAttached()
   await expect(page.locator('.alerts-table tbody tr')).toHaveCount(6)
   await page.getByRole('button', { name: 'Следующая страница' }).click()
   await expect(page.getByRole('button', { name: 'Страница 2', exact: true })).toHaveAttribute(
     'aria-current',
     'page',
   )
+  await page.locator('.filter-disclosure summary').click()
   await page.getByLabel('Уровень риска', { exact: true }).selectOption('HIGH')
   await expect(page.locator('.alerts-table .risk-badge:not(.high)')).toHaveCount(0)
   await expect(page.locator('.alerts-table tbody tr')).toHaveCount(6)
@@ -34,6 +31,7 @@ test('risk, text, chat and platform filters work together; pagination and empty 
 
 test('evidence is highlighted and analyst review persists through reload', async ({ page }) => {
   await page.goto('/alerts/demo-1')
+  await expect(page.locator('.brand-intro')).not.toBeAttached()
   await expect(page.locator('mark')).toHaveCount(4)
   await expect(page.locator('.original-message')).toContainText('Вложи 5 000 ₸')
   await page.getByLabel('Статус проверки', { exact: true }).selectOption('FALSE_POSITIVE')
@@ -41,27 +39,33 @@ test('evidence is highlighted and analyst review persists through reload', async
   await page.getByRole('button', { name: 'Сохранить решение' }).click()
   await expect(page.getByRole('status')).toContainText('Решение сохранено')
   await page.reload()
+  await expect(page.locator('.brand-intro')).not.toBeAttached()
   await expect(page.getByLabel('Статус проверки', { exact: true })).toHaveValue('FALSE_POSITIVE')
   await expect(page.getByLabel('Комментарий')).toHaveValue(
     'Контекст проверен: учебный синтетический пример.',
   )
   await page.getByRole('link', { name: 'Назад к мониторингу' }).click()
-  await page.getByRole('button', { name: 'Ложные срабатывания', exact: true }).click()
+  await page.locator('.filter-disclosure summary').click()
+  await page.getByLabel('Статус проверки', { exact: true }).selectOption('FALSE_POSITIVE')
   await expect(page.locator('.alerts-table tbody tr')).toHaveCount(2)
 })
 
 test('chat navigation, direct links and pending state', async ({ page }) => {
   await page.goto('/chats')
+  await expect(page.locator('.brand-intro')).not.toBeAttached()
   await expect(page.locator('.chat-card')).toHaveCount(5)
   await page.getByLabel('Поиск чатов').fill('Табыс')
   await expect(page.locator('.chat-card')).toHaveCount(1)
   await page.getByRole('link', { name: 'Открыть сообщения' }).click()
+  await page.locator('.filter-disclosure summary').click()
   await expect(page.getByLabel('Чат', { exact: true })).toHaveValue('wa_income')
   await page.goto('/alerts/demo-pipeline-0')
+  await expect(page.locator('.brand-intro')).not.toBeAttached()
   await expect(page.getByRole('button', { name: 'Сохранить решение' })).toBeDisabled()
   await expect(page.locator('.score-number')).toContainText('—')
   await page.goto('/analytics')
-  await expect(page.getByRole('heading', { name: 'Аналитика сигналов.' })).toBeVisible()
+  await expect(page.locator('.brand-intro')).not.toBeAttached()
+  await expect(page.getByRole('heading', { name: 'Аналитика' })).toBeVisible()
   await expect(page.locator('.metrics-note')).toContainText('не заменяют такую проверку')
 })
 
@@ -69,11 +73,13 @@ test('demo live signal appears and filtered JSON export carries synthetic label'
   page,
 }) => {
   await page.goto('/')
+  await expect(page.locator('.brand-intro')).not.toBeAttached()
   await expect(page.locator('.alerts-table tbody tr')).toHaveCount(6)
   await page.getByRole('button', { name: 'Демо-сообщение' }).click()
   await expect(
     page.getByRole('link', { name: 'Открыть сообщение demo-live-0', exact: true }),
   ).toBeVisible()
+  await page.locator('.filter-disclosure summary').click()
   await page.getByLabel('Уровень риска', { exact: true }).selectOption('HIGH')
   const download = page.waitForEvent('download')
   await page.getByRole('button', { name: 'Экспорт', exact: true }).click()
@@ -86,11 +92,13 @@ test('demo live signal appears and filtered JSON export carries synthetic label'
 
 test('help dialog is keyboard dismissible and unknown routes are recoverable', async ({ page }) => {
   await page.goto('/')
+  await expect(page.locator('.brand-intro')).not.toBeAttached()
   await page.getByRole('button', { name: 'О проекте' }).click()
   await expect(page.locator('dialog')).toBeVisible()
   await page.keyboard.press('Escape')
   await expect(page.locator('dialog')).not.toBeVisible()
   await page.goto('/unknown-page')
+  await expect(page.locator('.brand-intro')).not.toBeAttached()
   await page.getByRole('link', { name: 'К мониторингу', exact: true }).click()
   await expect(page).toHaveURL(/\/$/)
 })
@@ -101,6 +109,7 @@ for (const width of [375, 768, 1024, 1440]) {
     await page.emulateMedia({ reducedMotion: 'reduce' })
     for (const path of ['/', '/chats', '/analytics', '/settings', '/alerts/demo-1']) {
       await page.goto(path)
+      await expect(page.locator('.brand-intro')).not.toBeAttached()
       await expect(page.locator('main h1')).toBeVisible()
       const dimensions = await page.evaluate(() => ({
         width: document.documentElement.clientWidth,
@@ -109,7 +118,6 @@ for (const width of [375, 768, 1024, 1440]) {
       expect(dimensions.scroll, path).toBeLessThanOrEqual(dimensions.width + 1)
     }
     if (width === 375) {
-      await page.getByRole('button', { name: 'Открыть навигацию' }).click()
       await page.getByRole('link', { name: 'Чаты и источники' }).click()
       await expect(page).toHaveURL(/\/chats$/)
     }

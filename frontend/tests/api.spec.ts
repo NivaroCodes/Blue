@@ -1,9 +1,5 @@
 import { expect, test } from '@playwright/test'
 
-// Inputs behind the native intro dialog are intentionally inert until it closes.
-test.beforeEach(async ({ page }) => {
-  await page.addInitScript(() => sessionStorage.setItem('kraken.intro.seen.v1', '1'))
-})
 import type { Page } from '@playwright/test'
 
 const fixture = {
@@ -56,6 +52,7 @@ test('real adapter uses list, stats, detail and review endpoints', async ({ page
     else await route.fulfill({ json: fixture })
   })
   await page.goto('/')
+  await expect(page.locator('.brand-intro')).not.toBeAttached()
   await expect(page.locator('.alerts-table tbody tr')).toHaveCount(1)
   await expect(
     page.locator('.alerts-table').getByText('API Test Group', { exact: true }),
@@ -82,6 +79,7 @@ test('API failures show error, retry works, synthetic records never replace the 
     ),
   )
   await page.goto('/')
+  await expect(page.locator('.brand-intro')).not.toBeAttached()
   await expect(page.getByRole('alert')).toContainText('503')
   await expect(page.locator('.alerts-table tbody tr')).toHaveCount(0)
   await expect(page.getByRole('button', { name: 'Демо-сообщение' })).toHaveCount(0)
@@ -103,6 +101,7 @@ test('malformed processed result is rejected rather than displayed as low risk',
     }),
   )
   await page.goto('/')
+  await expect(page.locator('.brand-intro')).not.toBeAttached()
   await expect(page.getByRole('alert')).toContainText('не соответствует контракту')
   await expect(page.locator('.alerts-table tbody tr')).toHaveCount(0)
 })
@@ -118,6 +117,7 @@ test('failed review preserves note and never announces success', async ({ page }
     )
   })
   await page.goto('/alerts/api-1')
+  await expect(page.locator('.brand-intro')).not.toBeAttached()
   await page.getByLabel('Комментарий').fill('Не терять комментарий')
   await page.getByRole('button', { name: 'Сохранить решение' }).click()
   await expect(page.getByRole('alert')).toContainText('500')
@@ -143,12 +143,12 @@ test('polling receives new records and pause stops subsequent requests', async (
     })
   })
   await page.goto('/')
+  await expect(page.locator('.brand-intro')).not.toBeAttached()
   await expect(page.locator('.alerts-table tbody tr')).toHaveCount(1)
   newMessage = true
   await page.clock.fastForward(11_000)
   await expect(page.locator('.alerts-table tbody tr')).toHaveCount(2)
-  await page.getByRole('button', { name: /Уведомления:/ }).click()
-  await expect(page.locator('.notification-popover')).toContainText('Новых сообщений: 1')
+  await expect(page.locator('.new-count')).toContainText('+1 новых')
   await page.getByRole('button', { name: 'Приостановить live-обновления' }).click()
   await expect(page.getByText('Обновление на паузе', { exact: true })).toBeVisible()
   await expect(page.locator('.alerts-table tbody tr')).toHaveCount(2)
@@ -164,6 +164,7 @@ test('settings switch to API, validate URL and remember selected mode', async ({
     }),
   )
   await page.goto('/settings')
+  await expect(page.locator('.brand-intro')).not.toBeAttached()
   await page.getByLabel('Адрес Backend API', { exact: true }).fill('javascript:alert(1)')
   await page.getByRole('button', { name: 'Сохранить', exact: true }).click()
   await expect(page.getByRole('alert')).toContainText('HTTP(S)')
@@ -173,6 +174,7 @@ test('settings switch to API, validate URL and remember selected mode', async ({
   await expect(page.getByRole('status')).toContainText('Подключение работает')
   await page.getByRole('button', { name: 'Сохранить', exact: true }).click()
   await page.goto('/')
+  await expect(page.locator('.brand-intro')).not.toBeAttached()
   await expect(
     page.locator('.alerts-table').getByText('API Test Group', { exact: true }),
   ).toBeVisible()
