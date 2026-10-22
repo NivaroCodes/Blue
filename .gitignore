@@ -7,3 +7,7 @@ test-results/
 playwright-report/
 .DS_Store
 *.tsbuildinfo
+
+*.db
+__pycache__/
+*.pyc

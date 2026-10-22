@@ -1,0 +1,454 @@
+[
+  {
+    "id": "bench_001",
+    "text": "Вложи 5 000 ₸ сегодня — получи 10 000 ₸ уже завтра! Доход гарантирован. Пригласи двух друзей и получи бонус. Осталось 3 места.",
+    "language": "ru",
+    "category": "pyramid_ponzi",
+    "is_pyramid": true,
+    "expected_level": "HIGH",
+    "expected_reasons": ["UNREALISTIC_RETURN", "MONEY_REQUEST", "REFERRAL", "URGENCY"]
+  },
+  {
+    "id": "bench_002",
+    "text": "Бүгін 10 000 теңге сал, ертең 20 000 теңге ал! Табысқа кепілдік береміз. Kaspi арқылы жеке картаға аудар.",
+    "language": "kz",
+    "category": "pyramid_ponzi",
+    "is_pyramid": true,
+    "expected_level": "HIGH",
+    "expected_reasons": ["UNREALISTIC_RETURN", "GUARANTEED_PROFIT", "PERSONAL_TRANSFER"]
+  },
+  {
+    "id": "bench_003",
+    "text": "Новая инвестиционная группа: старт от 15 000 тг. За каждого нового участника +20%. Прибыль 200% за неделю, без риска.",
+    "language": "ru",
+    "category": "pyramid_matrix",
+    "is_pyramid": true,
+    "expected_level": "HIGH",
+    "expected_reasons": ["UNREALISTIC_RETURN", "REFERRAL", "GUARANTEED_PROFIT"]
+  },
+  {
+    "id": "bench_004",
+    "text": "Vlozhi 5000 tg — poluchi 15000 za 2 dnya. Privedi druga i zaberi bonus. Perevod na lichnuyu kartu.",
+    "language": "translit",
+    "category": "pyramid_translit",
+    "is_pyramid": true,
+    "expected_level": "HIGH",
+    "expected_reasons": ["UNREALISTIC_RETURN", "REFERRAL", "PERSONAL_TRANSFER"]
+  },
+  {
+    "id": "bench_005",
+    "text": "Только до вечера: вступление в закрытый клуб 30 000 ₸. Выплаты идут из взносов новых участников. Приведите троих.",
+    "language": "ru",
+    "category": "pyramid_scheme",
+    "is_pyramid": true,
+    "expected_level": "HIGH",
+    "expected_reasons": ["MONEY_REQUEST", "REFERRAL", "URGENCY"]
+  },
+  {
+    "id": "bench_006",
+    "text": "Ақшаңды екі есе көбейт! Кіру жарнасы 5 000 теңге. Досыңды шақырсаң, қосымша сыйақы аласың.",
+    "language": "kz",
+    "category": "pyramid_kz",
+    "is_pyramid": true,
+    "expected_level": "HIGH",
+    "expected_reasons": ["UNREALISTIC_RETURN", "MONEY_REQUEST", "REFERRAL"]
+  },
+  {
+    "id": "bench_007",
+    "text": "Вл0жи 10000 тг — удв0й баланс за 24 часа! Каспи голд жеке картаға аудар. Шектеулі орын!",
+    "language": "kz_ru_obfuscated",
+    "category": "pyramid_obfuscated",
+    "is_pyramid": true,
+    "expected_level": "HIGH",
+    "expected_reasons": ["UNREALISTIC_RETURN", "PERSONAL_TRANSFER", "URGENCY"]
+  },
+  {
+    "id": "bench_008",
+    "text": "Супер касса взаимопомощи! Переведи 20 000 тг на личную карту куратора. Пригласи 3 человек и получи 80 000 тенге уже завтра!",
+    "language": "ru",
+    "category": "pyramid_matrix",
+    "is_pyramid": true,
+    "expected_level": "HIGH",
+    "expected_reasons": ["MONEY_REQUEST", "PERSONAL_TRANSFER", "REFERRAL", "UNREALISTIC_RETURN"]
+  },
+  {
+    "id": "bench_009",
+    "text": "Bugin 20000 tg sal, 3 kun ishinde 50000 al. Tokeuel'siz, 100% kepildik. Kaspi nomerge audar.",
+    "language": "translit_kz",
+    "category": "pyramid_translit",
+    "is_pyramid": true,
+    "expected_level": "HIGH",
+    "expected_reasons": ["UNREALISTIC_RETURN", "GUARANTEED_PROFIT", "PERSONAL_TRANSFER"]
+  },
+  {
+    "id": "bench_010",
+    "text": "Автоматический бот для заработка: депозит 50 000 ₸. Доход 300% за неделю, 100% гарантия прибыли без риска. Успей зайти!",
+    "language": "ru",
+    "category": "pyramid_crypto",
+    "is_pyramid": true,
+    "expected_level": "HIGH",
+    "expected_reasons": ["UNREALISTIC_RETURN", "GUARANTEED_PROFIT", "URGENCY"]
+  },
+  {
+    "id": "bench_011",
+    "text": "Жаңа қаржылық айналым: 15 000 теңге сал да, ертең 45 000 теңге ал. 100% кепілдік береміз.",
+    "language": "kz",
+    "category": "pyramid_kz",
+    "is_pyramid": true,
+    "expected_level": "HIGH",
+    "expected_reasons": ["UNREALISTIC_RETURN", "GUARANTEED_PROFIT"]
+  },
+  {
+    "id": "bench_012",
+    "text": "Инвестиции в золото Дубая. Первый взнос 25 000 тг. Приведи друга и забери 50% от его депозита. Рисков нет!",
+    "language": "ru",
+    "category": "pyramid_scheme",
+    "is_pyramid": true,
+    "expected_level": "HIGH",
+    "expected_reasons": ["MONEY_REQUEST", "REFERRAL", "GUARANTEED_PROFIT"]
+  },
+  {
+    "id": "bench_013",
+    "text": "Құпия инвест чат: кіру жарнасы 20 000 теңге. Екі досыңды шақыр, күн сайын пассивті табыс ал. Соңғы 2 орын қалды!",
+    "language": "kz",
+    "category": "pyramid_kz",
+    "is_pyramid": true,
+    "expected_level": "HIGH",
+    "expected_reasons": ["MONEY_REQUEST", "REFERRAL", "URGENCY"]
+  },
+  {
+    "id": "bench_014",
+    "text": "Заработок на арбитраже: вход от 30 000 тг. Доход гарантирован 50% в день. Перевод на карту администратора.",
+    "language": "ru",
+    "category": "pyramid_arbitrage",
+    "is_pyramid": true,
+    "expected_level": "HIGH",
+    "expected_reasons": ["MONEY_REQUEST", "GUARANTEED_PROFIT", "PERSONAL_TRANSFER"]
+  },
+  {
+    "id": "bench_015",
+    "text": "Privedi 5 chelovek v nash proekt i poluchi 50000 tg srazu. Vlozhi 10000 tg dlya aktivatsii scheta.",
+    "language": "translit",
+    "category": "pyramid_translit",
+    "is_pyramid": true,
+    "expected_level": "HIGH",
+    "expected_reasons": ["REFERRAL", "MONEY_REQUEST"]
+  },
+  {
+    "id": "bench_016",
+    "text": "Срочный сбор пула на трейдинг. Вход 100 000 ₸. Гарантия прибыли 100% за 3 дня. Места ограничены!",
+    "language": "ru",
+    "category": "pyramid_pool",
+    "is_pyramid": true,
+    "expected_level": "HIGH",
+    "expected_reasons": ["MONEY_REQUEST", "GUARANTEED_PROFIT", "URGENCY"]
+  },
+  {
+    "id": "bench_017",
+    "text": "Үйден шықпай ақша тап: жарна 7 000 теңге. Kaspi арқылы жеке картаға аудар. Ертең 20 000 теңге ал!",
+    "language": "kz",
+    "category": "pyramid_kz",
+    "is_pyramid": true,
+    "expected_level": "HIGH",
+    "expected_reasons": ["MONEY_REQUEST", "PERSONAL_TRANSFER", "UNREALISTIC_RETURN"]
+  },
+  {
+    "id": "bench_018",
+    "text": "Матричный проект нового поколения! Вход 5 000 тг, зови друзей, закрой матрицу и получи х10 прибыли!",
+    "language": "ru",
+    "category": "pyramid_matrix",
+    "is_pyramid": true,
+    "expected_level": "HIGH",
+    "expected_reasons": ["MONEY_REQUEST", "REFERRAL", "UNREALISTIC_RETURN"]
+  },
+  {
+    "id": "bench_019",
+    "text": "Только сегодня до 23:00! Сделай вклад 10 000 тг — удвой капитал до утра. Доход гарантирован.",
+    "language": "ru",
+    "category": "pyramid_urgency",
+    "is_pyramid": true,
+    "expected_level": "HIGH",
+    "expected_reasons": ["URGENCY", "MONEY_REQUEST", "UNREALISTIC_RETURN", "GUARANTEED_PROFIT"]
+  },
+  {
+    "id": "bench_020",
+    "text": "Kassa vzaimopomoshchi: 10 000 sal, dostaryndy shaqyr, 100 000 al. Tokeuelsiz, tolyq senimdi.",
+    "language": "translit_kz",
+    "category": "pyramid_translit",
+    "is_pyramid": true,
+    "expected_level": "HIGH",
+    "expected_reasons": ["REFERRAL", "GUARANTEED_PROFIT"]
+  },
+
+  {
+    "id": "bench_021",
+    "text": "Набираем партнёров в проект. Вход 20 000 ₸, вознаграждение за приглашённых. Подробные условия пока не опубликованы.",
+    "language": "ru",
+    "category": "suspicious_mlm",
+    "is_pyramid": false,
+    "expected_level": "MEDIUM",
+    "expected_reasons": ["MONEY_REQUEST", "REFERRAL"]
+  },
+  {
+    "id": "bench_022",
+    "text": "Пассивный доход каждый день. Напиши куратору, чтобы узнать сумму первого взноса. Условия расскажем в личных сообщениях.",
+    "language": "ru",
+    "category": "suspicious_private",
+    "is_pyramid": false,
+    "expected_level": "MEDIUM",
+    "expected_reasons": ["MONEY_REQUEST"]
+  },
+  {
+    "id": "bench_023",
+    "text": "Жаңа жобаға серіктестер іздейміз. Қатысу үшін жарна қажет. Табыстылық туралы толық ақпарат кейін болады.",
+    "language": "kz",
+    "category": "suspicious_kz",
+    "is_pyramid": false,
+    "expected_level": "MEDIUM",
+    "expected_reasons": ["MONEY_REQUEST"]
+  },
+  {
+    "id": "bench_024",
+    "text": "Инвестиционный клуб проводит платную встречу. Обсудим стратегии и риски. Что входит в стоимость, уточняйте у организатора.",
+    "language": "ru",
+    "category": "club_meeting",
+    "is_pyramid": false,
+    "expected_level": "MEDIUM",
+    "expected_reasons": ["MONEY_REQUEST"]
+  },
+  {
+    "id": "bench_025",
+    "text": "Ищем амбассадоров сервиса. Есть бонус за регистрацию друзей, но выплата требует проверки условий программы.",
+    "language": "ru",
+    "category": "affiliate",
+    "is_pyramid": false,
+    "expected_level": "MEDIUM",
+    "expected_reasons": ["REFERRAL"]
+  },
+  {
+    "id": "bench_026",
+    "text": "Платный Telegram-канал с сигналами по крипте: стоимость подписки 15 000 тг в месяц. Результаты зависят от рынка.",
+    "language": "ru",
+    "category": "crypto_signals",
+    "is_pyramid": false,
+    "expected_level": "MEDIUM",
+    "expected_reasons": ["MONEY_REQUEST"]
+  },
+  {
+    "id": "bench_027",
+    "text": "Серіктестік бағдарламаға қосыл: достарыңа айт, әр сатылымнан пайыз ал. Лицензиясы бар өнім.",
+    "language": "kz",
+    "category": "affiliate_kz",
+    "is_pyramid": false,
+    "expected_level": "MEDIUM",
+    "expected_reasons": ["REFERRAL"]
+  },
+  {
+    "id": "bench_028",
+    "text": "Закрытый инвестиционный вебинар. Доступ 10 000 ₸. Аналитика акций KASE и зарубежных рынков.",
+    "language": "ru",
+    "category": "webinar",
+    "is_pyramid": false,
+    "expected_level": "MEDIUM",
+    "expected_reasons": ["MONEY_REQUEST"]
+  },
+  {
+    "id": "bench_029",
+    "text": "Партнерка онлайн-магазина: бонус за приглашённых покупателей до 10% от чека.",
+    "language": "ru",
+    "category": "ecommerce_referral",
+    "is_pyramid": false,
+    "expected_level": "MEDIUM",
+    "expected_reasons": ["REFERRAL"]
+  },
+  {
+    "id": "bench_030",
+    "text": "Старт от 15 000 тг на обучающую платформу по торговле. Доход не гарантирован, это образовательный контент.",
+    "language": "ru",
+    "category": "course_paid",
+    "is_pyramid": false,
+    "expected_level": "MEDIUM",
+    "expected_reasons": ["MONEY_REQUEST"]
+  },
+
+  {
+    "id": "bench_031",
+    "text": "Бесплатная лекция о финансовой грамотности в субботу. Разберём риски и принципы диверсификации. Взносы не нужны.",
+    "language": "ru",
+    "category": "education",
+    "is_pyramid": false,
+    "expected_level": "LOW",
+    "expected_reasons": []
+  },
+  {
+    "id": "bench_032",
+    "text": "Достар, қаржылық сауаттылық сабағы тегін өтеді. Ешқандай ақша салудың қажеті жоқ. Барлық сұрақты талқылаймыз.",
+    "language": "kz",
+    "category": "education_kz",
+    "is_pyramid": false,
+    "expected_level": "LOW",
+    "expected_reasons": []
+  },
+  {
+    "id": "bench_033",
+    "text": "Напоминание: стоимость инвестиций может снижаться. Прошлая доходность не гарантирует будущую. Изучайте документы.",
+    "language": "ru",
+    "category": "broker_disclaimer",
+    "is_pyramid": false,
+    "expected_level": "LOW",
+    "expected_reasons": []
+  },
+  {
+    "id": "bench_034",
+    "text": "Собираемся на волонтёрскую встречу в воскресенье. Участие бесплатное, регистрация открыта для всех.",
+    "language": "ru",
+    "category": "volunteer",
+    "is_pyramid": false,
+    "expected_level": "LOW",
+    "expected_reasons": []
+  },
+  {
+    "id": "bench_035",
+    "text": "Кітап клубының кездесуі ертең сағат 18:00-де. Кіру тегін. Достарыңды шақыр!",
+    "language": "kz",
+    "category": "book_club",
+    "is_pyramid": false,
+    "expected_level": "LOW",
+    "expected_reasons": []
+  },
+  {
+    "id": "bench_036",
+    "text": "Курс по планированию личного бюджета. Стоимость обучения 8 000 тг. Прибыль и заработок не обещаем.",
+    "language": "ru",
+    "category": "education_paid",
+    "is_pyramid": false,
+    "expected_level": "LOW",
+    "expected_reasons": []
+  },
+  {
+    "id": "bench_037",
+    "text": "Спасибо за встречу! Презентацию о распознавании финансовых пирамид отправим в этот чат завтра.",
+    "language": "ru",
+    "category": "chat_neutral",
+    "is_pyramid": false,
+    "expected_level": "LOW",
+    "expected_reasons": []
+  },
+  {
+    "id": "bench_038",
+    "text": "Привет всем! Во сколько завтра собираемся в коворкинге по проекту?",
+    "language": "ru",
+    "category": "everyday_chat",
+    "is_pyramid": false,
+    "expected_level": "LOW",
+    "expected_reasons": []
+  },
+  {
+    "id": "bench_039",
+    "text": "Сәлем достар! Бүгінгі футбол матчы сағат қаншада басталады?",
+    "language": "kz",
+    "category": "everyday_kz",
+    "is_pyramid": false,
+    "expected_level": "LOW",
+    "expected_reasons": []
+  },
+  {
+    "id": "bench_040",
+    "text": "Ребята, скиньте конспект лекции по высшей математике, пожалуйста.",
+    "language": "ru",
+    "category": "student_chat",
+    "is_pyramid": false,
+    "expected_level": "LOW",
+    "expected_reasons": []
+  },
+  {
+    "id": "bench_041",
+    "text": "Открыта регистрация на олимпиаду по программированию для школьников и студентов. Участие бесплатное.",
+    "language": "ru",
+    "category": "olympiad",
+    "is_pyramid": false,
+    "expected_level": "LOW",
+    "expected_reasons": []
+  },
+  {
+    "id": "bench_042",
+    "text": "Halyk Bank ескертуі: ешқашан құпия код пен SMS-кодты бөтен адамдарға айтпаңыз.",
+    "language": "kz",
+    "category": "bank_warning",
+    "is_pyramid": false,
+    "expected_level": "LOW",
+    "expected_reasons": []
+  },
+  {
+    "id": "bench_043",
+    "text": "Официальный отчет Национального Банка РК по инфляции за третий квартал доступен на сайте.",
+    "language": "ru",
+    "category": "official_macro",
+    "is_pyramid": false,
+    "expected_level": "LOW",
+    "expected_reasons": []
+  },
+  {
+    "id": "bench_044",
+    "text": "Қайырлы күн! Бүгін ауа райы суық болады, жылы киініңіздер.",
+    "language": "kz",
+    "category": "weather_kz",
+    "is_pyramid": false,
+    "expected_level": "LOW",
+    "expected_reasons": []
+  },
+  {
+    "id": "bench_045",
+    "text": "Продам подержанный велосипед в хорошем состоянии. Цена 35 000 тг. Самовывоз.",
+    "language": "ru",
+    "category": "classifieds",
+    "is_pyramid": false,
+    "expected_level": "LOW",
+    "expected_reasons": []
+  },
+  {
+    "id": "bench_046",
+    "text": "Вакансия: требуется бухгалтер со знанием 1С. Зарплата от 250 000 тенге по результатам собеседования.",
+    "language": "ru",
+    "category": "job_posting",
+    "is_pyramid": false,
+    "expected_level": "LOW",
+    "expected_reasons": []
+  },
+  {
+    "id": "bench_047",
+    "text": "Қайырымдылық акциясы: ауруханаға көмек көрсету үшін еріктілер жиналады. Кіру тегін.",
+    "language": "kz",
+    "category": "charity_kz",
+    "is_pyramid": false,
+    "expected_level": "LOW",
+    "expected_reasons": []
+  },
+  {
+    "id": "bench_048",
+    "text": "Кто потерял студенческий билет в столовой на втором этаже? Обратитесь к дежурному.",
+    "language": "ru",
+    "category": "lost_found",
+    "is_pyramid": false,
+    "expected_level": "LOW",
+    "expected_reasons": []
+  },
+  {
+    "id": "bench_049",
+    "text": "Агентство РК по регулированию и развитию финансового рынка предупреждает граждан об опасности нелицензированных финансовых посредников.",
+    "language": "ru",
+    "category": "regulatory_alert",
+    "is_pyramid": false,
+    "expected_level": "LOW",
+    "expected_reasons": []
+  },
+  {
+    "id": "bench_050",
+    "text": "Бүгін сағат 20:00-де онлайн шахмат турнирі. Қатысу тегін. Баршаңызды күтеміз!",
+    "language": "kz",
+    "category": "sports_kz",
+    "is_pyramid": false,
+    "expected_level": "LOW",
+    "expected_reasons": []
+  }
+]
