@@ -131,6 +131,16 @@ SCENARIOS = [
         "Вл0жи 10000 тг — удв0й баланс за 24 часа! Каспи голд жеке картаға аудар. Шектеулі орын!",
         70,
     ),
+    (
+        "msg_obfuscated_02",
+        "whatsapp",
+        "wa_income",
+        "Табыс / Доход",
+        "https://chat.whatsapp.com/tabys_income_kz",
+        "user_stealth_scam",
+        "С.р.о.ч.н.о! В.л.0.ж.1 5ООО тг — получи 15ООО тг на Kаspі Gold. Доход гарантирован. Мест мало!",
+        50,
+    ),
 
     # ═══════════════════════════════════════════════════════════════
     # CLUSTER D: Matrix, Ponzi & Fake Arbitrage
@@ -208,6 +218,42 @@ SCENARIOS = [
         "user_signals_admin",
         "Платный Telegram-канал с сигналами по крипте: стоимость подписки 15 000 тг в месяц. Результаты зависят от рынка.",
         65,
+    ),
+
+    # ═══════════════════════════════════════════════════════════════
+    # CLUSTER G: Disguised Scams (Fake Jobs, Task Scam, Food Aid Advance Fee)
+    # Scammers disguise theft under "work from home", "charity food baskets",
+    # or "helping families" while demanding an upfront 5000 KZT deposit/fee.
+    # ═══════════════════════════════════════════════════════════════
+    (
+        "msg_job_01",
+        "telegram",
+        "tg_growth",
+        "Финансовый рост KZ",
+        "https://t.me/fin_growth_kz",
+        "user_fake_hr",
+        "Работа на дому: ставить лайки товарам на Kaspi Магазин. Доход от 25 000 тг в день. Для активации рабочего кабинета внесите залог 5 000 тг куратору.",
+        55,
+    ),
+    (
+        "msg_food_01",
+        "whatsapp",
+        "wa_income",
+        "Табыс / Доход",
+        "https://chat.whatsapp.com/tabys_income_kz",
+        "user_fake_aid",
+        "Бесплатная продуктовая помощь семьям: корзина продуктов на 50 000 тг бесплатно! Оплатите только доставку курьером 5 000 тг на личную карту Kaspi.",
+        40,
+    ),
+    (
+        "msg_job_kz_01",
+        "whatsapp",
+        "wa_income",
+        "Табыс / Доход",
+        "https://chat.whatsapp.com/tabys_income_kz",
+        "user_fake_hr_kz",
+        "Үйде отырып жұмыс: тауарларға пікір жазу, күніне 30 000 теңге табыс. Жұмысты бастау үшін 5 000 теңге сақтық жарнасын Kaspi-ге аударыңыз.",
+        35,
     ),
 
     # ═══════════════════════════════════════════════════════════════

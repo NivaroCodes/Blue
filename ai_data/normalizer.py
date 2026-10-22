@@ -11,6 +11,24 @@ LEET_MAP: Dict[str, str] = {
     "$": "с",
 }
 
+# Homoglyph map: Latin lookalikes and leetspeak numbers mapped to standard Cyrillic
+HOMOGLYPH_MAP: Dict[str, str] = {
+    # Latin letters that look like Cyrillic
+    "a": "а", "c": "с", "e": "е", "o": "о", "p": "р", "x": "х", "y": "у", "i": "і", "k": "к", "m": "м", "t": "т", "b": "в", "h": "н",
+    # Leetspeak numbers & symbols that replace Cyrillic letters
+    "0": "о", "@": "а", "$": "с", "1": "і", "3": "з", "4": "ч",
+}
+
+
+def canonical_char(char: str) -> str:
+    """Folds a single character using homoglyphs and leet map to standard Cyrillic."""
+    return HOMOGLYPH_MAP.get(char.lower(), char.lower())
+
+
+def canonical_fold(text: str) -> str:
+    """Folds an entire string into canonical lowercase Cyrillic representation."""
+    return "".join(canonical_char(c) for c in text)
+
 # Common transliteration mappings for Kazakh & Russian
 TRANSLIT_TO_CYRILLIC: Dict[str, str] = {
     "sh": "ш", "ch": "ч", "zh": "ж", "kh": "х", "ts": "ц", "ya": "я", "yu": "ю",
@@ -89,6 +107,28 @@ def find_exact_substring(original_text: str, target: str) -> str:
         match = re.search(pattern, original_text, re.IGNORECASE)
         if match:
             return match.group(0)
+
+    # Homoglyph and Leetspeak canonical alignment (e.g. 'Вл0жи 10000 тг' -> 'вложи 10000 тг')
+    c_orig = canonical_fold(original_text)
+    c_target = canonical_fold(lower_target)
+    c_pos = c_orig.find(c_target)
+    if c_pos != -1:
+        matched_slice = original_text[c_pos:c_pos + len(c_target)]
+        if len(matched_slice) == len(c_target):
+            return matched_slice
+
+    # Word sequence with homoglyphs and optional punctuation separators (e.g. 'в.л.0.ж.и')
+    if words:
+        c_words = [
+            r"[.\-_]*".join(re.escape(canonical_char(ch)) for ch in w)
+            for w in re.split(r"\s+", lower_target) if w
+        ]
+        if c_words:
+            c_pattern = r"\s+".join(c_words)
+            c_match = re.search(c_pattern, c_orig)
+            if c_match:
+                start, end = c_match.span()
+                return original_text[start:end]
 
     # Substring search by longest matching word chunk
     if len(words) > 2:

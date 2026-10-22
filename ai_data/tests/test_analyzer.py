@@ -46,6 +46,23 @@ class TestLLMParsing(unittest.TestCase):
         result = _parse_and_validate_llm_json(raw, text, "test")
         self.assertEqual(result.risk_level, RiskLevelEnum.LOW)  # 15 → LOW, not HIGH
 
+    def test_obfuscated_substring_extraction(self):
+        # Scammer used 0 instead of o and dots: 'в.л.0.ж.и 5000 тг'
+        text = "Срочно в.л.0.ж.и 5000 тг — удвой!"
+        raw = '{"risk_score":90,"risk_level":"HIGH","reasons":[{"code":"MONEY_REQUEST","evidence":"вложи 5000 тг"}],"explanation":"test","confidence":0.9}'
+        result = _parse_and_validate_llm_json(raw, text, "test")
+        self.assertEqual(len(result.reasons), 1)
+        self.assertIn(result.reasons[0].evidence, text)
+        self.assertEqual(result.reasons[0].evidence, "в.л.0.ж.и 5000 тг")
+
+    def test_disguised_scam_reason_parsing(self):
+        # Fake job & food aid advance fee disguised scams
+        job_text = "Работа на дому: ставить лайки товарам. Внесите залог 5 000 тг куратору."
+        raw = '{"risk_score":85,"risk_level":"HIGH","reasons":[{"code":"MONEY_REQUEST","evidence":"Внесите залог 5 000 тг"}],"explanation":"Task scam","confidence":0.9}'
+        result = _parse_and_validate_llm_json(raw, job_text, "test")
+        self.assertEqual(len(result.reasons), 1)
+        self.assertEqual(result.reasons[0].evidence, "Внесите залог 5 000 тг")
+
 
 class TestAnalyzerRequiresAPIKey(unittest.TestCase):
 
