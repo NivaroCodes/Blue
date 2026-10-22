@@ -102,7 +102,7 @@ textarea {
 }
 input::placeholder,
 textarea::placeholder {
-  color: #898990;
+  color: var(--muted);
 }
 textarea {
   resize: vertical;
@@ -184,12 +184,12 @@ code,
 .brand-wordmark {
   text-transform: uppercase;
 }
-.kraken-mark {
+.blue-mark {
   width: 29px;
   height: 29px;
   color: var(--accent);
 }
-.brand-small .kraken-mark {
+.brand-small .blue-mark {
   width: 25px;
   height: 25px;
 }
@@ -287,7 +287,7 @@ main:focus {
 }
 .button:hover {
   background: var(--surface-raised);
-  border-color: #4a4a52;
+  border-color: var(--border);
 }
 .button-primary {
   background: var(--accent);
@@ -388,7 +388,7 @@ main:focus {
   min-width: 0;
 }
 .search-field:focus-within {
-  border-color: #777780;
+  border-color: #8798b5;
 }
 .search-field input {
   background: transparent;
@@ -420,7 +420,7 @@ main:focus {
   display: none;
 }
 .filter-disclosure[open] > summary {
-  border-color: #666670;
+  border-color: #8798b5;
 }
 .filter-fields {
   position: absolute;
@@ -428,7 +428,7 @@ main:focus {
   top: calc(100% + 9px);
   width: 300px;
   padding: 20px;
-  border: 1px solid #414149;
+  border: 1px solid var(--border);
   border-radius: 7px;
   background: var(--surface-raised);
   z-index: 20;
@@ -525,7 +525,7 @@ main:focus {
   border-bottom: 0;
 }
 .alerts-table tbody tr:hover {
-  background: #1c1c1f;
+  background: var(--page);
 }
 .message-cell {
   display: flex;
@@ -717,11 +717,11 @@ main:focus {
   max-width: 1280px;
   margin: auto;
   padding: 24px 40px;
-  color: #898990;
+  color: var(--muted);
   font-size: 0.6875rem;
 }
 .footer-separator {
-  color: #5a5a63;
+  color: var(--muted);
   margin: 0 6px;
 }
 .error-box {
@@ -730,7 +730,7 @@ main:focus {
   gap: 12px;
   padding: 16px;
   margin-bottom: 24px;
-  border: 1px solid #67343a;
+  border: 1px solid #e4b9c1;
   border-radius: 6px;
   color: var(--high);
   background: var(--high-bg);
@@ -1061,10 +1061,10 @@ main:focus {
 }
 mark {
   background: var(--medium-bg);
-  color: #ecd29f;
+  color: #443416;
   box-decoration-break: clone;
   -webkit-box-decoration-break: clone;
-  border-bottom: 1px solid #857044;
+  border-bottom: 1px solid #d9bc70;
   padding: 1px 0;
 }
 .message-foot {
@@ -1232,7 +1232,7 @@ mark {
 }
 .mode-card.selected {
   background: var(--surface);
-  border-color: #777780;
+  border-color: #8798b5;
 }
 .mode-icon {
   color: var(--muted);
@@ -1323,7 +1323,7 @@ mark {
   display: block;
   height: 100%;
   border-radius: 20px;
-  background: #4a4a52;
+  background: var(--border);
   pointer-events: none;
 }
 .switch > span::before {
@@ -1380,7 +1380,7 @@ mark {
   max-height: 85dvh;
   overflow: auto;
   padding: 28px;
-  border: 1px solid #414149;
+  border: 1px solid var(--border);
   border-radius: 8px;
   color: var(--ink);
   background: var(--surface);
@@ -1420,7 +1420,7 @@ mark {
   max-width: min(440px, calc(100% - 32px));
   padding: 10px 12px 10px 18px;
   background: var(--surface-raised);
-  border: 1px solid #4a4a52;
+  border: 1px solid var(--border);
   border-radius: 6px;
   color: var(--ink);
   font-size: 0.8125rem;
@@ -1483,7 +1483,7 @@ mark {
   .brand {
     font-size: 1rem;
   }
-  .kraken-mark {
+  .blue-mark {
     width: 27px;
     height: 27px;
   }

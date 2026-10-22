@@ -88,7 +88,7 @@ export function SettingsPage({
       </div>
       <div className="settings-grid">
         <div>
-          <Panel title="Источник данных" description="Выберите режим работы Kraken">
+          <Panel title="Источник данных" description="Выберите режим работы Blue">
             <form className="settings-form" onSubmit={save}>
               <fieldset className="mode-options">
                 <legend className="sr-only">Режим данных</legend>

@@ -19,6 +19,7 @@ import {
   ReviewBadge,
   RiskBadge,
 } from '../components/ui'
+import { EvidencePreview } from '../components/EvidencePreview'
 import { dateTime, levelLabels, levels, time } from '../lib/model'
 import type { Alert } from '../lib/model'
 import type { Monitor } from '../lib/useMonitor'
@@ -46,6 +47,7 @@ export function Dashboard({
   const [page, setPage] = useState(1)
   const [sort, setSort] = useState<'latest' | 'risk'>('latest')
   const [settingsError, setSettingsError] = useState('')
+  const [selectedId, setSelectedId] = useState('')
   function applyParams(values: URLSearchParams | Record<string, string>) {
     const next = new URLSearchParams(values)
     paramsRef.current = next
@@ -108,7 +110,7 @@ export function Dashboard({
     const url = URL.createObjectURL(blob),
       anchor = document.createElement('a')
     anchor.href = url
-    anchor.download = `kraken-alerts-${new Date().toISOString().slice(0, 10)}.json`
+    anchor.download = `blue-alerts-${new Date().toISOString().slice(0, 10)}.json`
     anchor.click()
     setTimeout(() => URL.revokeObjectURL(url), 1000)
   }
@@ -124,9 +126,9 @@ export function Dashboard({
     <>
       <div className="page-heading inbox-heading">
         <div>
-          <h1>Входящие</h1>
+          <h1>Сначала — важное.</h1>
           <p>
-            {m.alerts.length} сообщений · {chats.length} источников
+            Находите признаки. Проверяйте контекст. Принимайте решение.
             <span className="new-count" aria-live="polite">
               {m.newCount > 0 ? ` · +${m.newCount} новых` : ''}
             </span>
@@ -149,227 +151,246 @@ export function Dashboard({
           {settingsError}
         </p>
       )}
-      <section className="inbox" aria-label="Сообщения для проверки">
-        <div className="inbox-tabs" aria-label="Фильтр риска">
-          <button
-            aria-pressed={!level}
-            className={!level ? 'selected' : ''}
-            onClick={() => filter('level', '')}
-          >
-            Все <span>{m.alerts.length}</span>
-          </button>
-          {levels.map((l) => (
+      <div className="inbox-layout">
+        <section className="inbox" aria-label="Сообщения для проверки">
+          <div className="inbox-title">
+            <h2>Входящие</h2>
+            <span>
+              {m.alerts.length} сообщений · {chats.length} источников
+            </span>
+          </div>
+          <div className="inbox-tabs" aria-label="Фильтр риска">
             <button
-              key={l}
-              aria-pressed={level === l}
-              className={level === l ? 'selected' : ''}
-              onClick={() => filter('level', l)}
+              aria-pressed={!level}
+              className={!level ? 'selected' : ''}
+              onClick={() => filter('level', '')}
             >
-              <i className={`risk-tick ${l.toLowerCase()}`} />
-              {levelLabels[l]}
-              <span>{m.stats.by_level[l]}</span>
+              Все <span>{m.alerts.length}</span>
             </button>
-          ))}
-        </div>
-        <div className="inbox-toolbar">
-          <label className="search-field">
-            <Search size={17} />
-            <input
-              aria-label="Поиск сообщений"
-              placeholder="Поиск сообщений или источника"
-              value={search}
-              onChange={(e) => filter('q', e.target.value)}
-            />
-          </label>
-          <details className="filter-disclosure">
-            <summary className="button">
-              <Filter size={15} /> Фильтры{' '}
-              {filterCount > 0 && <span className="count-badge">{filterCount}</span>}
-            </summary>
-            <div className="filter-fields">
-              <label>
-                Платформа
-                <select
-                  aria-label="Платформа"
-                  value={platform}
-                  onChange={(e) => filter('platform', e.target.value)}
-                >
-                  <option value="">Все платформы</option>
-                  <option value="telegram">Telegram</option>
-                  <option value="whatsapp">WhatsApp</option>
-                </select>
-              </label>
-              <label>
-                Источник
-                <select
-                  aria-label="Чат"
-                  value={chat}
-                  onChange={(e) => filter('chat', e.target.value)}
-                >
-                  <option value="">Все чаты</option>
-                  {chats.map(([id, name]) => (
-                    <option key={id} value={id}>
-                      {name}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <label>
-                Риск
-                <select
-                  aria-label="Уровень риска"
-                  value={level}
-                  onChange={(e) => filter('level', e.target.value)}
-                >
-                  <option value="">Любой риск</option>
-                  {levels.map((l) => (
-                    <option key={l} value={l}>
-                      {levelLabels[l]}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <label>
-                Статус
-                <select
-                  aria-label="Статус проверки"
-                  value={review}
-                  onChange={(e) => filter('review', e.target.value)}
-                >
-                  <option value="">Все сообщения</option>
-                  <option value="NEW">На проверке</option>
-                  <option value="REVIEWED">Проверенные</option>
-                  <option value="FALSE_POSITIVE">Ложные срабатывания</option>
-                </select>
-              </label>
-              <label>
-                Период
-                <select
-                  aria-label="Период ленты"
-                  value={period}
-                  onChange={(e) => filter('period', e.target.value)}
-                >
-                  <option value="24">Последние 24 часа</option>
-                  <option value="168">Последние 7 дней</option>
-                  <option value="all">Всё время</option>
-                </select>
-              </label>
-              <button className="text-button" onClick={() => applyParams({ period: 'all' })}>
-                Очистить фильтры
+            {levels.map((l) => (
+              <button
+                key={l}
+                aria-pressed={level === l}
+                className={level === l ? 'selected' : ''}
+                onClick={() => filter('level', l)}
+              >
+                <i className={`risk-tick ${l.toLowerCase()}`} />
+                {levelLabels[l]}
+                <span>{m.stats.by_level[l]}</span>
+              </button>
+            ))}
+          </div>
+          <div className="inbox-toolbar">
+            <label className="search-field">
+              <Search size={17} />
+              <input
+                aria-label="Поиск сообщений"
+                placeholder="Поиск сообщений или источника"
+                value={search}
+                onChange={(e) => filter('q', e.target.value)}
+              />
+            </label>
+            <details className="filter-disclosure">
+              <summary className="button">
+                <Filter size={15} /> Фильтры{' '}
+                {filterCount > 0 && <span className="count-badge">{filterCount}</span>}
+              </summary>
+              <div className="filter-fields">
+                <label>
+                  Платформа
+                  <select
+                    aria-label="Платформа"
+                    value={platform}
+                    onChange={(e) => filter('platform', e.target.value)}
+                  >
+                    <option value="">Все платформы</option>
+                    <option value="telegram">Telegram</option>
+                    <option value="whatsapp">WhatsApp</option>
+                  </select>
+                </label>
+                <label>
+                  Источник
+                  <select
+                    aria-label="Чат"
+                    value={chat}
+                    onChange={(e) => filter('chat', e.target.value)}
+                  >
+                    <option value="">Все чаты</option>
+                    {chats.map(([id, name]) => (
+                      <option key={id} value={id}>
+                        {name}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label>
+                  Риск
+                  <select
+                    aria-label="Уровень риска"
+                    value={level}
+                    onChange={(e) => filter('level', e.target.value)}
+                  >
+                    <option value="">Любой риск</option>
+                    {levels.map((l) => (
+                      <option key={l} value={l}>
+                        {levelLabels[l]}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label>
+                  Статус
+                  <select
+                    aria-label="Статус проверки"
+                    value={review}
+                    onChange={(e) => filter('review', e.target.value)}
+                  >
+                    <option value="">Все сообщения</option>
+                    <option value="NEW">На проверке</option>
+                    <option value="REVIEWED">Проверенные</option>
+                    <option value="FALSE_POSITIVE">Ложные срабатывания</option>
+                  </select>
+                </label>
+                <label>
+                  Период
+                  <select
+                    aria-label="Период ленты"
+                    value={period}
+                    onChange={(e) => filter('period', e.target.value)}
+                  >
+                    <option value="24">Последние 24 часа</option>
+                    <option value="168">Последние 7 дней</option>
+                    <option value="all">Всё время</option>
+                  </select>
+                </label>
+                <button className="text-button" onClick={() => applyParams({ period: 'all' })}>
+                  Очистить фильтры
+                </button>
+              </div>
+            </details>
+            <div className="toolbar-trailing">
+              <button
+                className="icon-button"
+                aria-label={
+                  m.settings.polling ? 'Приостановить live-обновления' : 'Включить live-обновления'
+                }
+                aria-pressed={m.settings.polling}
+                onClick={togglePolling}
+              >
+                {m.settings.polling ? <Pause size={16} /> : <Play size={16} />}
+              </button>
+              <button
+                className="icon-button"
+                aria-label="Обновить данные"
+                onClick={m.refresh}
+                disabled={m.loading}
+              >
+                <RefreshCw size={16} className={m.loading ? 'spin' : ''} />
               </button>
             </div>
-          </details>
-          <div className="toolbar-trailing">
-            <button
-              className="icon-button"
-              aria-label={
-                m.settings.polling ? 'Приостановить live-обновления' : 'Включить live-обновления'
-              }
-              aria-pressed={m.settings.polling}
-              onClick={togglePolling}
-            >
-              {m.settings.polling ? <Pause size={16} /> : <Play size={16} />}
-            </button>
-            <button
-              className="icon-button"
-              aria-label="Обновить данные"
-              onClick={m.refresh}
-              disabled={m.loading}
-            >
-              <RefreshCw size={16} className={m.loading ? 'spin' : ''} />
-            </button>
           </div>
-        </div>
-        {filterCount > 0 && rows.length > 0 && (
-          <div className="active-filter-note">
-            Найдено: {filtered.length}
-            <button className="text-button" onClick={() => applyParams({ period })}>
-              Сбросить фильтры
-            </button>
-          </div>
-        )}
-        {m.loading && !m.alerts.length ? (
-          <div className="loading-state" role="status">
-            <RefreshCw size={18} className="spin" />
-            Загружаем сообщения…
-          </div>
-        ) : !rows.length ? (
-          <Empty
-            title="Сообщений не найдено"
-            text={m.error ? 'Проверьте подключение.' : 'Измените запрос или сбросьте фильтры.'}
-            action={
-              <button className="button" onClick={() => applyParams({ period: 'all' })}>
+          {filterCount > 0 && rows.length > 0 && (
+            <div className="active-filter-note">
+              Найдено: {filtered.length}
+              <button className="text-button" onClick={() => applyParams({ period })}>
                 Сбросить фильтры
               </button>
-            }
-          />
-        ) : (
-          <div className="table-scroll">
-            <table className="alerts-table">
-              <thead>
-                <tr>
-                  <th>Сообщение</th>
-                  <th>
-                    <button onClick={() => setSort(sort === 'risk' ? 'latest' : 'risk')}>
-                      Риск <span aria-hidden="true">↓</span>
+            </div>
+          )}
+          {m.loading && !m.alerts.length ? (
+            <div className="loading-state" role="status">
+              <RefreshCw size={18} className="spin" />
+              Загружаем сообщения…
+            </div>
+          ) : !rows.length ? (
+            <Empty
+              title="Сообщений не найдено"
+              text={m.error ? 'Проверьте подключение.' : 'Измените запрос или сбросьте фильтры.'}
+              action={
+                <button className="button" onClick={() => applyParams({ period: 'all' })}>
+                  Сбросить фильтры
+                </button>
+              }
+            />
+          ) : (
+            <div className="table-scroll">
+              <table className="alerts-table">
+                <thead>
+                  <tr>
+                    <th>Сообщение</th>
+                    <th>
+                      <button onClick={() => setSort(sort === 'risk' ? 'latest' : 'risk')}>
+                        Риск <span aria-hidden="true">↓</span>
+                      </button>
+                    </th>
+                    <th>Проверка</th>
+                    <th>Получено</th>
+                    <th>
+                      <span className="sr-only">Открыть</span>
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {rows.map((alert) => (
+                    <AlertRow
+                      key={alert.id}
+                      alert={alert}
+                      selected={
+                        alert.id === (rows.find((row) => row.id === selectedId) || rows[0])?.id
+                      }
+                      onSelect={() => setSelectedId(alert.id)}
+                    />
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+          <div className="table-footer">
+            <span>
+              {filtered.length
+                ? `${(currentPage - 1) * 6 + 1}–${Math.min(currentPage * 6, filtered.length)} из ${filtered.length}`
+                : '0 сообщений'}
+            </span>
+            <div className="pagination">
+              <button
+                className="icon-button"
+                aria-label="Предыдущая страница"
+                disabled={currentPage === 1}
+                onClick={() => setPage(currentPage - 1)}
+              >
+                <ChevronLeft size={16} />
+              </button>
+              {Array.from({ length: maxPage }, (_, i) => i + 1)
+                .filter((i) => i === 1 || i === maxPage || Math.abs(i - currentPage) < 2)
+                .map((n, i, arr) => (
+                  <span key={n}>
+                    {i > 0 && n - arr[i - 1] > 1 && <span className="pagination-ellipsis">…</span>}
+                    <button
+                      aria-label={`Страница ${n}`}
+                      aria-current={n === currentPage ? 'page' : undefined}
+                      className={n === currentPage ? 'selected' : ''}
+                      onClick={() => setPage(n)}
+                    >
+                      {n}
                     </button>
-                  </th>
-                  <th>Проверка</th>
-                  <th>Получено</th>
-                  <th>
-                    <span className="sr-only">Открыть</span>
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {rows.map((alert) => (
-                  <AlertRow key={alert.id} alert={alert} />
+                  </span>
                 ))}
-              </tbody>
-            </table>
+              <button
+                className="icon-button"
+                aria-label="Следующая страница"
+                disabled={currentPage === maxPage}
+                onClick={() => setPage(currentPage + 1)}
+              >
+                <ChevronRight size={16} />
+              </button>
+            </div>
           </div>
-        )}
-        <div className="table-footer">
-          <span>
-            {filtered.length
-              ? `${(currentPage - 1) * 6 + 1}–${Math.min(currentPage * 6, filtered.length)} из ${filtered.length}`
-              : '0 сообщений'}
-          </span>
-          <div className="pagination">
-            <button
-              className="icon-button"
-              aria-label="Предыдущая страница"
-              disabled={currentPage === 1}
-              onClick={() => setPage(currentPage - 1)}
-            >
-              <ChevronLeft size={16} />
-            </button>
-            {Array.from({ length: maxPage }, (_, i) => i + 1)
-              .filter((i) => i === 1 || i === maxPage || Math.abs(i - currentPage) < 2)
-              .map((n, i, arr) => (
-                <span key={n}>
-                  {i > 0 && n - arr[i - 1] > 1 && <span className="pagination-ellipsis">…</span>}
-                  <button
-                    aria-label={`Страница ${n}`}
-                    aria-current={n === currentPage ? 'page' : undefined}
-                    className={n === currentPage ? 'selected' : ''}
-                    onClick={() => setPage(n)}
-                  >
-                    {n}
-                  </button>
-                </span>
-              ))}
-            <button
-              className="icon-button"
-              aria-label="Следующая страница"
-              disabled={currentPage === maxPage}
-              onClick={() => setPage(currentPage + 1)}
-            >
-              <ChevronRight size={16} />
-            </button>
-          </div>
-        </div>
-      </section>
+        </section>
+        <EvidencePreview
+          alert={rows.find((alert) => alert.id === selectedId) || rows[0]}
+          demo={m.settings.mode === 'demo'}
+        />
+      </div>
       <div className="connection-line">
         <span>
           <i className={`status-dot ${m.error ? 'is-error' : ''}`} />
@@ -386,15 +407,30 @@ export function Dashboard({
     </>
   )
 }
-function AlertRow({ alert: a }: { alert: Alert }) {
+function AlertRow({
+  alert: a,
+  selected,
+  onSelect,
+}: {
+  alert: Alert
+  selected: boolean
+  onSelect: () => void
+}) {
   return (
-    <tr>
+    <tr className={selected ? 'is-selected' : ''}>
       <td>
         <div className="message-cell">
           <Platform platform={a.platform} />
           <div className="message-cell-text">
             <div className="message-source">
-              <b>{a.chat_name}</b>
+              <button
+                className="preview-select"
+                aria-label={`Предпросмотр сообщения ${a.id}: ${a.chat_name}`}
+                aria-pressed={selected}
+                onClick={onSelect}
+              >
+                {a.chat_name}
+              </button>
               <span>{a.platform === 'telegram' ? 'Telegram' : 'WhatsApp'}</span>
             </div>
             <Link className="message-preview" to={`/alerts/${encodeURIComponent(a.id)}`}>

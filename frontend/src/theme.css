@@ -1,7 +1,7 @@
 :root {
-  color-scheme: dark;
+  color-scheme: light;
   font-family:
-    'Segoe UI',
+    'Manrope',
     -apple-system,
     BlinkMacSystemFont,
     sans-serif;
@@ -9,22 +9,22 @@
   line-height: 1.5;
   font-weight: 400;
   -webkit-font-smoothing: antialiased;
-  --page: #111113;
-  --surface: #171719;
-  --surface-raised: #222225;
-  --ink: #eeeef0;
-  --muted: #a0a0a7;
-  --border: #2d2d32;
-  --accent: #ef7748;
-  --accent-hover: #f98c60;
-  --accent-soft: #33251e;
-  --on-accent: #1b100c;
-  --high: #f0787d;
-  --high-bg: #352125;
-  --medium: #d5b67c;
-  --medium-bg: #302b21;
-  --low: #8cb9a3;
-  --low-bg: #223029;
+  --page: #f5f7fb;
+  --surface: #ffffff;
+  --surface-raised: #edf1f8;
+  --ink: #121c35;
+  --muted: #596780;
+  --border: #e4e9f2;
+  --accent: #2455ed;
+  --accent-hover: #1943c9;
+  --accent-soft: #eaf0ff;
+  --on-accent: #ffffff;
+  --high: #b42338;
+  --high-bg: #fceef0;
+  --medium: #95611b;
+  --medium-bg: #fff4e1;
+  --low: #247351;
+  --low-bg: #eaf5ef;
   color: var(--ink);
   background: var(--page);
 }

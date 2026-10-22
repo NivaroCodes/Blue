@@ -5,7 +5,7 @@ test('entrance appears on reload even with an old saved flag, but not on SPA nav
 }) => {
   await page.addInitScript(() => sessionStorage.setItem('kraken.intro.seen.v1', '1'))
   await page.goto('/')
-  const intro = page.getByRole('dialog', { name: 'Kraken', exact: true })
+  const intro = page.getByRole('dialog', { name: 'Blue', exact: true })
   await expect(intro).toBeVisible()
   await expect(page.getByRole('button', { name: 'Пропустить' })).toBeFocused()
   await expect(intro).not.toBeAttached()
@@ -23,7 +23,7 @@ test('skip, keyboard dismissal and replay restore focus', async ({ page }) => {
   await page.getByRole('button', { name: 'Пропустить' }).click()
   await page.getByRole('button', { name: 'О проекте' }).click()
   await page.getByRole('button', { name: 'Посмотреть заставку' }).click()
-  await expect(page.getByRole('dialog', { name: 'Kraken', exact: true })).toBeVisible()
+  await expect(page.getByRole('dialog', { name: 'Blue', exact: true })).toBeVisible()
   await page.keyboard.press('Tab')
   await page.keyboard.press('Tab')
   await expect(page.getByRole('button', { name: 'Пропустить' })).toBeFocused()

@@ -36,7 +36,7 @@
   overflow: hidden;
   margin-bottom: 28px;
 }
-.intro-symbol .kraken-mark {
+.intro-symbol .blue-mark {
   display: block;
   width: 58px;
   height: 58px;
@@ -128,7 +128,7 @@
   .intro-symbol {
     margin-bottom: 22px;
   }
-  .intro-symbol .kraken-mark {
+  .intro-symbol .blue-mark {
     width: 48px;
     height: 48px;
   }

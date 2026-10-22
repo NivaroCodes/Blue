@@ -1,6 +1,7 @@
-import { useLayoutEffect, useRef } from 'react'
+import { lazy, Suspense, useLayoutEffect, useRef } from 'react'
 import { ArrowRight } from 'lucide-react'
-import { KrakenMark } from './KrakenMark'
+import { BlueMark } from './BlueMark'
+const Scene3D = lazy(() => import('./Scene3D').then((module) => ({ default: module.Scene3D })))
 
 // Every full page entry gets the entrance. SPA navigation never replays it.
 export function shouldShowIntro() {
@@ -46,13 +47,15 @@ export function BrandIntro({ active, onComplete }: { active: boolean; onComplete
         onComplete()
       }}
     >
-      <span className="intro-corner">Kraken / SafeNet KZ</span>
+      <span className="intro-corner">Blue / SafeNet KZ</span>
       <div className="intro-center">
         <div className="intro-symbol">
-          <KrakenMark />
+          <Suspense fallback={<BlueMark />}>
+            <Scene3D />
+          </Suspense>
         </div>
-        <h1 id="intro-title" className="intro-wordmark" aria-label="Kraken">
-          {'KRAKEN'.split('').map((letter, i) => (
+        <h1 id="intro-title" className="intro-wordmark" aria-label="Blue">
+          {'blue'.split('').map((letter, i) => (
             <span className="intro-letter-mask" key={i} aria-hidden="true">
               <span style={{ animationDelay: `${180 + i * 65}ms` }}>{letter}</span>
             </span>

@@ -107,7 +107,7 @@ for (const width of [375, 768, 1024, 1440]) {
   test(`layouts remain within viewport at ${width}px`, async ({ page }) => {
     await page.setViewportSize({ width, height: 900 })
     await page.emulateMedia({ reducedMotion: 'reduce' })
-    for (const path of ['/', '/chats', '/analytics', '/settings', '/alerts/demo-1']) {
+    for (const path of ['/', '/chats', '/graph', '/analytics', '/settings', '/alerts/demo-1']) {
       await page.goto(path)
       await expect(page.locator('.brand-intro')).not.toBeAttached()
       await expect(page.locator('main h1')).toBeVisible()

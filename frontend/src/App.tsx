@@ -1,5 +1,15 @@
-import { useEffect, useRef, useState } from 'react'
-import { ArrowRight, CircleHelp, Settings2, X } from 'lucide-react'
+import { lazy, Suspense, useEffect, useRef, useState } from 'react'
+import {
+  ArrowRight,
+  ChartNoAxesCombined,
+  CircleHelp,
+  Database,
+  Inbox,
+  Network,
+  Settings2,
+  X,
+} from 'lucide-react'
+import { motion, MotionConfig } from 'motion/react'
 import { Link, NavLink, Route, Routes, useLocation } from 'react-router-dom'
 import { BrandIntro, shouldShowIntro } from './components/BrandIntro'
 import { Empty, Logo } from './components/ui'
@@ -10,13 +20,24 @@ import { Analytics } from './pages/Analytics'
 import { SettingsPage } from './pages/Settings'
 import { useMonitor } from './lib/useMonitor'
 import { addDemoAlert } from './data/demo'
+const Graph = lazy(() => import('./pages/Graph').then((module) => ({ default: module.Graph })))
+const Scene3D = lazy(() =>
+  import('./components/Scene3D').then((module) => ({ default: module.Scene3D })),
+)
 
 export default function App() {
   const monitor = useMonitor()
   const [intro, setIntro] = useState(shouldShowIntro)
+  const [wide, setWide] = useState(() => window.matchMedia('(min-width: 801px)').matches)
   const [toast, setToast] = useState('')
   const help = useRef<HTMLDialogElement>(null)
   const location = useLocation()
+  useEffect(() => {
+    const query = window.matchMedia('(min-width: 801px)')
+    const update = () => setWide(query.matches)
+    query.addEventListener('change', update)
+    return () => query.removeEventListener('change', update)
+  }, [])
   useEffect(() => {
     window.scrollTo(0, 0)
   }, [location.pathname])
@@ -31,7 +52,7 @@ export default function App() {
     setToast('Демо-сообщение добавлено.')
   }
   return (
-    <>
+    <MotionConfig reducedMotion="user">
       <BrandIntro active={intro} onComplete={() => setIntro(false)} />
       <div className="app-shell">
         <a className="skip-link" href="#main">
@@ -39,18 +60,38 @@ export default function App() {
         </a>
         <header className="app-header">
           <div className="header-inner">
-            <Link to="/" className="brand-link" aria-label="Kraken — мониторинг">
+            <Link to="/" className="brand-link" aria-label="Blue — мониторинг">
               <Logo />
             </Link>
+            <div className="workspace-name">
+              <span>Рабочее пространство</span>
+              <strong>SafeNet KZ</strong>
+            </div>
             <nav className="primary-nav" aria-label="Главная навигация">
               <NavLink to="/" end>
-                Входящие
+                <Inbox size={18} /> Входящие
               </NavLink>
               <NavLink to="/chats" aria-label="Чаты и источники">
-                Источники
+                <Database size={18} /> Источники
               </NavLink>
-              <NavLink to="/analytics">Аналитика</NavLink>
+              <NavLink to="/graph">
+                <Network size={18} /> Граф связей
+              </NavLink>
+              <NavLink to="/analytics">
+                <ChartNoAxesCombined size={18} /> Аналитика
+              </NavLink>
             </nav>
+            <NavLink to="/settings" className="sidebar-settings">
+              <Settings2 size={18} /> Настройки
+            </NavLink>
+            <div className="sidebar-art">
+              {wide && !intro && (
+                <Suspense fallback={null}>
+                  <Scene3D />
+                </Suspense>
+              )}
+              <p>Сигналы. Контекст. Решение.</p>
+            </div>
             <div className="header-tools">
               <span className={`source-pill ${monitor.settings.mode}`}>
                 {monitor.settings.mode === 'demo' ? 'Деморежим' : 'Backend API'}
@@ -68,38 +109,71 @@ export default function App() {
             </div>
           </div>
         </header>
+        <div className="workspace-bar">
+          <span>
+            Рабочее пространство <i>/</i>{' '}
+            {location.pathname.startsWith('/alerts')
+              ? 'Проверка сообщения'
+              : {
+                  '/': 'Входящие',
+                  '/chats': 'Источники',
+                  '/analytics': 'Аналитика',
+                  '/graph': 'Граф связей',
+                  '/settings': 'Настройки',
+                }[location.pathname] || 'Blue'}
+          </span>
+          <span className="workspace-status">
+            <i /> {monitor.settings.mode === 'demo' ? 'Деморежим' : 'Backend API'}
+          </span>
+        </div>
         <main id="main" tabIndex={-1}>
-          <Routes>
-            <Route path="/" element={<Dashboard monitor={monitor} onDemoMessage={addMessage} />} />
-            <Route
-              path="/alerts/:id"
-              element={<AlertDetail monitor={monitor} notify={setToast} />}
-            />
-            <Route path="/chats" element={<Chats monitor={monitor} />} />
-            <Route path="/analytics" element={<Analytics monitor={monitor} />} />
-            <Route
-              path="/settings"
-              element={<SettingsPage monitor={monitor} notify={setToast} />}
-            />
-            <Route
-              path="*"
-              element={
-                <Empty
-                  title="Страница не найдена"
-                  text="Вернитесь к списку сообщений."
-                  action={
-                    <Link className="button button-primary" to="/">
-                      К мониторингу
-                    </Link>
+          <motion.div
+            key={location.pathname}
+            className="route-view"
+            initial={{ opacity: 0.75, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
+          >
+            <Suspense
+              fallback={<div className="loading-state">Загружаем рабочее пространство…</div>}
+            >
+              <Routes>
+                <Route
+                  path="/"
+                  element={<Dashboard monitor={monitor} onDemoMessage={addMessage} />}
+                />
+                <Route
+                  path="/alerts/:id"
+                  element={<AlertDetail monitor={monitor} notify={setToast} />}
+                />
+                <Route path="/chats" element={<Chats monitor={monitor} />} />
+                <Route path="/analytics" element={<Analytics monitor={monitor} />} />
+                <Route path="/graph" element={<Graph monitor={monitor} />} />
+                <Route
+                  path="/settings"
+                  element={<SettingsPage monitor={monitor} notify={setToast} />}
+                />
+                <Route
+                  path="*"
+                  element={
+                    <Empty
+                      title="Страница не найдена"
+                      text="Вернитесь к списку сообщений."
+                      action={
+                        <Link className="button button-primary" to="/">
+                          К мониторингу
+                        </Link>
+                      }
+                    />
                   }
                 />
-              }
-            />
-          </Routes>
+              </Routes>
+            </Suspense>
+          </motion.div>
         </main>
         <footer className="app-footer">
           <span>
-            Kraken <span className="footer-separator">/</span> SafeNet KZ
+            Blue <span className="footer-separator">/</span> SafeNet KZ
           </span>
           <span>Окончательное решение — за аналитиком.</span>
         </footer>
@@ -114,7 +188,7 @@ export default function App() {
               <X size={19} />
             </button>
           </div>
-          <h2 id="help-title">О Kraken</h2>
+          <h2 id="help-title">О Blue</h2>
           <p>Проверка признаков финансовых пирамид в сообщениях Telegram и импортах WhatsApp.</p>
           <p>
             В деморежиме сообщения синтетические. Оценки подготовлены для демонстрации; решение
@@ -146,6 +220,6 @@ export default function App() {
           </div>
         )}
       </div>
-    </>
+    </MotionConfig>
   )
 }
