@@ -1,0 +1,1000 @@
+{
+  "summary": {
+    "total_samples": 50,
+    "overall_accuracy": 0.98,
+    "macro_f1": 0.9743,
+    "high_risk_precision": 1.0,
+    "high_risk_recall": 1.0,
+    "high_risk_f1": 1.0,
+    "high_risk_false_positive_rate": 0.0,
+    "evidence_exact_match_rate": 1.0,
+    "total_extracted_reasons": 80
+  },
+  "per_class_metrics": {
+    "HIGH": {
+      "tp": 20,
+      "fp": 0,
+      "fn": 0,
+      "tn": 30,
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1_score": 1.0,
+      "false_positive_rate": 0.0
+    },
+    "MEDIUM": {
+      "tp": 9,
+      "fp": 0,
+      "fn": 1,
+      "tn": 40,
+      "precision": 1.0,
+      "recall": 0.9,
+      "f1_score": 0.9474,
+      "false_positive_rate": 0.0
+    },
+    "LOW": {
+      "tp": 20,
+      "fp": 1,
+      "fn": 0,
+      "tn": 29,
+      "precision": 0.9524,
+      "recall": 1.0,
+      "f1_score": 0.9756,
+      "false_positive_rate": 0.0333
+    }
+  },
+  "confusion_matrix": {
+    "HIGH": {
+      "HIGH": 20,
+      "MEDIUM": 0,
+      "LOW": 0
+    },
+    "MEDIUM": {
+      "HIGH": 0,
+      "MEDIUM": 9,
+      "LOW": 1
+    },
+    "LOW": {
+      "HIGH": 0,
+      "MEDIUM": 0,
+      "LOW": 20
+    }
+  },
+  "by_language": {
+    "ru": {
+      "total": 31,
+      "correct": 30,
+      "high_tp": 10,
+      "high_fp": 0,
+      "high_fn": 0
+    },
+    "kz": {
+      "total": 14,
+      "correct": 14,
+      "high_tp": 5,
+      "high_fp": 0,
+      "high_fn": 0
+    },
+    "translit": {
+      "total": 2,
+      "correct": 2,
+      "high_tp": 2,
+      "high_fp": 0,
+      "high_fn": 0
+    },
+    "kz_ru_obfuscated": {
+      "total": 1,
+      "correct": 1,
+      "high_tp": 1,
+      "high_fp": 0,
+      "high_fn": 0
+    },
+    "translit_kz": {
+      "total": 2,
+      "correct": 2,
+      "high_tp": 2,
+      "high_fp": 0,
+      "high_fn": 0
+    }
+  },
+  "detailed_results": [
+    {
+      "id": "bench_001",
+      "language": "ru",
+      "category": "pyramid_ponzi",
+      "expected_level": "HIGH",
+      "pred_level": "HIGH",
+      "risk_score": 98,
+      "reasons_count": 5,
+      "reasons": [
+        {
+          "code": "UNREALISTIC_RETURN",
+          "evidence": "получи 10 000 ₸ уже завтра"
+        },
+        {
+          "code": "GUARANTEED_PROFIT",
+          "evidence": "Доход гарантирован"
+        },
+        {
+          "code": "MONEY_REQUEST",
+          "evidence": "Вложи 5 000 ₸"
+        },
+        {
+          "code": "REFERRAL",
+          "evidence": "Пригласи"
+        },
+        {
+          "code": "URGENCY",
+          "evidence": "Осталось 3 места"
+        }
+      ],
+      "correct": true
+    },
+    {
+      "id": "bench_002",
+      "language": "kz",
+      "category": "pyramid_ponzi",
+      "expected_level": "HIGH",
+      "pred_level": "HIGH",
+      "risk_score": 98,
+      "reasons_count": 4,
+      "reasons": [
+        {
+          "code": "UNREALISTIC_RETURN",
+          "evidence": "ертең 20 000 теңге ал"
+        },
+        {
+          "code": "GUARANTEED_PROFIT",
+          "evidence": "Табысқа кепілдік береміз"
+        },
+        {
+          "code": "MONEY_REQUEST",
+          "evidence": "10 000 теңге сал"
+        },
+        {
+          "code": "PERSONAL_TRANSFER",
+          "evidence": "Kaspi арқылы жеке картаға аудар"
+        }
+      ],
+      "correct": true
+    },
+    {
+      "id": "bench_003",
+      "language": "ru",
+      "category": "pyramid_matrix",
+      "expected_level": "HIGH",
+      "pred_level": "HIGH",
+      "risk_score": 98,
+      "reasons_count": 4,
+      "reasons": [
+        {
+          "code": "UNREALISTIC_RETURN",
+          "evidence": "Прибыль 200% за неделю"
+        },
+        {
+          "code": "GUARANTEED_PROFIT",
+          "evidence": "без риска"
+        },
+        {
+          "code": "MONEY_REQUEST",
+          "evidence": "старт от 15 000 тг"
+        },
+        {
+          "code": "REFERRAL",
+          "evidence": "За каждого нового участника"
+        }
+      ],
+      "correct": true
+    },
+    {
+      "id": "bench_004",
+      "language": "translit",
+      "category": "pyramid_translit",
+      "expected_level": "HIGH",
+      "pred_level": "HIGH",
+      "risk_score": 98,
+      "reasons_count": 4,
+      "reasons": [
+        {
+          "code": "UNREALISTIC_RETURN",
+          "evidence": "poluchi 15000 za 2 dnya"
+        },
+        {
+          "code": "MONEY_REQUEST",
+          "evidence": "Vlozhi 5000"
+        },
+        {
+          "code": "REFERRAL",
+          "evidence": "Privedi"
+        },
+        {
+          "code": "PERSONAL_TRANSFER",
+          "evidence": "Perevod na lichnuyu kartu"
+        }
+      ],
+      "correct": true
+    },
+    {
+      "id": "bench_005",
+      "language": "ru",
+      "category": "pyramid_scheme",
+      "expected_level": "HIGH",
+      "pred_level": "HIGH",
+      "risk_score": 85,
+      "reasons_count": 3,
+      "reasons": [
+        {
+          "code": "MONEY_REQUEST",
+          "evidence": "вступление в закрытый клуб 30"
+        },
+        {
+          "code": "REFERRAL",
+          "evidence": "Приведи"
+        },
+        {
+          "code": "URGENCY",
+          "evidence": "Только до вечера"
+        }
+      ],
+      "correct": true
+    },
+    {
+      "id": "bench_006",
+      "language": "kz",
+      "category": "pyramid_kz",
+      "expected_level": "HIGH",
+      "pred_level": "HIGH",
+      "risk_score": 98,
+      "reasons_count": 3,
+      "reasons": [
+        {
+          "code": "UNREALISTIC_RETURN",
+          "evidence": "екі есе"
+        },
+        {
+          "code": "MONEY_REQUEST",
+          "evidence": "Кіру жарнасы 5 000 теңге"
+        },
+        {
+          "code": "REFERRAL",
+          "evidence": "Досыңды шақыр"
+        }
+      ],
+      "correct": true
+    },
+    {
+      "id": "bench_007",
+      "language": "kz_ru_obfuscated",
+      "category": "pyramid_obfuscated",
+      "expected_level": "HIGH",
+      "pred_level": "HIGH",
+      "risk_score": 98,
+      "reasons_count": 4,
+      "reasons": [
+        {
+          "code": "UNREALISTIC_RETURN",
+          "evidence": "удв0й баланс"
+        },
+        {
+          "code": "MONEY_REQUEST",
+          "evidence": "Вл0жи 10000 тг"
+        },
+        {
+          "code": "URGENCY",
+          "evidence": "Шектеулі орын"
+        },
+        {
+          "code": "PERSONAL_TRANSFER",
+          "evidence": "жеке картаға"
+        }
+      ],
+      "correct": true
+    },
+    {
+      "id": "bench_008",
+      "language": "ru",
+      "category": "pyramid_matrix",
+      "expected_level": "HIGH",
+      "pred_level": "HIGH",
+      "risk_score": 98,
+      "reasons_count": 3,
+      "reasons": [
+        {
+          "code": "UNREALISTIC_RETURN",
+          "evidence": "получи 80 000 тенге уже завтра"
+        },
+        {
+          "code": "REFERRAL",
+          "evidence": "Пригласи 3"
+        },
+        {
+          "code": "PERSONAL_TRANSFER",
+          "evidence": "на личную карту"
+        }
+      ],
+      "correct": true
+    },
+    {
+      "id": "bench_009",
+      "language": "translit_kz",
+      "category": "pyramid_translit",
+      "expected_level": "HIGH",
+      "pred_level": "HIGH",
+      "risk_score": 98,
+      "reasons_count": 3,
+      "reasons": [
+        {
+          "code": "UNREALISTIC_RETURN",
+          "evidence": "100%"
+        },
+        {
+          "code": "GUARANTEED_PROFIT",
+          "evidence": "100% kepildik"
+        },
+        {
+          "code": "PERSONAL_TRANSFER",
+          "evidence": "Kaspi nomerge audar"
+        }
+      ],
+      "correct": true
+    },
+    {
+      "id": "bench_010",
+      "language": "ru",
+      "category": "pyramid_crypto",
+      "expected_level": "HIGH",
+      "pred_level": "HIGH",
+      "risk_score": 98,
+      "reasons_count": 4,
+      "reasons": [
+        {
+          "code": "UNREALISTIC_RETURN",
+          "evidence": "Доход 300% за неделю"
+        },
+        {
+          "code": "GUARANTEED_PROFIT",
+          "evidence": "100% гарантия"
+        },
+        {
+          "code": "MONEY_REQUEST",
+          "evidence": "депозит 50 000 ₸"
+        },
+        {
+          "code": "URGENCY",
+          "evidence": "Успей зайти"
+        }
+      ],
+      "correct": true
+    },
+    {
+      "id": "bench_011",
+      "language": "kz",
+      "category": "pyramid_kz",
+      "expected_level": "HIGH",
+      "pred_level": "HIGH",
+      "risk_score": 98,
+      "reasons_count": 3,
+      "reasons": [
+        {
+          "code": "UNREALISTIC_RETURN",
+          "evidence": "ертең 45 000 теңге ал"
+        },
+        {
+          "code": "GUARANTEED_PROFIT",
+          "evidence": "кепілдік береміз"
+        },
+        {
+          "code": "MONEY_REQUEST",
+          "evidence": "15 000 теңге сал"
+        }
+      ],
+      "correct": true
+    },
+    {
+      "id": "bench_012",
+      "language": "ru",
+      "category": "pyramid_scheme",
+      "expected_level": "HIGH",
+      "pred_level": "HIGH",
+      "risk_score": 90,
+      "reasons_count": 3,
+      "reasons": [
+        {
+          "code": "GUARANTEED_PROFIT",
+          "evidence": "Рисков нет"
+        },
+        {
+          "code": "MONEY_REQUEST",
+          "evidence": "Первый взнос"
+        },
+        {
+          "code": "REFERRAL",
+          "evidence": "Приведи друга"
+        }
+      ],
+      "correct": true
+    },
+    {
+      "id": "bench_013",
+      "language": "kz",
+      "category": "pyramid_kz",
+      "expected_level": "HIGH",
+      "pred_level": "HIGH",
+      "risk_score": 85,
+      "reasons_count": 3,
+      "reasons": [
+        {
+          "code": "MONEY_REQUEST",
+          "evidence": "кіру жарнасы 20 000 теңге"
+        },
+        {
+          "code": "REFERRAL",
+          "evidence": "досыңды шақыр"
+        },
+        {
+          "code": "URGENCY",
+          "evidence": "Соңғы 2 орын"
+        }
+      ],
+      "correct": true
+    },
+    {
+      "id": "bench_014",
+      "language": "ru",
+      "category": "pyramid_arbitrage",
+      "expected_level": "HIGH",
+      "pred_level": "HIGH",
+      "risk_score": 98,
+      "reasons_count": 4,
+      "reasons": [
+        {
+          "code": "UNREALISTIC_RETURN",
+          "evidence": "Доход гарантирован 50% в день"
+        },
+        {
+          "code": "GUARANTEED_PROFIT",
+          "evidence": "Доход гарантирован"
+        },
+        {
+          "code": "MONEY_REQUEST",
+          "evidence": "вход от 30 000 тг"
+        },
+        {
+          "code": "PERSONAL_TRANSFER",
+          "evidence": "Перевод на карту"
+        }
+      ],
+      "correct": true
+    },
+    {
+      "id": "bench_015",
+      "language": "translit",
+      "category": "pyramid_translit",
+      "expected_level": "HIGH",
+      "pred_level": "HIGH",
+      "risk_score": 98,
+      "reasons_count": 3,
+      "reasons": [
+        {
+          "code": "UNREALISTIC_RETURN",
+          "evidence": "poluchi 50000 tg srazu"
+        },
+        {
+          "code": "MONEY_REQUEST",
+          "evidence": "Vlozhi 10000"
+        },
+        {
+          "code": "REFERRAL",
+          "evidence": "Privedi 5"
+        }
+      ],
+      "correct": true
+    },
+    {
+      "id": "bench_016",
+      "language": "ru",
+      "category": "pyramid_pool",
+      "expected_level": "HIGH",
+      "pred_level": "HIGH",
+      "risk_score": 98,
+      "reasons_count": 4,
+      "reasons": [
+        {
+          "code": "UNREALISTIC_RETURN",
+          "evidence": "100%"
+        },
+        {
+          "code": "GUARANTEED_PROFIT",
+          "evidence": "Гарантия прибыли"
+        },
+        {
+          "code": "MONEY_REQUEST",
+          "evidence": "Вход 100 000 ₸"
+        },
+        {
+          "code": "URGENCY",
+          "evidence": "Срочный сбор"
+        }
+      ],
+      "correct": true
+    },
+    {
+      "id": "bench_017",
+      "language": "kz",
+      "category": "pyramid_kz",
+      "expected_level": "HIGH",
+      "pred_level": "HIGH",
+      "risk_score": 98,
+      "reasons_count": 3,
+      "reasons": [
+        {
+          "code": "UNREALISTIC_RETURN",
+          "evidence": "Ертең 20 000 теңге ал"
+        },
+        {
+          "code": "MONEY_REQUEST",
+          "evidence": "жарна 7 000 теңге"
+        },
+        {
+          "code": "PERSONAL_TRANSFER",
+          "evidence": "Kaspi арқылы жеке картаға аудар"
+        }
+      ],
+      "correct": true
+    },
+    {
+      "id": "bench_018",
+      "language": "ru",
+      "category": "pyramid_matrix",
+      "expected_level": "HIGH",
+      "pred_level": "HIGH",
+      "risk_score": 98,
+      "reasons_count": 3,
+      "reasons": [
+        {
+          "code": "UNREALISTIC_RETURN",
+          "evidence": "х10 прибыли"
+        },
+        {
+          "code": "MONEY_REQUEST",
+          "evidence": "Вход 5 000 тг"
+        },
+        {
+          "code": "REFERRAL",
+          "evidence": "зови друзей"
+        }
+      ],
+      "correct": true
+    },
+    {
+      "id": "bench_019",
+      "language": "ru",
+      "category": "pyramid_urgency",
+      "expected_level": "HIGH",
+      "pred_level": "HIGH",
+      "risk_score": 98,
+      "reasons_count": 4,
+      "reasons": [
+        {
+          "code": "UNREALISTIC_RETURN",
+          "evidence": "удвой капитал"
+        },
+        {
+          "code": "GUARANTEED_PROFIT",
+          "evidence": "Доход гарантирован"
+        },
+        {
+          "code": "MONEY_REQUEST",
+          "evidence": "вклад 10 000 тг"
+        },
+        {
+          "code": "URGENCY",
+          "evidence": "Только сегодня"
+        }
+      ],
+      "correct": true
+    },
+    {
+      "id": "bench_020",
+      "language": "translit_kz",
+      "category": "pyramid_translit",
+      "expected_level": "HIGH",
+      "pred_level": "HIGH",
+      "risk_score": 90,
+      "reasons_count": 3,
+      "reasons": [
+        {
+          "code": "GUARANTEED_PROFIT",
+          "evidence": "Tokeuelsiz"
+        },
+        {
+          "code": "MONEY_REQUEST",
+          "evidence": "10 000 sal"
+        },
+        {
+          "code": "REFERRAL",
+          "evidence": "dostaryndy shaqyr"
+        }
+      ],
+      "correct": true
+    },
+    {
+      "id": "bench_021",
+      "language": "ru",
+      "category": "suspicious_mlm",
+      "expected_level": "MEDIUM",
+      "pred_level": "MEDIUM",
+      "risk_score": 55,
+      "reasons_count": 2,
+      "reasons": [
+        {
+          "code": "MONEY_REQUEST",
+          "evidence": "Вход 20 000 ₸"
+        },
+        {
+          "code": "REFERRAL",
+          "evidence": "вознаграждение за приглашённых"
+        }
+      ],
+      "correct": true
+    },
+    {
+      "id": "bench_022",
+      "language": "ru",
+      "category": "suspicious_private",
+      "expected_level": "MEDIUM",
+      "pred_level": "MEDIUM",
+      "risk_score": 30,
+      "reasons_count": 1,
+      "reasons": [
+        {
+          "code": "MONEY_REQUEST",
+          "evidence": "сумму первого взноса"
+        }
+      ],
+      "correct": true
+    },
+    {
+      "id": "bench_023",
+      "language": "kz",
+      "category": "suspicious_kz",
+      "expected_level": "MEDIUM",
+      "pred_level": "MEDIUM",
+      "risk_score": 30,
+      "reasons_count": 1,
+      "reasons": [
+        {
+          "code": "MONEY_REQUEST",
+          "evidence": "жарна қажет"
+        }
+      ],
+      "correct": true
+    },
+    {
+      "id": "bench_024",
+      "language": "ru",
+      "category": "club_meeting",
+      "expected_level": "MEDIUM",
+      "pred_level": "MEDIUM",
+      "risk_score": 30,
+      "reasons_count": 1,
+      "reasons": [
+        {
+          "code": "MONEY_REQUEST",
+          "evidence": "платную встречу"
+        }
+      ],
+      "correct": true
+    },
+    {
+      "id": "bench_025",
+      "language": "ru",
+      "category": "affiliate",
+      "expected_level": "MEDIUM",
+      "pred_level": "MEDIUM",
+      "risk_score": 30,
+      "reasons_count": 1,
+      "reasons": [
+        {
+          "code": "REFERRAL",
+          "evidence": "бонус за регистрацию"
+        }
+      ],
+      "correct": true
+    },
+    {
+      "id": "bench_026",
+      "language": "ru",
+      "category": "crypto_signals",
+      "expected_level": "MEDIUM",
+      "pred_level": "MEDIUM",
+      "risk_score": 30,
+      "reasons_count": 1,
+      "reasons": [
+        {
+          "code": "MONEY_REQUEST",
+          "evidence": "Платный Telegram-канал"
+        }
+      ],
+      "correct": true
+    },
+    {
+      "id": "bench_027",
+      "language": "kz",
+      "category": "affiliate_kz",
+      "expected_level": "MEDIUM",
+      "pred_level": "MEDIUM",
+      "risk_score": 30,
+      "reasons_count": 1,
+      "reasons": [
+        {
+          "code": "REFERRAL",
+          "evidence": "достарыңа айт"
+        }
+      ],
+      "correct": true
+    },
+    {
+      "id": "bench_028",
+      "language": "ru",
+      "category": "webinar",
+      "expected_level": "MEDIUM",
+      "pred_level": "MEDIUM",
+      "risk_score": 30,
+      "reasons_count": 1,
+      "reasons": [
+        {
+          "code": "MONEY_REQUEST",
+          "evidence": "Доступ 10 000 ₸"
+        }
+      ],
+      "correct": true
+    },
+    {
+      "id": "bench_029",
+      "language": "ru",
+      "category": "ecommerce_referral",
+      "expected_level": "MEDIUM",
+      "pred_level": "MEDIUM",
+      "risk_score": 30,
+      "reasons_count": 1,
+      "reasons": [
+        {
+          "code": "REFERRAL",
+          "evidence": "Партнерка"
+        }
+      ],
+      "correct": true
+    },
+    {
+      "id": "bench_030",
+      "language": "ru",
+      "category": "course_paid",
+      "expected_level": "MEDIUM",
+      "pred_level": "LOW",
+      "risk_score": 12,
+      "reasons_count": 0,
+      "reasons": [],
+      "correct": false
+    },
+    {
+      "id": "bench_031",
+      "language": "ru",
+      "category": "education",
+      "expected_level": "LOW",
+      "pred_level": "LOW",
+      "risk_score": 2,
+      "reasons_count": 0,
+      "reasons": [],
+      "correct": true
+    },
+    {
+      "id": "bench_032",
+      "language": "kz",
+      "category": "education_kz",
+      "expected_level": "LOW",
+      "pred_level": "LOW",
+      "risk_score": 2,
+      "reasons_count": 0,
+      "reasons": [],
+      "correct": true
+    },
+    {
+      "id": "bench_033",
+      "language": "ru",
+      "category": "broker_disclaimer",
+      "expected_level": "LOW",
+      "pred_level": "LOW",
+      "risk_score": 2,
+      "reasons_count": 0,
+      "reasons": [],
+      "correct": true
+    },
+    {
+      "id": "bench_034",
+      "language": "ru",
+      "category": "volunteer",
+      "expected_level": "LOW",
+      "pred_level": "LOW",
+      "risk_score": 2,
+      "reasons_count": 0,
+      "reasons": [],
+      "correct": true
+    },
+    {
+      "id": "bench_035",
+      "language": "kz",
+      "category": "book_club",
+      "expected_level": "LOW",
+      "pred_level": "LOW",
+      "risk_score": 2,
+      "reasons_count": 0,
+      "reasons": [],
+      "correct": true
+    },
+    {
+      "id": "bench_036",
+      "language": "ru",
+      "category": "education_paid",
+      "expected_level": "LOW",
+      "pred_level": "LOW",
+      "risk_score": 2,
+      "reasons_count": 0,
+      "reasons": [],
+      "correct": true
+    },
+    {
+      "id": "bench_037",
+      "language": "ru",
+      "category": "chat_neutral",
+      "expected_level": "LOW",
+      "pred_level": "LOW",
+      "risk_score": 2,
+      "reasons_count": 0,
+      "reasons": [],
+      "correct": true
+    },
+    {
+      "id": "bench_038",
+      "language": "ru",
+      "category": "everyday_chat",
+      "expected_level": "LOW",
+      "pred_level": "LOW",
+      "risk_score": 2,
+      "reasons_count": 0,
+      "reasons": [],
+      "correct": true
+    },
+    {
+      "id": "bench_039",
+      "language": "kz",
+      "category": "everyday_kz",
+      "expected_level": "LOW",
+      "pred_level": "LOW",
+      "risk_score": 2,
+      "reasons_count": 0,
+      "reasons": [],
+      "correct": true
+    },
+    {
+      "id": "bench_040",
+      "language": "ru",
+      "category": "student_chat",
+      "expected_level": "LOW",
+      "pred_level": "LOW",
+      "risk_score": 2,
+      "reasons_count": 0,
+      "reasons": [],
+      "correct": true
+    },
+    {
+      "id": "bench_041",
+      "language": "ru",
+      "category": "olympiad",
+      "expected_level": "LOW",
+      "pred_level": "LOW",
+      "risk_score": 2,
+      "reasons_count": 0,
+      "reasons": [],
+      "correct": true
+    },
+    {
+      "id": "bench_042",
+      "language": "kz",
+      "category": "bank_warning",
+      "expected_level": "LOW",
+      "pred_level": "LOW",
+      "risk_score": 2,
+      "reasons_count": 0,
+      "reasons": [],
+      "correct": true
+    },
+    {
+      "id": "bench_043",
+      "language": "ru",
+      "category": "official_macro",
+      "expected_level": "LOW",
+      "pred_level": "LOW",
+      "risk_score": 2,
+      "reasons_count": 0,
+      "reasons": [],
+      "correct": true
+    },
+    {
+      "id": "bench_044",
+      "language": "kz",
+      "category": "weather_kz",
+      "expected_level": "LOW",
+      "pred_level": "LOW",
+      "risk_score": 2,
+      "reasons_count": 0,
+      "reasons": [],
+      "correct": true
+    },
+    {
+      "id": "bench_045",
+      "language": "ru",
+      "category": "classifieds",
+      "expected_level": "LOW",
+      "pred_level": "LOW",
+      "risk_score": 2,
+      "reasons_count": 0,
+      "reasons": [],
+      "correct": true
+    },
+    {
+      "id": "bench_046",
+      "language": "ru",
+      "category": "job_posting",
+      "expected_level": "LOW",
+      "pred_level": "LOW",
+      "risk_score": 2,
+      "reasons_count": 0,
+      "reasons": [],
+      "correct": true
+    },
+    {
+      "id": "bench_047",
+      "language": "kz",
+      "category": "charity_kz",
+      "expected_level": "LOW",
+      "pred_level": "LOW",
+      "risk_score": 2,
+      "reasons_count": 0,
+      "reasons": [],
+      "correct": true
+    },
+    {
+      "id": "bench_048",
+      "language": "ru",
+      "category": "lost_found",
+      "expected_level": "LOW",
+      "pred_level": "LOW",
+      "risk_score": 2,
+      "reasons_count": 0,
+      "reasons": [],
+      "correct": true
+    },
+    {
+      "id": "bench_049",
+      "language": "ru",
+      "category": "regulatory_alert",
+      "expected_level": "LOW",
+      "pred_level": "LOW",
+      "risk_score": 2,
+      "reasons_count": 0,
+      "reasons": [],
+      "correct": true
+    },
+    {
+      "id": "bench_050",
+      "language": "kz",
+      "category": "sports_kz",
+      "expected_level": "LOW",
+      "pred_level": "LOW",
+      "risk_score": 2,
+      "reasons_count": 0,
+      "reasons": [],
+      "correct": true
+    }
+  ]
+}
