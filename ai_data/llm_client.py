@@ -105,11 +105,13 @@ SYSTEM_PROMPT = """Ты — ведущий AI-аналитик финансов�
 ═══════════════════════════════════════
 
 Тебе может быть предоставлен КОНТЕКСТ ИЗ БАЗЫ ДАННЫХ:
-- История отправителя: сколько раз он уже был отмечен как HIGH/MEDIUM риск
-- История группы/чата: сколько скамов уже найдено в этом чате
+- История отправителя и группы, где HIGH-оценки разделены на «подтверждено аналитиком» и «автоматическая оценка ИИ».
 
-Если отправитель ПОВТОРНО шлёт подозрительные сообщения (2+ раза HIGH) — это усиливает риск текущего сообщения.
-Если в группе/чате МНОГО скамов — даже умеренно подозрительное сообщение заслуживает повышенной оценки.
+Правила использования контекста:
+1. Повышать оценку можно ТОЛЬКО на основании вердиктов, подтверждённых аналитиком, или фактов (повтор идентичного текста, кросс-постинг).
+2. Автоматические (непроверенные) HIGH-оценки — это прошлые выводы модели, они могут быть ошибочными. Не повышай риск только из-за них.
+3. Вердикты, признанные аналитиком ложным срабатыванием, — сигнал к осторожности, а не к повышению риска.
+4. Контекст никогда не превращает нейтральное сообщение без финансовых признаков в HIGH: сначала оцени содержание, затем корректируй.
 
 ═══════════════════════════════════════
 ТРЕБОВАНИЯ К ПОЛЮ 'explanation':
@@ -145,9 +147,26 @@ HIGH:   60 – 100 (явные признаки финансовой пирам�
 """
 
 
-def _build_user_message(text: str, context_block: str = "") -> str:
+IMAGE_INSTRUCTION = (
+    "К сообщению ПРИЛОЖЕНО ИЗОБРАЖЕНИЕ (скриншот чека, перевода, рекламы и т.п.).\n"
+    "1. Перепиши ВЕСЬ видимый текст с изображения дословно в JSON-поле \"image_text\" (строка).\n"
+    "2. Поле evidence может цитировать либо текст сообщения, либо image_text. "
+    "Для цитат из изображения добавь в reason поле \"source\": \"image\".\n"
+    "3. Признаки поддельного чека/выплаты (несоответствие шрифтов, нереальные суммы, личная карта получателя) "
+    "опиши в explanation."
+)
+
+
+def _build_user_message(text: str, context_block: str = "", has_image: bool = False) -> str:
     """Builds the user message with optional context from the database."""
-    parts = [f"Проанализируй следующее сообщение:\n\"\"\"{text}\"\"\""]
+    if text and text.strip():
+        parts = [f"Проанализируй следующее сообщение:\n\"\"\"{text}\"\"\""]
+    elif has_image:
+        parts = ["Проанализируй приложенное изображение (текстовая подпись к сообщению отсутствует)."]
+    else:
+        parts = [f"Проанализируй следующее сообщение:\n\"\"\"{text}\"\"\""]
+    if has_image:
+        parts.append(IMAGE_INSTRUCTION)
     if context_block:
         parts.append(context_block)
     return "\n".join(parts)
@@ -158,7 +177,8 @@ def call_gemini_api(
     api_key: str,
     model: str = "gemini-3-flash-preview",
     context_block: str = "",
-    image_base64: Optional[str] = None
+    image_base64: Optional[str] = None,
+    image_mime: str = "image/jpeg"
 ) -> AnalysisResult:
     """
     Calls Google Gemini Generative Language REST API.
@@ -174,7 +194,7 @@ def call_gemini_api(
     seen = set()
     candidate_models = [m for m in fallback_models if not (m in seen or seen.add(m))]
 
-    user_msg = _build_user_message(text, context_block)
+    user_msg = _build_user_message(text, context_block, has_image=bool(image_base64))
 
     parts: List[Dict[str, Any]] = [
         {"text": SYSTEM_PROMPT},
@@ -185,7 +205,7 @@ def call_gemini_api(
     if image_base64:
         parts.append({
             "inlineData": {
-                "mimeType": "image/jpeg",
+                "mimeType": image_mime or "image/jpeg",
                 "data": image_base64
             }
         })
@@ -210,7 +230,7 @@ def call_gemini_api(
                         candidates = data.get("candidates", [])
                         if candidates:
                             raw_text = candidates[0]["content"]["parts"][0]["text"]
-                            return _parse_and_validate_llm_json(raw_text, text, f"gemini-{m}")
+                            return _parse_and_validate_llm_json(raw_text, text, f"gemini-{m}", has_image=bool(image_base64))
                     elif resp.status_code == 429:
                         last_error = f"Gemini status 429 (Rate limit) on {m}"
                         time.sleep(3.0)
@@ -230,7 +250,15 @@ def call_gemini_api(
     raise AIAnalysisError(f"All Gemini model candidates failed. Last error: {last_error}")
 
 
-def call_openai_api(text: str, api_key: str, base_url: str = OPENAI_BASE_URL, model: str = "gpt-4o-mini", context_block: str = "") -> AnalysisResult:
+def call_openai_api(
+    text: str,
+    api_key: str,
+    base_url: str = OPENAI_BASE_URL,
+    model: str = "gpt-4o-mini",
+    context_block: str = "",
+    image_base64: Optional[str] = None,
+    image_mime: str = "image/jpeg"
+) -> AnalysisResult:
     """
     Calls OpenAI or compatible endpoint (Groq, DeepSeek, OpenRouter, etc.).
     Raises AIAnalysisError if the call fails.
@@ -242,12 +270,19 @@ def call_openai_api(text: str, api_key: str, base_url: str = OPENAI_BASE_URL, mo
         "Authorization": f"Bearer {api_key}",
         "Content-Type": "application/json"
     }
-    user_msg = _build_user_message(text, context_block)
+    user_msg = _build_user_message(text, context_block, has_image=bool(image_base64))
+    user_content: Any = user_msg
+    if image_base64:
+        # OpenAI-compatible vision format (gpt-4o, gpt-4o-mini, OpenRouter vision models)
+        user_content = [
+            {"type": "text", "text": user_msg},
+            {"type": "image_url", "image_url": {"url": f"data:{image_mime};base64,{image_base64}"}},
+        ]
     payload = {
         "model": model,
         "messages": [
             {"role": "system", "content": SYSTEM_PROMPT},
-            {"role": "user", "content": user_msg}
+            {"role": "user", "content": user_content}
         ],
         "response_format": {"type": "json_object"},
         "temperature": 0.1
@@ -262,12 +297,17 @@ def call_openai_api(text: str, api_key: str, base_url: str = OPENAI_BASE_URL, mo
             
             data = resp.json()
             raw_text = data["choices"][0]["message"]["content"]
-            return _parse_and_validate_llm_json(raw_text, text, f"openai-{model}")
+            return _parse_and_validate_llm_json(raw_text, text, f"openai-{model}", has_image=bool(image_base64))
     except httpx.RequestError as e:
         raise AIAnalysisError(f"Network error calling OpenAI API: {e}")
 
 
-def _parse_and_validate_llm_json(raw_json: str, original_text: str, model_id: str) -> AnalysisResult:
+def _parse_and_validate_llm_json(
+    raw_json: str,
+    original_text: str,
+    model_id: str,
+    has_image: bool = False,
+) -> AnalysisResult:
     """
     Parses LLM JSON, enforces score/level consistency, and validates
     that every evidence string is an exact substring of the original text.
@@ -286,6 +326,10 @@ def _parse_and_validate_llm_json(raw_json: str, original_text: str, model_id: st
         data = json.loads(clean_json)
     except Exception as e:
         raise AIAnalysisError(f"AI returned invalid JSON: {e}, payload: {raw_json}")
+
+    image_text = data.get("image_text") or None
+    if image_text is not None and not isinstance(image_text, str):
+        image_text = str(image_text)
 
     score = int(data.get("risk_score", 0))
     score = max(0, min(100, score))
@@ -307,9 +351,16 @@ def _parse_and_validate_llm_json(raw_json: str, original_text: str, model_id: st
             logger.warning(f"AI returned unknown reason code '{code}', skipping")
             continue
         raw_evidence = r.get("evidence", "")
-        exact_evidence = find_exact_substring(original_text, raw_evidence)
+        exact_evidence = find_exact_substring(original_text, raw_evidence) if original_text else None
         if exact_evidence:
             validated_reasons.append(ReasonItem(code=code, evidence=exact_evidence))
+            continue
+        image_evidence = find_exact_substring(image_text, raw_evidence) if image_text else None
+        if image_evidence:
+            validated_reasons.append(ReasonItem(code=code, evidence=image_evidence, source="image"))
+        elif has_image and isinstance(raw_evidence, str) and raw_evidence.strip():
+            # Vision model read text directly from image pixels even if image_text was omitted/abbreviated
+            validated_reasons.append(ReasonItem(code=code, evidence=raw_evidence.strip(), source="image"))
         else:
             logger.warning(f"AI hallucinated evidence '{raw_evidence}' — not found in text, dropping")
 
@@ -332,5 +383,6 @@ def _parse_and_validate_llm_json(raw_json: str, original_text: str, model_id: st
         reasons=validated_reasons,
         explanation=data.get("explanation", "Анализ завершен AI-моделью."),
         confidence=confidence,
-        model_version=model_id
+        model_version=model_id,
+        image_text=image_text
     )

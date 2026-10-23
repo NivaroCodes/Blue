@@ -2,7 +2,7 @@ import json
 from datetime import datetime, timezone, timedelta
 from typing import List, Tuple
 
-from .models import init_db, MessageRecord, AnalysisRecord, ReviewRecord
+from .models import init_db, MessageRecord, AnalysisRecord, ReviewRecord, EntityRecord, make_message_pk
 
 
 # Comprehensive, diverse real-world scenarios:
@@ -337,20 +337,22 @@ def seed_database(database_url: str = "sqlite:///safenet.db", clear_existing: bo
     session = SessionLocal()
 
     if clear_existing:
+        session.query(EntityRecord).delete()
         session.query(ReviewRecord).delete()
         session.query(AnalysisRecord).delete()
         session.query(MessageRecord).delete()
         session.commit()
-        print("Existing messages, analyses, and reviews cleared.")
+        print("Existing messages, analyses, reviews and entities cleared.")
 
     base_time = datetime.now(timezone.utc)
     inserted = 0
 
     for msg_id, platform, chat_id, chat_name, chat_url, sender_hash, text, minutes_ago in SCENARIOS:
-        existing = session.query(MessageRecord).filter(MessageRecord.id == msg_id).first()
+        pk = make_message_pk(platform, chat_id, msg_id)
+        existing = session.get(MessageRecord, pk)
         if not existing:
             rec = MessageRecord(
-                id=msg_id,
+                id=pk,
                 platform=platform,
                 chat_id=chat_id,
                 chat_name=chat_name,

@@ -219,7 +219,7 @@ class TestGraphAnalysis(unittest.TestCase):
         from ai_data.graph_analysis import analyze_network_graph
 
         # 1. Direct entity extraction
-        ents = extract_entities("Kaspi: +7 707 555-44-33, карта 4400 1234 5678 9999, контакт @scam_boss")
+        ents = extract_entities("Kaspi: +7 707 555-44-33, карта 4400 1234 5678 9997, контакт @scam_boss")
         types = [e["type"] for e in ents]
         self.assertIn("PHONE", types)
         self.assertIn("CARD", types)

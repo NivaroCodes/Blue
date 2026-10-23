@@ -50,6 +50,7 @@ REASON_LABELS = {
 class ReasonItem(BaseModel):
     code: str = Field(..., description="Machine-readable code corresponding to ReasonCodeEnum or custom code")
     evidence: str = Field(..., description="EXACT substring from the original text (critical for frontend highlighting)")
+    source: str = Field(default="text", description="'text' = quote from message text (highlightable); 'image' = quote from OCR of the attached image")
 
 
 class MessageInput(BaseModel):
@@ -67,7 +68,10 @@ class MessageInput(BaseModel):
     @field_validator("timestamp", mode="before")
     def parse_timestamp(cls, v):
         if isinstance(v, str):
-            return datetime.fromisoformat(v.replace("Z", "+00:00"))
+            dt = datetime.fromisoformat(v.strip().replace("Z", "+00:00"))
+            return dt.replace(tzinfo=timezone.utc) if dt.tzinfo is None else dt.astimezone(timezone.utc)
+        if isinstance(v, datetime):
+            return v.replace(tzinfo=timezone.utc) if v.tzinfo is None else v.astimezone(timezone.utc)
         return v
 
 
@@ -78,6 +82,7 @@ class AnalysisResult(BaseModel):
     explanation: str = Field(..., description="Human-readable explanation in Russian or Kazakh")
     confidence: float = Field(..., ge=0.0, le=1.0, description="Model confidence score")
     model_version: str = Field(default="safenet-analyzer-v1.0")
+    image_text: Optional[str] = Field(default=None, description="Verbatim text transcribed from the attached image (OCR by the model)")
 
 
 class Alert(BaseModel):

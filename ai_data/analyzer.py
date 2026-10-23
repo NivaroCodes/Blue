@@ -13,7 +13,8 @@ def analyze_message(
     api_key: Optional[str] = None,
     provider: Optional[str] = None,
     context_block: str = "",
-    image_base64: Optional[str] = None
+    image_base64: Optional[str] = None,
+    image_mime: str = "image/jpeg"
 ) -> AnalysisResult:
     """
     Main entrypoint for analyzing a message via AI (LLM API).
@@ -40,9 +41,11 @@ def analyze_message(
         )
 
     if active_provider == "gemini":
-        return call_gemini_api(text, api_key=active_key, model=MODEL_NAME, context_block=context_block, image_base64=img)
+        return call_gemini_api(text, api_key=active_key, model=MODEL_NAME, context_block=context_block,
+                               image_base64=img, image_mime=image_mime)
     elif active_provider in ("openai", "groq", "openrouter", "deepseek"):
-        return call_openai_api(text, api_key=active_key, model=MODEL_NAME, context_block=context_block)
+        return call_openai_api(text, api_key=active_key, model=MODEL_NAME, context_block=context_block,
+                               image_base64=img, image_mime=image_mime)
     else:
         raise AIAnalysisError(f"Неизвестный AI-провайдер: '{active_provider}'")
 
@@ -51,9 +54,11 @@ def create_alert_from_analysis(message: MessageInput, analysis: AnalysisResult) 
     """
     Constructs a full Alert model ready for the frontend /api/alerts endpoints.
     """
-    iso_timestamp = message.timestamp.isoformat() if message.timestamp else ""
+    from .db.models import format_timestamp, make_message_pk, utc_now
+    pk = make_message_pk(message.platform.value, message.chat_id, message.message_id)
+    iso_timestamp = format_timestamp(message.timestamp) or format_timestamp(utc_now())
     return Alert(
-        id=f"alert_{message.message_id}",
+        id=f"alert_{pk}",
         platform=message.platform,
         chat_id=message.chat_id,
         chat_name=message.chat_name,
