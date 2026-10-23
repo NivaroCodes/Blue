@@ -40,6 +40,31 @@ TRANSLIT_TO_CYRILLIC: Dict[str, str] = {
 KAZAKH_SPECIFIC_CHARS = set("әғқңөұүһіӘҒҚҢӨҰҮҺІ")
 
 
+def detect_obfuscation(text: str) -> bool:
+    """
+    Detects evasion techniques:
+    1. Leetspeak: digits or symbols embedded inside alphabetical words (e.g. 'вл0жи', 'з@р@б0ток').
+    2. Mixed scripts: Latin homoglyphs mixed within Cyrillic words (e.g. 'Kаspі', 'дoхoд').
+    3. Character-level separators (e.g. 'в.л.о.ж.и', 'п_е_р_е_в_о_д').
+    """
+    if not text:
+        return False
+    # Leetspeak inside words
+    if re.search(r"[a-zA-Zа-яА-ЯёЁ][0134@$]|[0134@$][a-zA-Zа-яА-ЯёЁ]", text):
+        return True
+    # Word-level mixed script
+    words = re.findall(r"\b\w+\b", text)
+    for w in words:
+        has_cyrillic = bool(re.search(r"[\u0400-\u04FF]", w))
+        has_latin = bool(re.search(r"[a-zA-Z]", w))
+        if has_cyrillic and has_latin:
+            return True
+    # Dotted or spaced separation
+    if re.search(r"(?:[a-zA-Zа-яА-ЯёЁ][\._\-]){3,}[a-zA-Zа-яА-ЯёЁ]", text):
+        return True
+    return False
+
+
 def detect_language(text: str) -> str:
     """
     Detects whether the text is primarily Kazakh (kz), Russian (ru), or Translit (translit).

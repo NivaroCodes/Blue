@@ -1,10 +1,12 @@
 import json
 import logging
+import re
 import time
-import httpx
 from typing import Optional, Dict, Any, List
 
-from .config import GEMINI_API_KEY, OPENAI_API_KEY, OPENAI_BASE_URL, MODEL_NAME
+import httpx
+
+from .config import GEMINI_API_KEY, GEMINI_MODEL
 from .models import AnalysisResult, ReasonItem, RiskLevelEnum
 from .normalizer import find_exact_substring
 
@@ -14,6 +16,11 @@ logger = logging.getLogger(__name__)
 class AIAnalysisError(Exception):
     """Raised when the AI model call or response validation fails."""
     pass
+
+
+def _sanitize_error_msg(error_msg: str) -> str:
+    """Strips API keys and tokens from error messages."""
+    return re.sub(r"(key|api_key|token|password|secret)=[^\s&\"']+", r"\1=[REDACTED]", error_msg)[:2000]
 
 
 SYSTEM_PROMPT = """Ты — ведущий AI-аналитик финансовой безопасности в системе SafeNet KZ (Казахстан).
@@ -146,7 +153,6 @@ HIGH:   60 – 100 (явные признаки финансовой пирам�
 }
 """
 
-
 IMAGE_INSTRUCTION = (
     "К сообщению ПРИЛОЖЕНО ИЗОБРАЖЕНИЕ (скриншот чека, перевода, рекламы и т.п.).\n"
     "1. Перепиши ВЕСЬ видимый текст с изображения дословно в JSON-поле \"image_text\" (строка).\n"
@@ -175,25 +181,22 @@ def _build_user_message(text: str, context_block: str = "", has_image: bool = Fa
 def call_gemini_api(
     text: str,
     api_key: str,
-    model: str = "gemini-3-flash-preview",
+    model: Optional[str] = None,
     context_block: str = "",
     image_base64: Optional[str] = None,
-    image_mime: str = "image/jpeg"
+    image_mime: str = "image/jpeg",
 ) -> AnalysisResult:
     """
-    Calls Google Gemini Generative Language REST API.
-    Supports multimodal input (text + screenshots of fake payments/checks).
-    Automatically retries on temporary 503 spikes across model variants.
+    Calls Google Gemini Generative Language REST API using the single configured model.
+    Passes API key securely via the 'x-goog-api-key' header (never in query parameters).
+    Retries temporary 429/503 errors on the SAME model with exponential backoff.
+    No multi-model fallback or cross-provider switching.
     Raises AIAnalysisError if the call fails or API key is invalid.
     """
-    if not api_key:
-        raise AIAnalysisError("GEMINI_API_KEY is not configured.")
+    if not api_key or not api_key.strip():
+        raise AIAnalysisError("GEMINI_API_KEY is not configured. Provide GEMINI_API_KEY in .env.")
 
-    fallback_models = [model, "gemini-3-flash-preview", "gemini-3.5-flash", "gemini-3.8-flash"]
-    # De-duplicate preserving order
-    seen = set()
-    candidate_models = [m for m in fallback_models if not (m in seen or seen.add(m))]
-
+    target_model = (model or GEMINI_MODEL).strip()
     user_msg = _build_user_message(text, context_block, has_image=bool(image_base64))
 
     parts: List[Dict[str, Any]] = [
@@ -201,7 +204,6 @@ def call_gemini_api(
         {"text": user_msg}
     ]
 
-    # Multimodal image support (Hackathon Criterion 3: Multimodality)
     if image_base64:
         parts.append({
             "inlineData": {
@@ -218,88 +220,54 @@ def call_gemini_api(
         }
     }
 
+    url = f"https://generativelanguage.googleapis.com/v1beta/models/{target_model}:generateContent"
+    headers = {
+        "x-goog-api-key": api_key.strip(),
+        "Content-Type": "application/json",
+    }
+
+    max_attempts = 3
+    backoff_delays = [1.5, 3.0, 6.0]
     last_error = ""
+
     with httpx.Client(timeout=35.0) as client:
-        for m in candidate_models:
-            url = f"https://generativelanguage.googleapis.com/v1beta/models/{m}:generateContent?key={api_key}"
-            for attempt in range(2):
-                try:
-                    resp = client.post(url, json=payload)
-                    if resp.status_code == 200:
-                        data = resp.json()
-                        candidates = data.get("candidates", [])
-                        if candidates:
-                            raw_text = candidates[0]["content"]["parts"][0]["text"]
-                            return _parse_and_validate_llm_json(raw_text, text, f"gemini-{m}", has_image=bool(image_base64))
-                    elif resp.status_code == 429:
-                        last_error = f"Gemini status 429 (Rate limit) on {m}"
-                        time.sleep(3.0)
+        for attempt in range(max_attempts):
+            try:
+                resp = client.post(url, json=payload, headers=headers)
+                if resp.status_code == 200:
+                    data = resp.json()
+                    candidates = data.get("candidates", [])
+                    if candidates:
+                        raw_text = candidates[0]["content"]["parts"][0]["text"]
+                        return _parse_and_validate_llm_json(raw_text, text, f"gemini-{target_model}", has_image=bool(image_base64))
+                    raise AIAnalysisError(f"Gemini API returned 200 but candidate list is empty: {data}")
+                elif resp.status_code == 429:
+                    last_error = f"Gemini status 429 (Rate limit) on {target_model}"
+                    if attempt < max_attempts - 1:
+                        time.sleep(backoff_delays[attempt])
                         continue
-                    elif resp.status_code == 503:
-                        last_error = f"Gemini status 503 on {m}"
-                        time.sleep(2.0)
+                elif resp.status_code == 503:
+                    last_error = f"Gemini status 503 (Service unavailable) on {target_model}"
+                    if attempt < max_attempts - 1:
+                        time.sleep(backoff_delays[attempt])
                         continue
-                    else:
-                        last_error = f"Gemini status {resp.status_code}: {resp.text}"
-                        break
-                except httpx.RequestError as e:
-                    last_error = f"Network error calling Gemini ({m}): {e}"
-                    time.sleep(1.5)
+                elif resp.status_code in (400, 404):
+                    err_body = _sanitize_error_msg(resp.text)
+                    raise AIAnalysisError(
+                        f"Gemini API error for model '{target_model}': HTTP {resp.status_code}. "
+                        f"Verify that model '{target_model}' is accessible in Google AI Studio for your API key. Details: {err_body}"
+                    )
+                else:
+                    err_body = _sanitize_error_msg(resp.text)
+                    last_error = f"Gemini HTTP {resp.status_code}: {err_body}"
+                    break
+            except httpx.RequestError as e:
+                last_error = f"Network error calling Gemini ({target_model}): {e}"
+                if attempt < max_attempts - 1:
+                    time.sleep(backoff_delays[attempt])
                     continue
 
-    raise AIAnalysisError(f"All Gemini model candidates failed. Last error: {last_error}")
-
-
-def call_openai_api(
-    text: str,
-    api_key: str,
-    base_url: str = OPENAI_BASE_URL,
-    model: str = "gpt-4o-mini",
-    context_block: str = "",
-    image_base64: Optional[str] = None,
-    image_mime: str = "image/jpeg"
-) -> AnalysisResult:
-    """
-    Calls OpenAI or compatible endpoint (Groq, DeepSeek, OpenRouter, etc.).
-    Raises AIAnalysisError if the call fails.
-    """
-    if not api_key:
-        raise AIAnalysisError("OPENAI_API_KEY is not configured.")
-
-    headers = {
-        "Authorization": f"Bearer {api_key}",
-        "Content-Type": "application/json"
-    }
-    user_msg = _build_user_message(text, context_block, has_image=bool(image_base64))
-    user_content: Any = user_msg
-    if image_base64:
-        # OpenAI-compatible vision format (gpt-4o, gpt-4o-mini, OpenRouter vision models)
-        user_content = [
-            {"type": "text", "text": user_msg},
-            {"type": "image_url", "image_url": {"url": f"data:{image_mime};base64,{image_base64}"}},
-        ]
-    payload = {
-        "model": model,
-        "messages": [
-            {"role": "system", "content": SYSTEM_PROMPT},
-            {"role": "user", "content": user_content}
-        ],
-        "response_format": {"type": "json_object"},
-        "temperature": 0.1
-    }
-
-    try:
-        url = f"{base_url.rstrip('/')}/chat/completions"
-        with httpx.Client(timeout=30.0) as client:
-            resp = client.post(url, json=payload, headers=headers)
-            if resp.status_code != 200:
-                raise AIAnalysisError(f"OpenAI API error (status {resp.status_code}): {resp.text}")
-            
-            data = resp.json()
-            raw_text = data["choices"][0]["message"]["content"]
-            return _parse_and_validate_llm_json(raw_text, text, f"openai-{model}", has_image=bool(image_base64))
-    except httpx.RequestError as e:
-        raise AIAnalysisError(f"Network error calling OpenAI API: {e}")
+    raise AIAnalysisError(f"Gemini model '{target_model}' call failed after {max_attempts} attempts. Last error: {last_error}")
 
 
 def _parse_and_validate_llm_json(
@@ -359,17 +327,16 @@ def _parse_and_validate_llm_json(
         if image_evidence:
             validated_reasons.append(ReasonItem(code=code, evidence=image_evidence, source="image"))
         elif has_image and isinstance(raw_evidence, str) and raw_evidence.strip():
-            # Vision model read text directly from image pixels even if image_text was omitted/abbreviated
             validated_reasons.append(ReasonItem(code=code, evidence=raw_evidence.strip(), source="image"))
         else:
             logger.warning(f"AI hallucinated evidence '{raw_evidence}' — not found in text, dropping")
 
-    # If AI gave reasons but score is LOW, bump to at least MEDIUM
+    # If AI gave valid reasons but score is LOW, bump to at least MEDIUM
     if validated_reasons and score < 30:
         score = 35
         level = RiskLevelEnum.MEDIUM
 
-    # If AI gave no valid reasons but score is HIGH, drop to MEDIUM
+    # If AI gave no valid reasons but score is HIGH, drop to LOW
     if not validated_reasons and score >= 60:
         score = 25
         level = RiskLevelEnum.LOW
