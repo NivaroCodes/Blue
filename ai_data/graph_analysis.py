@@ -128,7 +128,8 @@ def analyze_network_graph(session: Session) -> Dict[str, Any]:
     msg_id_to_sender = {m.id: m.sender_hash for m in messages}
     entity_records = (
         session.query(EntityRecord)
-        .filter(EntityRecord.message_id.in_(list(msg_id_to_sender.keys())))
+        .join(MessageRecord, EntityRecord.message_id == MessageRecord.id)
+        .filter(MessageRecord.status == "PROCESSED")
         .all()
     )
     entity_to_senders: Dict[Tuple[str, str], Set[str]] = defaultdict(set)

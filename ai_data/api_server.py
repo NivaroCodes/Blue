@@ -22,7 +22,7 @@ from .media import save_image, resolve_local_media_path, sniff_mime, MediaError
 
 DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///safenet.db")
 # 1 = analyse right inside POST /api/messages (demo mode); 0 = leave it to the background worker.
-INLINE_ANALYSIS = os.getenv("INLINE_ANALYSIS", "1") == "1"
+INLINE_ANALYSIS = os.getenv("INLINE_ANALYSIS", "0") == "1"
 SessionLocal = init_db(DATABASE_URL)
 
 app = FastAPI(
@@ -148,6 +148,9 @@ def _ingest(db: Session, req: MessageCreateRequest) -> MessageRecord:
         # Two identical messages arrived concurrently — the other request inserted it first.
         db.rollback()
         return db.get(MessageRecord, pk) or _find_by_source(db, req.platform, req.chat_id, req.message_id)
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=f"Database error during ingestion: {e}")
     return rec
 
 
@@ -223,8 +226,8 @@ def update_review(alert_id: str, req: ReviewRequest, db: Session = Depends(get_d
     FALSE_POSITIVE = verdict rejected (excluded from sender/chat reputation).
     """
     rec = _find_message(db, alert_id)
-    if not rec.analysis:
-        raise HTTPException(status_code=400, detail="Cannot review an alert without completed AI analysis.")
+    if rec.status != "PROCESSED" or not rec.analysis:
+        raise HTTPException(status_code=400, detail="Cannot review an alert that is not in PROCESSED status.")
 
     review = rec.analysis.review
     if not review:
@@ -242,8 +245,12 @@ def update_review(alert_id: str, req: ReviewRequest, db: Session = Depends(get_d
         if req.reviewed_by:
             review.reviewed_by = req.reviewed_by
 
-    db.commit()
-    db.refresh(rec)
+    try:
+        db.commit()
+        db.refresh(rec)
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=f"Database error saving review: {e}")
     return serialize_to_alert_dict(rec)
 
 

@@ -16,6 +16,7 @@ Concurrency model (safe for several workers + the API's inline processing at the
 import json
 import logging
 import os
+import re
 import socket
 import time
 import uuid
@@ -38,6 +39,12 @@ logger = logging.getLogger("ai_worker")
 
 CLAIM_TIMEOUT = timedelta(minutes=int(os.getenv("CLAIM_TIMEOUT_MINUTES", "10")))
 MAX_ATTEMPTS = int(os.getenv("MAX_ATTEMPTS", "3"))
+
+
+def _sanitize_error(error_msg: str) -> str:
+    """Strips API keys, tokens, and query secrets from error messages before storing or logging."""
+    redacted = re.sub(r"(key|api_key|token|password|secret)=[^\s&\"']+", r"\1=[REDACTED]", error_msg)
+    return redacted[:2000]
 
 
 def make_worker_id() -> str:
@@ -138,29 +145,53 @@ def _analyse_and_store(session: Session, msg: MessageRecord, worker_id: str, api
         ensure_ascii=False,
     )
     now = utc_now()
-    analysis_record = AnalysisRecord(
-        id=f"analysis_{msg.id}",
-        message_id=msg.id,
-        risk_score=analysis.risk_score,
-        risk_level=analysis.risk_level.value,
-        reasons_json=reasons_payload,
-        explanation=analysis.explanation,
-        confidence=analysis.confidence,
-        model_version=analysis.model_version,
-        image_analyzed=1 if image else 0,
-        image_text=analysis.image_text if image else None,
-        analyzed_at=now,
+    existing_analysis = (
+        session.query(AnalysisRecord)
+        .filter(AnalysisRecord.message_id == msg.id)
+        .first()
     )
-    review_record = ReviewRecord(
-        id=f"rev_{msg.id}",
-        analysis_id=analysis_record.id,
-        review_status="NEW",
-        reviewer_note="",
-        created_at=now,
-        updated_at=now,
+    if existing_analysis:
+        existing_analysis.risk_score = analysis.risk_score
+        existing_analysis.risk_level = analysis.risk_level.value
+        existing_analysis.reasons_json = reasons_payload
+        existing_analysis.explanation = analysis.explanation
+        existing_analysis.confidence = analysis.confidence
+        existing_analysis.model_version = analysis.model_version
+        existing_analysis.image_analyzed = 1 if image else 0
+        existing_analysis.image_text = analysis.image_text if image else None
+        existing_analysis.analyzed_at = now
+        analysis_record = existing_analysis
+    else:
+        analysis_record = AnalysisRecord(
+            id=f"analysis_{msg.id}",
+            message_id=msg.id,
+            risk_score=analysis.risk_score,
+            risk_level=analysis.risk_level.value,
+            reasons_json=reasons_payload,
+            explanation=analysis.explanation,
+            confidence=analysis.confidence,
+            model_version=analysis.model_version,
+            image_analyzed=1 if image else 0,
+            image_text=analysis.image_text if image else None,
+            analyzed_at=now,
+        )
+        session.add(analysis_record)
+
+    existing_review = (
+        session.query(ReviewRecord)
+        .filter(ReviewRecord.analysis_id == analysis_record.id)
+        .first()
     )
-    session.add(analysis_record)
-    session.add(review_record)
+    if not existing_review:
+        review_record = ReviewRecord(
+            id=f"rev_{msg.id}",
+            analysis_id=analysis_record.id,
+            review_status="NEW",
+            reviewer_note="",
+            created_at=now,
+            updated_at=now,
+        )
+        session.add(review_record)
 
     # 4. Entities (phones, cards, Telegram handles) from the text, image OCR, and image-sourced evidence
     session.query(EntityRecord).filter(EntityRecord.message_id == msg.id).delete(synchronize_session=False)
@@ -209,16 +240,50 @@ def process_pending_messages(
     """
     worker_id = worker_id or make_worker_id()
 
-    query = session.query(MessageRecord.id).filter(MessageRecord.status == "PENDING")
-    if only_ids is not None:
-        ids = list(only_ids)
-        if not ids:
-            return 0
-        query = query.filter(MessageRecord.id.in_(ids))
-    # Over-fetch candidates: some may be claimed by a concurrent worker in the meantime.
-    candidate_ids: List[str] = [
-        row[0] for row in query.order_by(MessageRecord.timestamp.asc()).limit(max(limit * 3, limit)).all()
-    ]
+    is_postgres = session.bind is not None and session.bind.dialect.name == "postgresql"
+    candidate_ids: List[str] = []
+    already_claimed_ids = set()
+
+    if is_postgres:
+        try:
+            # Atomic batch claim on PostgreSQL using SELECT ... FOR UPDATE SKIP LOCKED
+            pq = (
+                session.query(MessageRecord)
+                .filter(MessageRecord.status == "PENDING")
+                .order_by(MessageRecord.timestamp.asc())
+                .with_for_update(skip_locked=True)
+                .limit(limit)
+            )
+            if only_ids is not None:
+                pq = pq.filter(MessageRecord.id.in_(list(only_ids)))
+            claimed_recs = pq.all()
+            now = utc_now()
+            for rec in claimed_recs:
+                rec.status = "PROCESSING"
+                rec.claimed_by = worker_id
+                rec.claimed_at = now
+                rec.attempts = (rec.attempts or 0) + 1
+                rec.last_error = None
+                candidate_ids.append(rec.id)
+                already_claimed_ids.add(rec.id)
+            session.commit()
+        except Exception as e:
+            session.rollback()
+            logger.error(f"Error during PostgreSQL FOR UPDATE SKIP LOCKED claim: {_sanitize_error(str(e))}")
+            candidate_ids = []
+
+    if not candidate_ids and not is_postgres:
+        query = session.query(MessageRecord.id).filter(MessageRecord.status == "PENDING")
+        if only_ids is not None:
+            ids = list(only_ids)
+            if not ids:
+                return 0
+            query = query.filter(MessageRecord.id.in_(ids))
+        # Over-fetch candidates: some may be claimed by a concurrent worker in the meantime.
+        candidate_ids = [
+            row[0] for row in query.order_by(MessageRecord.timestamp.asc()).limit(max(limit * 3, limit)).all()
+        ]
+
     if not candidate_ids:
         return 0
 
@@ -227,8 +292,9 @@ def process_pending_messages(
     for msg_id in candidate_ids:
         if claimed >= limit:
             break
-        if not claim_message(session, msg_id, worker_id):
-            continue  # someone else got it
+        if msg_id not in already_claimed_ids:
+            if not claim_message(session, msg_id, worker_id):
+                continue  # someone else got it
         claimed += 1
         if claimed > 1 and throttle_seconds and api_key != "":
             time.sleep(throttle_seconds)  # rate-limit between LLM calls, not after the last one
@@ -244,21 +310,23 @@ def process_pending_messages(
         except Exception as e:
             session.rollback()
             kind = "AI failed" if isinstance(e, AIAnalysisError) else "Unexpected error"
-            logger.error(f"{kind} for message {msg_id}: {e}")
-            _set_status_if_owner(session, msg_id, worker_id, "ERROR", error=str(e)[:2000])
+            sanitized_err = _sanitize_error(str(e))
+            logger.error(f"{kind} for message {msg_id}: {sanitized_err}")
+            _set_status_if_owner(session, msg_id, worker_id, "ERROR", error=sanitized_err)
             session.commit()
 
     return processed_count
 
 
-def run_worker_loop(database_url: str = "sqlite:///safenet.db", poll_interval: float = 3.0, api_key: Optional[str] = None):
+def run_worker_loop(database_url: Optional[str] = None, poll_interval: float = 3.0, api_key: Optional[str] = None):
     """
     Continuous background worker loop that watches the database for PENDING messages.
     Several instances may run in parallel.
     """
-    SessionLocal = init_db(database_url)
+    db_url = database_url or os.getenv("DATABASE_URL", "sqlite:///safenet.db")
+    SessionLocal = init_db(db_url)
     worker_id = make_worker_id()
-    logger.info(f"Starting AI Background Worker {worker_id} connected to {database_url}...")
+    logger.info(f"Starting AI Background Worker {worker_id} connected to {db_url}...")
 
     while True:
         session = SessionLocal()

@@ -47,11 +47,15 @@ def parse_timestamp(value: Optional[str]) -> datetime:
     Parses an ISO-8601 timestamp from the parser.
     - '...Z' / '+00:00' / '+05:00' offsets are honoured and converted to UTC.
     - A timestamp without an offset is interpreted as UTC (Telegram/WhatsApp APIs deliver UTC).
-    Raises ValueError on malformed input.
+    - If value is None, defaults to current UTC time.
+    - Empty or malformed strings raise ValueError.
     """
-    if not value:
+    if value is None:
         return datetime.now(timezone.utc)
-    dt = datetime.fromisoformat(value.strip().replace("Z", "+00:00"))
+    val = value.strip()
+    if not val:
+        raise ValueError("Timestamp string cannot be empty.")
+    dt = datetime.fromisoformat(val.replace("Z", "+00:00"))
     return to_utc(dt)
 
 
@@ -181,7 +185,7 @@ class EntityRecord(Base):
 # ---------------------------------------------------------------------------
 _ADDED_COLUMNS = {
     "messages": {
-        "claimed_at": "DATETIME",
+        "claimed_at": "TIMESTAMP",
         "claimed_by": "VARCHAR(64)",
         "attempts": "INTEGER NOT NULL DEFAULT 0",
         "last_error": "TEXT",
@@ -225,6 +229,8 @@ def init_db(database_url: str = "sqlite:///safenet.db"):
     engine_kwargs: Dict[str, Any] = {"connect_args": connect_args}
     if is_memory:
         engine_kwargs["poolclass"] = StaticPool
+    elif not is_sqlite:
+        engine_kwargs["pool_pre_ping"] = True
     engine = create_engine(database_url, **engine_kwargs)
 
     if is_sqlite:

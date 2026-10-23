@@ -36,8 +36,8 @@
 }
 ```
 * Ключ дедупликации: `(platform, chat_id, message_id)`.
-* При `INLINE_ANALYSIS=1` сразу запускается атомарный AI-анализ; при `INLINE_ANALYSIS=0` запись остаётся в `PENDING` для фонового воркера.
-* Ответ: `{ "id": "alert_m_...", "message_id": "101", "status": "PROCESSED" }`.
+* При `INLINE_ANALYSIS=0` (по умолчанию) запись сохраняется со статусом `PENDING` для обработки воркером; при `INLINE_ANALYSIS=1` выполняется синхронный анализ.
+* Ответ: `{ "id": "alert_m_...", "message_id": "101", "status": "PENDING" }` (или `"PROCESSED"` при включённом синхронном режиме).
 
 ### 2. Список и детали алертов — `GET /api/alerts`, `GET /api/alerts/{id}`
 Полностью соответствует `docs/API.md` и Zod-схеме фронтенда (`AlertSchema`):
@@ -94,7 +94,7 @@
 GEMINI_API_KEY=your_gemini_api_key_here
 AI_MODEL_NAME=gemini-3-flash-preview
 DATABASE_URL=sqlite:///safenet.db
-INLINE_ANALYSIS=1
+INLINE_ANALYSIS=0
 ENTITY_HASH_SECRET=change-me-in-production
 ```
 
