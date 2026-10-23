@@ -103,5 +103,5 @@ ENTITY_HASH_SECRET=change-me-in-production
 python run.py api      # Запуск FastAPI сервера (http://127.0.0.1:8000)
 python run.py worker   # Запуск фонового AI-воркера (безопасно в несколько процессов)
 python run.py seed     # Засев БД тестовыми сценариями
-python run.py test     # Прогон всех 26 модульных и конкурентных тестов
+python run.py test     # Прогон всех 38 модульных, конкурентных и интеграционных тестов
 ```
