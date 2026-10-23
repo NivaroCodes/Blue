@@ -20,6 +20,7 @@ import {
   RiskBadge,
 } from '../components/ui'
 import { EvidencePreview } from '../components/EvidencePreview'
+import { RiskSummary } from '../components/RiskSummary'
 import { dateTime, levelLabels, levels, time } from '../lib/model'
 import type { Alert } from '../lib/model'
 import type { Monitor } from '../lib/useMonitor'
@@ -126,9 +127,9 @@ export function Dashboard({
     <>
       <div className="page-heading inbox-heading">
         <div>
-          <h1>Сначала — важное.</h1>
+          <h1>Мониторинг сообщений</h1>
           <p>
-            Находите признаки. Проверяйте контекст. Принимайте решение.
+            Проверяйте предупреждения из Telegram и WhatsApp.
             <span className="new-count" aria-live="polite">
               {m.newCount > 0 ? ` · +${m.newCount} новых` : ''}
             </span>
@@ -145,6 +146,7 @@ export function Dashboard({
           )}
         </div>
       </div>
+      <RiskSummary stats={m.stats} />
       {m.error && <ErrorBox message={m.error} retry={m.refresh} />}
       {settingsError && (
         <p className="form-error" role="alert">

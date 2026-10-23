@@ -1,6 +1,6 @@
 {
   "schemaVersion": 2,
-  "generatedAt": "2026-10-22T20:56:31.232Z",
+  "generatedAt": "2026-10-23T08:25:45.465796Z",
   "title": "Design System: Blue",
   "extensions": {
     "colorMeta": {
@@ -79,6 +79,26 @@
       "hover-row": {
         "role": "neutral",
         "displayName": "Hover Row"
+      },
+      "chart-high": {
+        "role": "secondary",
+        "displayName": "Muted Risk Red"
+      },
+      "chart-medium": {
+        "role": "secondary",
+        "displayName": "Muted Risk Ochre"
+      },
+      "chart-low": {
+        "role": "secondary",
+        "displayName": "Muted Risk Green"
+      },
+      "chart-unscored": {
+        "role": "secondary",
+        "displayName": "Unscored Chart Fill"
+      },
+      "connector": {
+        "role": "neutral",
+        "displayName": "Relationship Blue"
       }
     },
     "typographyMeta": {
@@ -113,6 +133,10 @@
       "mono": {
         "displayName": "Mono",
         "purpose": "Code and technical identifiers."
+      },
+      "metric": {
+        "displayName": "Metric",
+        "purpose": "Tabular dashboard risk-summary values."
       }
     },
     "shadows": [
@@ -120,6 +144,16 @@
         "name": "toast",
         "value": "0 12px 28px #121c3526",
         "purpose": "Soft elevation for transient toast messages."
+      },
+      {
+        "name": "relationship-card",
+        "value": "0 4px 10px #1b356006",
+        "purpose": "Minimal separation for labeled diagram cards."
+      },
+      {
+        "name": "activity-tooltip",
+        "value": "0 8px 24px #1a30541c",
+        "purpose": "Temporary chart interval detail."
       }
     ],
     "motion": [
@@ -142,12 +176,51 @@
         "name": "mark-loop-stop",
         "value": "4400ms",
         "purpose": "Stop the finite decorative 3D animation loop."
+      },
+      {
+        "name": "analysis-ease",
+        "value": "cubic-bezier(0.23, 1, 0.32, 1)",
+        "purpose": "Analytics and relationship motion."
+      },
+      {
+        "name": "relationship-card-entry",
+        "value": "250ms",
+        "purpose": "Opacity 0.5 to 1 and translation -8px to 0; disabled under reduced motion."
+      },
+      {
+        "name": "relationship-connector",
+        "value": "280ms",
+        "purpose": "Finite smooth-step SVG path drawing; immediate under reduced motion."
+      },
+      {
+        "name": "relationship-view",
+        "value": "180ms",
+        "purpose": "Zoom/fit controls; duration 0 under reduced motion."
+      },
+      {
+        "name": "metric-reveal",
+        "value": "280ms cubic-bezier(0.23, 1, 0.32, 1)",
+        "purpose": "Distribution/source tracks reveal once; disabled under reduced motion."
+      },
+      {
+        "name": "chart-series-entry",
+        "value": "280ms ease-out",
+        "purpose": "Time-series area and line reveal; disabled under reduced motion."
+      },
+      {
+        "name": "reason-bar-change",
+        "value": "250ms cubic-bezier(0.23, 1, 0.32, 1)",
+        "purpose": "Reason-frequency scale changes."
       }
     ],
     "breakpoints": [
       {
         "name": "compact-single-column",
         "value": "560px"
+      },
+      {
+        "name": "analysis-mobile",
+        "value": "650px"
       },
       {
         "name": "base-mobile",
@@ -229,11 +302,12 @@
       "css": ".ds-quote{margin:8px 0 0;padding:12px;max-height:210px;overflow-y:auto;overflow-wrap:anywhere;border-radius:8px;background:var(--page,#f5f7fb);color:var(--ink,#121c35);font-family:Manrope,-apple-system,BlinkMacSystemFont,sans-serif;font-size:13px;line-height:1.9;}.ds-evidence{padding:1px 0;border-radius:3px;background:#ffebad;color:#443416;}"
     },
     {
-      "name": "Risk Label",
-      "kind": "chip",
-      "description": "Risk uses explicit wording and a small semantic dot.",
-      "html": "<span class=\"ds-risk\"><i class=\"ds-risk-dot\" aria-hidden=\"true\"></i>Высокий</span>",
-      "css": ".ds-risk{display:inline-flex;align-items:center;gap:5px;flex-wrap:wrap;padding:3px 0;border-radius:5px;background:transparent;color:var(--high,#b42338);font-family:Manrope,-apple-system,BlinkMacSystemFont,sans-serif;font-size:11px;line-height:1.5;}.ds-risk-dot{width:5px;height:5px;border-radius:50%;background:currentColor;}"
+      "name": "Relationship Source Card",
+      "kind": "card",
+      "refersTo": "relationship-card",
+      "description": "Labeled source card with recognizable platform identity; pointer and keyboard activation open its messages.",
+      "html": "<button class=\"ds-flow-card\" type=\"button\"><svg class=\"ds-platform-mark\" aria-hidden=\"true\" xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 512 512\"><path fill=\"#26A5E4\" d=\"M256 8a248 248 0 1 0 0 496 248 248 0 1 0 0-496zM371 176.7c-3.7 39.2-19.9 134.4-28.1 178.3-3.5 18.6-10.3 24.8-16.9 25.4-14.4 1.3-25.3-9.5-39.3-18.7-21.8-14.3-34.2-23.2-55.3-37.2-24.5-16.1-8.6-25 5.3-39.5 3.7-3.8 67.1-61.5 68.3-66.7 .2-.7 .3-3.1-1.2-4.4s-3.6-.8-5.1-.5c-2.2 .5-37.1 23.5-104.6 69.1-9.9 6.8-18.9 10.1-26.9 9.9-8.9-.2-25.9-5-38.6-9.1-15.5-5-27.9-7.7-26.8-16.3 .6-4.5 6.7-9 18.4-13.7 72.3-31.5 120.5-52.3 144.6-62.3 68.9-28.6 83.2-33.6 92.5-33.8 2.1 0 6.6 .5 9.6 2.9 2 1.7 3.2 4.1 3.5 6.7 .5 3.2 .6 6.5 .4 9.8z\"/></svg><span class=\"ds-flow-copy\"><strong>Telegram</strong><span>Открыть сообщения источника</span></span></button>",
+      "css": ".ds-flow-card{display:flex;align-items:center;gap:9px;width:250px;min-height:78px;padding:14px 16px;border:1px solid #dfe6f2;border-radius:10px;background:var(--surface,#ffffff);color:var(--ink,#121c35);box-shadow:0 4px 10px #1b356006;text-align:left;cursor:pointer;font-family:Manrope,-apple-system,BlinkMacSystemFont,sans-serif;}.ds-platform-mark{width:23px;height:23px;flex-shrink:0;}.ds-flow-copy{display:flex;flex-direction:column;gap:7px;}.ds-flow-copy strong{font-size:12px;font-weight:600;}.ds-flow-copy>span{font-size:10px;color:var(--muted,#596780);}.ds-flow-card:focus-visible{outline:2px solid var(--accent,#2455ed);outline-offset:4px;}.ds-flow-card[aria-pressed=\"true\"]{background:#f0f5ff;border-color:var(--accent,#2455ed);}"
     },
     {
       "name": "Blue Mark",
@@ -241,15 +315,24 @@
       "description": "Vector signature and non-WebGL fallback for the sculptural lowercase b.",
       "html": "<svg class=\"ds-blue-mark\" viewBox=\"0 0 40 48\" fill=\"none\" role=\"img\" aria-label=\"Blue\"><path d=\"M8 3 18 9v15c5-6 16-5 18 3 3 11-6 20-17 18L8 38V3Z\" fill=\"currentColor\"/><path d=\"M18 25v12c5 0 10-4 10-8 0-5-6-5-10-4Z\" fill=\"var(--surface,#ffffff)\"/><path d=\"M8 3v35l10 7V9L8 3Z\" fill=\"currentColor\" opacity=\".58\"/></svg>",
       "css": ".ds-blue-mark{display:block;width:32px;height:40px;color:var(--accent,#2455ed);}"
+    },
+    {
+      "name": "Analytics Period Selector",
+      "kind": "custom",
+      "refersTo": "period-selected",
+      "description": "One shared period selection controls every analytics panel.",
+      "html": "<div class=\"ds-period\" role=\"group\" aria-label=\"Период аналитики\"><button aria-pressed=\"true\">24 часа</button><button aria-pressed=\"false\">7 дней</button><button aria-pressed=\"false\">Вся выборка</button></div>",
+      "css": ".ds-period{display:inline-flex;align-items:center;padding:4px;gap:3px;border:1px solid var(--border,#e4e9f2);background:var(--surface,#ffffff);border-radius:9px;}.ds-period button{min-height:35px;padding:7px 13px;border:0;border-radius:6px;background:transparent;color:var(--muted,#596780);font-family:Manrope,-apple-system,BlinkMacSystemFont,sans-serif;font-size:12px;cursor:pointer;transition:background-color 150ms ease-out,color 150ms ease-out;}.ds-period button[aria-pressed=\"true\"]{background:var(--accent-soft,#eaf0ff);color:var(--accent,#2455ed);font-weight:600;}.ds-period button:focus-visible{outline:2px solid var(--accent,#2455ed);outline-offset:4px;}@media(prefers-reduced-motion:reduce){.ds-period button{transition-duration:.01ms;}}"
     }
   ],
   "narrative": {
     "northStar": "The Daylit Analyst Workspace",
-    "overview": "Blue is an operating workspace: a cool ground, white review surfaces, dark ink and a precise royal-blue accent. Message content, source context and review actions share one calm working field. This light direction replaces the previous dark orange identity.\n\nA folded lowercase b is the signature, shared by the vector mark and a lit extruded 3D form. Dimensional branding stays beside the analyst's work or inside a short, skippable entrance; review surfaces remain mostly flat. The generated concept supplies composition reference only; actual application data and implemented components define the shipped system.",
+    "overview": "Blue is an operating workspace: a cool ground, white review surfaces, dark ink and a precise royal-blue accent. Message content, source context and review actions share one calm working field. This light direction replaces the previous dark orange identity.\n\nA folded lowercase b is the signature, shared by the vector mark and a lit extruded 3D form. Dimensional branding stays beside the analyst's work or inside a short, skippable entrance; review surfaces remain mostly flat. Relationships use labeled two-dimensional source and message cards rather than a spatial 3D model. The generated concept supplies composition reference only; actual application data and implemented components define the shipped system.",
     "keyCharacteristics": [
       "Cool daylight surfaces and restrained royal-blue emphasis.",
       "Self-hosted Manrope with Cyrillic, Cyrillic extended and Latin glyph coverage.",
       "Dense message review with adjacent evidence and explicit human judgment.",
+      "Recognizable platform marks, shared-sample analytics and labeled source/message relationships.",
       "Finite animation, keyboard controls and a usable non-WebGL path."
     ],
     "rules": [
@@ -265,8 +348,13 @@
       },
       {
         "name": "The Reserved Depth Rule",
-        "body": "Keep review surfaces flat; reserve dimensional material for the b signature and genuine spatial source membership.",
+        "body": "Keep review surfaces flat; reserve 3D material for the b signature. Source/message relationships use a two-dimensional labeled hierarchy.",
         "section": "elevation"
+      },
+      {
+        "name": "The One Sample Rule",
+        "body": "Every analytics panel uses the same selected period and platform; drill-through links retain that sample.",
+        "section": "components"
       },
       {
         "name": "The Actual Membership Rule",
@@ -277,14 +365,16 @@
     "dos": [
       "**Do** use the cool ground, white sheets and blue actions consistently across routes.",
       "**Do** keep message evidence, source context, risk labels and human review readable together.",
-      "**Do** retain keyboard controls, source/message lists, reduced motion and vector fallbacks alongside 3D.",
+      "**Do** retain keyboard controls, source/message lists and reduced motion; keep vector fallbacks for the 3D brand.",
+      "**Do** preserve recognizable platform marks and a shared period/platform sample across analytics.",
       "**Do** show actual application counts and distinguish synthetic demonstration scores from evaluated model results."
     ],
     "donts": [
       "**Don't** reuse the discarded dark orange identity for new Blue surfaces.",
       "**Don't** turn the workspace into a landing-first 3D spectacle or repeat the entrance during SPA navigation.",
       "**Don't** introduce decorative glass cards, neon glow or stock robot imagery.",
-      "**Don't** invent AI performance metrics, graph relationships or legal verdicts."
+      "**Don't** invent AI performance metrics, graph relationships or legal verdicts.",
+      "**Don't** use an atom-like 3D model for source/message relationships or expose endpoint and port setup in analyst settings."
     ]
   }
 }

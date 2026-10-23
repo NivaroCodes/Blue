@@ -4,6 +4,21 @@ import { AlertSchema, calculateStats, StatsSchema } from './model'
 import type { Review, Settings } from './model'
 
 async function request(settings: Settings, path: string, options: RequestInit = {}) {
+  if (settings.baseUrl) {
+    try {
+      const url = new URL(settings.baseUrl)
+      if (
+        !['http:', 'https:'].includes(url.protocol) ||
+        url.username ||
+        url.password ||
+        url.search ||
+        url.hash
+      )
+        throw new Error()
+    } catch {
+      throw new Error('Подключение к сервису данных не настроено. Обратитесь к команде проекта.')
+    }
+  }
   const response = await fetch(`${settings.baseUrl.replace(/\/$/, '')}/api${path}`, {
     ...options,
     headers: {
@@ -14,11 +29,11 @@ async function request(settings: Settings, path: string, options: RequestInit = 
     signal: options.signal || AbortSignal.timeout(12_000),
   })
   if (!response.ok)
-    throw new Error(`API вернул ${response.status}. Проверьте адрес сервера и доступ к нему.`)
+    throw new Error('Сервис данных временно недоступен. Попробуйте обновить сообщения позже.')
   try {
     return await response.json()
   } catch {
-    throw new Error('API вернул ответ, который не является JSON.')
+    throw new Error('Не удалось прочитать данные сервиса. Попробуйте обновить сообщения.')
   }
 }
 export async function getAlerts(settings: Settings, signal?: AbortSignal) {
@@ -27,7 +42,7 @@ export async function getAlerts(settings: Settings, signal?: AbortSignal) {
     .union([z.array(AlertSchema), z.object({ items: z.array(AlertSchema) })])
     .safeParse(await request(settings, '/alerts', { signal }))
   if (!result.success)
-    throw new Error('Формат /api/alerts не соответствует контракту. Проверьте docs/API.md.')
+    throw new Error('Сервис вернул неполные данные сообщений. Попробуйте обновить выборку.')
   return Array.isArray(result.data) ? result.data : result.data.items
 }
 export async function getAlert(settings: Settings, id: string, signal?: AbortSignal) {
@@ -40,14 +55,14 @@ export async function getAlert(settings: Settings, id: string, signal?: AbortSig
     await request(settings, `/alerts/${encodeURIComponent(id)}`, { signal }),
   )
   if (!result.success)
-    throw new Error('Детали сообщения не соответствуют контракту API. Проверьте docs/API.md.')
+    throw new Error('Сервис вернул неполные данные сообщения. Попробуйте открыть его позже.')
   return result.data
 }
 export async function getStats(settings: Settings, signal?: AbortSignal) {
   if (settings.mode === 'demo') return calculateStats(demoAlerts())
   const result = StatsSchema.safeParse(await request(settings, '/stats', { signal }))
   if (!result.success)
-    throw new Error('Формат /api/stats не соответствует контракту. Проверьте docs/API.md.')
+    throw new Error('Не удалось получить сводку сообщений. Попробуйте обновить выборку.')
   return result.data
 }
 export async function saveReview(
@@ -65,7 +80,7 @@ export async function saveReview(
   )
   if (!result.success)
     throw new Error(
-      'Ответ на сохранение не соответствует контракту API. Проверьте состояние решения на сервере.',
+      'Не удалось подтвердить сохранение решения. Обновите сообщение и проверьте его статус.',
     )
   return result.data
 }

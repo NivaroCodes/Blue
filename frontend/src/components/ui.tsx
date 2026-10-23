@@ -1,13 +1,5 @@
 import { BlueMark } from './BlueMark'
-import {
-  AlertCircle,
-  ArrowUpRight,
-  CheckCheck,
-  CircleDot,
-  MessageCircle,
-  Send,
-  ShieldCheck,
-} from 'lucide-react'
+import { AlertCircle, ArrowUpRight, CheckCheck, CircleDot, ShieldCheck } from 'lucide-react'
 import { levelLabels, reasonLabels, reviewLabels, statusLabels } from '../lib/model'
 import type { Alert, Level } from '../lib/model'
 import type { ReactNode } from 'react'
@@ -27,11 +19,11 @@ export function Platform({
   platform: Alert['platform']
   label?: boolean
 }) {
-  const Icon = platform === 'telegram' ? Send : MessageCircle
+  const name = platform === 'telegram' ? 'Telegram' : 'WhatsApp'
   return (
     <span className={`platform platform-${platform}`}>
-      <Icon size={14} aria-hidden="true" />
-      {label && (platform === 'telegram' ? 'Telegram' : 'WhatsApp')}
+      <img src={`/brands/${platform}.svg`} width={24} height={24} alt={label ? '' : name} />
+      {label && name}
     </span>
   )
 }

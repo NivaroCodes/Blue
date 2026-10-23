@@ -1,105 +1,257 @@
+import { useState } from 'react'
+import { motion, useReducedMotion } from 'motion/react'
+import { ArrowUpRight, Clock3 } from 'lucide-react'
+import { Link } from 'react-router-dom'
 import { ActivityChart } from '../components/charts'
-import { ErrorBox } from '../components/ui'
-import { levelLabels, levels, reasonLabels } from '../lib/model'
+import { Empty, ErrorBox, Platform } from '../components/ui'
+import { calculateStats, levelLabels, levels, reasonLabels } from '../lib/model'
+import { reasonSummaries, selectAnalytics, sourceSummaries } from '../lib/analytics'
+import type { Period, PlatformFilter } from '../lib/analytics'
 import type { Monitor } from '../lib/useMonitor'
 
 export function Analytics({ monitor: m }: { monitor: Monitor }) {
-  const processed = m.alerts.filter((a) => a.status === 'PROCESSED')
-  const reviewed = processed.filter((a) => a.review_status !== 'NEW')
-  const reasons = Object.entries(
-    m.alerts
-      .flatMap((a) => [...new Set(a.reasons.map((r) => r.code))])
-      .reduce<Record<string, number>>((acc, code) => {
-        acc[code] = (acc[code] || 0) + 1
-        return acc
-      }, {}),
-  ).sort((a, b) => b[1] - a[1])
+  const [period, setPeriod] = useState<Period>('24')
+  const [platform, setPlatform] = useState<PlatformFilter>('all')
+  const reduce = useReducedMotion()
+  const now = m.lastUpdate ? Date.parse(m.lastUpdate) : Date.now()
+  const alerts = selectAnalytics(m.alerts, period, platform, now)
+  const stats = calculateStats(alerts)
+  const processed = levels.reduce((sum, level) => sum + stats.by_level[level], 0)
+  const sources = sourceSummaries(alerts)
+  const reasons = reasonSummaries(alerts)
+  const awaiting = stats.pending + stats.processing + stats.errors
+  const query = `period=${period}${platform === 'all' ? '' : `&platform=${platform}`}`
+  const entrance = (delay = 0) => ({
+    initial: reduce ? (false as const) : { opacity: 0.5, transform: 'translateY(8px)' },
+    animate: { opacity: 1, transform: 'translateY(0px)' },
+    transition: { duration: 0.25, delay, ease: [0.23, 1, 0.32, 1] as const },
+  })
   return (
     <>
-      <div className="page-heading">
+      <div className="page-heading analytics-heading">
         <div>
           <h1>Аналитика</h1>
-          <p>По загруженной выборке · время UTC+5</p>
+          <p>Сигналы риска, активность и источники — в одной выборке.</p>
         </div>
+        <div className="period-selector" aria-label="Период аналитики">
+          {(
+            [
+              ['24', '24 часа'],
+              ['168', '7 дней'],
+              ['all', 'Вся выборка'],
+            ] as const
+          ).map(([value, label]) => (
+            <button key={value} aria-pressed={period === value} onClick={() => setPeriod(value)}>
+              {label}
+            </button>
+          ))}
+        </div>
+      </div>
+      <div className="analytics-toolbar">
+        <div className="platform-selector" aria-label="Платформа аналитики">
+          {(['all', 'telegram', 'whatsapp'] as const).map((value) => (
+            <button
+              key={value}
+              aria-pressed={platform === value}
+              onClick={() => setPlatform(value)}
+            >
+              {value === 'all' ? 'Все платформы' : <Platform platform={value} label />}
+            </button>
+          ))}
+        </div>
+        <span>
+          <Clock3 size={13} />
+          Время Казахстана · UTC+5
+        </span>
       </div>
       {m.error && <ErrorBox message={m.error} retry={m.refresh} />}
-      <dl className="analytics-totals">
+      <motion.section className="analytics-overview" aria-label="Сводка аналитики" {...entrance()}>
         <div>
-          <dt>Сообщений</dt>
-          <dd>{m.alerts.length}</dd>
+          <span>Сообщений в выборке</span>
+          <strong>{alerts.length}</strong>
+          <span>{sources.length} источников</span>
         </div>
-        <div>
-          <dt>Обработано</dt>
-          <dd>{processed.length}</dd>
-        </div>
-        <div>
-          <dt>Проверено человеком</dt>
-          <dd>{reviewed.length}</dd>
-        </div>
-      </dl>
-      <section className="activity-section">
-        <div className="section-heading">
-          <h2>Активность за 24 часа</h2>
-          <div className="chart-legend">
+        {levels.map((level) => (
+          <Link className={level.toLowerCase()} key={level} to={`/?${query}&level=${level}`}>
             <span>
-              <i className="legend-line" />
-              Все сообщения
+              <i className={`risk-tick ${level.toLowerCase()}`} />
+              {levelLabels[level]} риск
             </span>
+            <strong>{stats.by_level[level]}</strong>
             <span>
-              <i className="legend-line high" />
-              Высокий риск
+              Посмотреть сообщения <ArrowUpRight size={12} />
             </span>
+          </Link>
+        ))}
+        <div>
+          <span>Без оценки</span>
+          <strong>{awaiting}</strong>
+          <span>
+            {stats.errors ? `${stats.errors} с ошибкой обработки` : 'Очередь и обработка'}
+          </span>
+        </div>
+      </motion.section>
+      <div className="analytics-primary-grid">
+        <motion.section className="analytics-panel volume-panel" {...entrance(0.04)}>
+          <div className="analytics-panel-heading">
+            <div>
+              <h2>Поток сообщений</h2>
+              <p>
+                {period === '24'
+                  ? 'Последние 24 часа'
+                  : period === '168'
+                    ? 'Последние 7 дней'
+                    : 'Все доступные сообщения'}{' '}
+                · {alerts.length} в выборке
+              </p>
+            </div>
+            <div className="volume-legend">
+              <span>
+                <i className="chart-key all" />
+                Все
+              </span>
+              <span>
+                <i className="chart-key high" />
+                Высокий риск
+              </span>
+            </div>
           </div>
-        </div>
-        <ActivityChart alerts={m.alerts} large />
-      </section>
-      <div className="analysis-columns">
-        <section>
-          <h2>Распределение рисков</h2>
-          <div className="analysis-list">
-            {levels.map((l) => (
-              <div key={l}>
+          <ActivityChart alerts={alerts} period={period} now={now} />
+        </motion.section>
+        <motion.section className="analytics-panel distribution-panel" {...entrance(0.08)}>
+          <div className="analytics-panel-heading">
+            <div>
+              <h2>Риск в выборке</h2>
+              <p>{processed} сообщений с готовой оценкой</p>
+            </div>
+          </div>
+          <div className="distribution-track" aria-hidden="true">
+            {levels.map((level) => (
+              <span
+                key={level}
+                className={level.toLowerCase()}
+                style={{ flex: stats.by_level[level] }}
+              />
+            ))}
+          </div>
+          <div className="distribution-rows">
+            {levels.map((level) => (
+              <Link key={level} to={`/?${query}&level=${level}`}>
                 <span>
-                  <i className={`risk-tick ${l.toLowerCase()}`} />
-                  {levelLabels[l]}
+                  <i className={`risk-tick ${level.toLowerCase()}`} />
+                  {levelLabels[level]}
                 </span>
-                <b>{m.stats.by_level[l]}</b>
-              </div>
+                <strong>{stats.by_level[level]}</strong>
+                <span>
+                  {processed ? Math.round((stats.by_level[level] / processed) * 100) : 0}%
+                </span>
+                <ArrowUpRight size={14} />
+              </Link>
             ))}
           </div>
-          <details className="plain-disclosure">
-            <summary>Очередь обработки</summary>
-            <dl>
-              <div>
-                <dt>В очереди</dt>
-                <dd>{m.stats.pending}</dd>
-              </div>
-              <div>
-                <dt>Анализируются</dt>
-                <dd>{m.stats.processing}</dd>
-              </div>
-              <div>
-                <dt>Ошибки</dt>
-                <dd>{m.stats.errors}</dd>
-              </div>
-            </dl>
-          </details>
-        </section>
-        <section>
-          <h2>Частые признаки</h2>
-          <div className="analysis-list">
-            {reasons.slice(0, 5).map(([code, count]) => (
+          <div className="processing-summary">
+            <h3>Состояние обработки</h3>
+            <div>
+              <span>В очереди</span>
+              <b>{stats.pending}</b>
+            </div>
+            <div>
+              <span>Анализируются</span>
+              <b>{stats.processing}</b>
+            </div>
+            <div>
+              <span>Ошибки обработки</span>
+              <b>{stats.errors}</b>
+            </div>
+          </div>
+        </motion.section>
+      </div>
+      <div className="analytics-secondary-grid">
+        <motion.section className="analytics-panel" {...entrance(0.12)}>
+          <div className="analytics-panel-heading">
+            <div>
+              <h2>Источники, требующие внимания</h2>
+              <p>Сначала — источники с большим числом сигналов высокого риска.</p>
+            </div>
+            <Link className="text-button" to="/chats">
+              Все источники <ArrowUpRight size={14} />
+            </Link>
+          </div>
+          <div className="source-analytics-list">
+            {sources.map((source) => (
+              <Link key={source.id} to={`/?${query}&chat=${encodeURIComponent(source.id)}`}>
+                <Platform platform={source.platform} />
+                <div className="source-analysis-main">
+                  <strong>{source.name}</strong>
+                  <div className="source-risk-track" aria-hidden="true">
+                    {levels.map((level) => (
+                      <span
+                        className={level.toLowerCase()}
+                        key={level}
+                        style={{ flex: source.stats.by_level[level] }}
+                      />
+                    ))}
+                    <span
+                      className="unscored"
+                      style={{
+                        flex: source.stats.pending + source.stats.processing + source.stats.errors,
+                      }}
+                    />
+                  </div>
+                  <span>
+                    {source.stats.by_level.HIGH} высокого риска · {source.count} сообщений
+                  </span>
+                </div>
+                <ArrowUpRight size={16} />
+              </Link>
+            ))}
+          </div>
+          {!sources.length && (
+            <Empty title="В выборке нет сообщений" text="Выберите другой период или платформу." />
+          )}
+          <div className="risk-bar-legend">
+            {levels.map((level) => (
+              <span key={level}>
+                <i className={`risk-tick ${level.toLowerCase()}`} />
+                {levelLabels[level]}
+              </span>
+            ))}
+            <span>
+              <i className="risk-tick unscored" />
+              Без оценки
+            </span>
+          </div>
+        </motion.section>
+        <motion.section className="analytics-panel reasons-panel" {...entrance(0.16)}>
+          <div className="analytics-panel-heading">
+            <div>
+              <h2>Почему сообщения отмечены</h2>
+              <p>Число сообщений с каждым признаком.</p>
+            </div>
+          </div>
+          <div className="reason-frequency-list">
+            {reasons.slice(0, 6).map(([code, count]) => (
               <div key={code}>
-                <span>{reasonLabels[code] || code}</span>
-                <b>{count}</b>
+                <div>
+                  <span>{reasonLabels[code] || code}</span>
+                  <strong>{count}</strong>
+                </div>
+                <div className="reason-track">
+                  <span style={{ transform: `scaleX(${processed ? count / processed : 0})` }} />
+                </div>
               </div>
             ))}
           </div>
-        </section>
+          {!reasons.length && (
+            <p className="analysis-empty">В этой выборке признаки не выделены.</p>
+          )}
+          <p className="reason-footnote">В одном сообщении может быть несколько признаков.</p>
+        </motion.section>
       </div>
       <p className="metrics-note page-note">
-        Счётчики описывают выборку и не заменяют такую проверку, как оценка precision и recall на
-        отдельном размеченном наборе. В демо оценки заданы вручную.
+        Счётчики описывают выбранные сообщения и не заменяют такую проверку, как измерение precision
+        и recall на размеченных данных.
+        {m.settings.mode === 'demo' ? ' Демонстрационные оценки заданы вручную.' : ''}
       </p>
     </>
   )

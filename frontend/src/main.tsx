@@ -10,6 +10,7 @@ import './theme.css'
 import './styles.css'
 import './brand.css'
 import './blue.css'
+import './analysis.css'
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>

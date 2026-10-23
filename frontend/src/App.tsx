@@ -16,10 +16,12 @@ import { Empty, Logo } from './components/ui'
 import { Dashboard } from './pages/Dashboard'
 import { AlertDetail } from './pages/AlertDetail'
 import { Chats } from './pages/Chats'
-import { Analytics } from './pages/Analytics'
 import { SettingsPage } from './pages/Settings'
 import { useMonitor } from './lib/useMonitor'
 import { addDemoAlert } from './data/demo'
+const Analytics = lazy(() =>
+  import('./pages/Analytics').then((module) => ({ default: module.Analytics })),
+)
 const Graph = lazy(() => import('./pages/Graph').then((module) => ({ default: module.Graph })))
 const Scene3D = lazy(() =>
   import('./components/Scene3D').then((module) => ({ default: module.Scene3D })),
@@ -94,7 +96,7 @@ export default function App() {
             </div>
             <div className="header-tools">
               <span className={`source-pill ${monitor.settings.mode}`}>
-                {monitor.settings.mode === 'demo' ? 'Деморежим' : 'Backend API'}
+                {monitor.settings.mode === 'demo' ? 'Деморежим' : 'Рабочие данные'}
               </span>
               <button
                 className="icon-button"
@@ -123,7 +125,7 @@ export default function App() {
                 }[location.pathname] || 'Blue'}
           </span>
           <span className="workspace-status">
-            <i /> {monitor.settings.mode === 'demo' ? 'Деморежим' : 'Backend API'}
+            <i /> {monitor.settings.mode === 'demo' ? 'Деморежим' : 'Рабочие данные'}
           </span>
         </div>
         <main id="main" tabIndex={-1}>

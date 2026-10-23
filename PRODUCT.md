@@ -24,3 +24,6 @@ SafeNet_KZ_Hackathon (1) (3) (1).pdf; SafeNet_KZ_4_day_MVP_plan.docx; previous f
 
 ## Open decisions
 Backend implementation and real AI evaluation belong to teammates. Deployment is not requested in this redesign; local review is required.
+
+## Correction requirements 2026-10-23
+User rejected technical service settings, generic platform icons, weak analytics, and atom-like 3D graph. Use recognizable Telegram/WhatsApp marks; remove endpoint/port setup from analyst UI; restore High/Medium/Low dashboard summaries; shared period/platform sample for all analytics; interactive labelled source/message hierarchy and finite purposeful motion. 3D remains a brand treatment, not the relationship model.

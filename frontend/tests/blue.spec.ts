@@ -47,14 +47,16 @@ test('graph shows actual membership and remains usable without WebGL', async ({ 
   await expect(page.getByRole('heading', { name: 'Проверка сообщения', exact: true })).toBeVisible()
 })
 
-test('unchanged polling snapshot preserves the interactive graph canvas', async ({ page }) => {
+test('unchanged polling snapshot preserves the interactive graph view', async ({ page }) => {
   await page.goto('/graph')
   await expect(page.locator('.brand-intro')).not.toBeAttached()
-  await expect(page.locator('.scene-graph')).toHaveAttribute('data-ready', 'true')
-  await page.locator('.scene-graph canvas').evaluate((canvas) => {
-    canvas.setAttribute('data-view-marker', 'rotated')
+  await expect(page.locator('.react-flow__viewport')).toBeVisible()
+  await page.locator('.react-flow__viewport').evaluate((element) => {
+    element.setAttribute('data-view-marker', 'zoomed')
   })
-  await page.getByRole('button', { name: 'Повернуть вправо', exact: true }).click()
+  await page.getByRole('button', { name: 'Приблизить', exact: true }).click()
+  const transform = await page.locator('.react-flow__viewport').getAttribute('style')
   await page.waitForTimeout(11_000)
-  await expect(page.locator('.scene-graph canvas')).toHaveAttribute('data-view-marker', 'rotated')
+  await expect(page.locator('.react-flow__viewport')).toHaveAttribute('data-view-marker', 'zoomed')
+  await expect(page.locator('.react-flow__viewport')).toHaveAttribute('style', transform!)
 })
