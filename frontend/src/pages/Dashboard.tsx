@@ -24,6 +24,8 @@ import { RiskSummary } from '../components/RiskSummary'
 import { dateTime, levelLabels, levels, time } from '../lib/model'
 import type { Alert } from '../lib/model'
 import type { Monitor } from '../lib/useMonitor'
+import { selectAnalytics, sourceSummaries } from '../lib/analytics'
+import type { Period, PlatformFilter } from '../lib/analytics'
 
 export function Dashboard({
   monitor: m,
@@ -62,12 +64,16 @@ export function Dashboard({
     const next = new URLSearchParams(paramsRef.current)
     if (value) next.set(name, value)
     else next.delete(name)
+    if (name === 'platform') next.delete('chat')
     applyParams(next)
   }
-  const chats = Array.from(new Map(m.alerts.map((a) => [a.chat_id, a.chat_name])))
+  const chats = sourceSummaries(m.alerts).filter((source) => !platform || source.platform === platform)
+  const matchingChats = chats.filter((source) => source.id === chat)
+  const selectedChat = matchingChats.length === 1 ? matchingChats[0].key : ''
+  const snapshotTime = m.lastUpdate ? Date.parse(m.lastUpdate) : Date.now()
   const filtered = useMemo(
     () =>
-      m.alerts
+      selectAnalytics(m.alerts, period as Period, (platform || 'all') as PlatformFilter, snapshotTime)
         .filter((a) => {
           const match = `${a.text} ${a.chat_name} ${a.id}`
             .toLocaleLowerCase()
@@ -75,10 +81,8 @@ export function Dashboard({
           return (
             match &&
             (!level || a.risk_level === level) &&
-            (!platform || a.platform === platform) &&
             (!chat || a.chat_id === chat) &&
-            (!review || a.review_status === review) &&
-            (period === 'all' || Date.now() - +new Date(a.timestamp) <= Number(period) * 3_600_000)
+            (!review || a.review_status === review)
           )
         })
         .sort((a, b) =>
@@ -86,7 +90,7 @@ export function Dashboard({
             ? (b.risk_score ?? -1) - (a.risk_score ?? -1)
             : +new Date(b.timestamp) - +new Date(a.timestamp),
         ),
-    [m.alerts, search, level, platform, chat, review, period, sort],
+    [m.alerts, search, level, platform, chat, review, period, sort, snapshotTime],
   )
   const maxPage = Math.max(1, Math.ceil(filtered.length / 6)),
     currentPage = Math.min(page, maxPage)
@@ -214,13 +218,21 @@ export function Dashboard({
                   Источник
                   <select
                     aria-label="Чат"
-                    value={chat}
-                    onChange={(e) => filter('chat', e.target.value)}
+                    value={selectedChat}
+                    onChange={(e) => {
+                      const source = chats.find((item) => item.key === e.target.value)
+                      const next = new URLSearchParams(paramsRef.current)
+                      if (source) {
+                        next.set('chat', source.id)
+                        next.set('platform', source.platform)
+                      } else next.delete('chat')
+                      applyParams(next)
+                    }}
                   >
                     <option value="">Все чаты</option>
-                    {chats.map(([id, name]) => (
-                      <option key={id} value={id}>
-                        {name}
+                    {chats.map((source) => (
+                      <option key={source.key} value={source.key}>
+                        {source.name} · {source.platform === 'telegram' ? 'Telegram' : 'WhatsApp'}
                       </option>
                     ))}
                   </select>

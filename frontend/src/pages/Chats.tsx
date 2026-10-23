@@ -3,22 +3,12 @@ import { ArrowUpRight, Search } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { Empty, ErrorBox, Platform } from '../components/ui'
 import type { Monitor } from '../lib/useMonitor'
+import { sourceSummaries } from '../lib/analytics'
 
 export function Chats({ monitor: m }: { monitor: Monitor }) {
   const [query, setQuery] = useState('')
-  const chats = Array.from(new Set(m.alerts.map((a) => a.chat_id)))
-    .map((id) => {
-      const alerts = m.alerts.filter((a) => a.chat_id === id)
-      return {
-        id,
-        name: alerts[0].chat_name,
-        platform: alerts[0].platform,
-        total: alerts.length,
-        high: alerts.filter((a) => a.risk_level === 'HIGH').length,
-      }
-    })
+  const chats = sourceSummaries(m.alerts)
     .filter((c) => c.name.toLocaleLowerCase().includes(query.toLocaleLowerCase()))
-    .sort((a, b) => b.high - a.high)
   return (
     <>
       <div className="page-heading">
@@ -44,7 +34,7 @@ export function Chats({ monitor: m }: { monitor: Monitor }) {
       </div>
       <div className="source-list">
         {chats.map((chat) => (
-          <article className="chat-card" key={chat.id}>
+          <article className="chat-card" key={chat.key}>
             <div className="source-identity">
               <span className="source-symbol">
                 <Platform platform={chat.platform} />
@@ -57,12 +47,14 @@ export function Chats({ monitor: m }: { monitor: Monitor }) {
               </div>
             </div>
             <div className="source-numbers">
-              <span>{chat.total} сообщений</span>
-              <span className={chat.high ? 'high-text' : 'subtle'}>{chat.high} высокого риска</span>
+              <span>{chat.count} сообщений</span>
+              <span className={chat.stats.by_level.HIGH ? 'high-text' : 'subtle'}>
+                {chat.stats.by_level.HIGH} высокого риска
+              </span>
             </div>
             <Link
               className="chat-card-link"
-              to={`/?chat=${encodeURIComponent(chat.id)}&period=all`}
+              to={`/?chat=${encodeURIComponent(chat.id)}&platform=${chat.platform}&period=all`}
               aria-label={`Открыть сообщения — ${chat.name}`}
             >
               Открыть сообщения <ArrowUpRight size={16} />

@@ -18,7 +18,7 @@ export function Graph({ monitor: m }: { monitor: Monitor }) {
   const [selected, setSelected] = useState('')
   const [page, setPage] = useState(0)
   const sources = useMemo(() => sourceSummaries(m.alerts), [m.alerts])
-  const active = sources.find((group) => group.id === source)
+  const active = sources.find((group) => group.key === source)
   const messages = active?.messages || m.alerts
   const focused = messages.find((alert) => alert.id === selected)
   const maxPage = Math.max(0, Math.ceil(messages.length / PAGE_SIZE) - 1)
@@ -71,7 +71,7 @@ export function Graph({ monitor: m }: { monitor: Monitor }) {
           },
         },
         ...sources.map((group, index) => ({
-          id: `source:${group.id}`,
+          id: `source:${group.key}`,
           type: 'source',
           position: { x: 345, y: index * 100 },
           ariaLabel: `Источник ${group.name}`,
@@ -110,7 +110,7 @@ export function Graph({ monitor: m }: { monitor: Monitor }) {
           <select value={source} onChange={(event) => openSource(event.target.value)}>
             <option value="">Все источники</option>
             {sources.map((group) => (
-              <option key={group.id} value={group.id}>
+              <option key={group.key} value={group.key}>
                 {group.name}
               </option>
             ))}
@@ -145,7 +145,7 @@ export function Graph({ monitor: m }: { monitor: Monitor }) {
           </div>
           {m.alerts.length > 0 ? (
             <RelationshipGraph
-              key={`${active?.id || 'all'}:${currentPage}`}
+              key={`${active?.key || 'all'}:${currentPage}`}
               nodes={nodes}
               edges={edges}
               onSelect={(node) => {
@@ -222,7 +222,7 @@ export function Graph({ monitor: m }: { monitor: Monitor }) {
               ) : (
                 <div className="relationship-source-list">
                   {sources.map((group) => (
-                    <button key={group.id} onClick={() => openSource(group.id)}>
+                    <button key={group.key} onClick={() => openSource(group.key)}>
                       <Platform platform={group.platform} />
                       <span>
                         <strong>{group.name}</strong>

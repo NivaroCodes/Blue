@@ -39,7 +39,7 @@ test('graph shows actual membership and remains usable without WebGL', async ({ 
   ).toBeVisible()
   const select = page.getByLabel('Источник графа')
   await expect(select.locator('option')).toHaveCount(6)
-  await select.selectOption('wa_income')
+  await select.selectOption('whatsapp:wa_income')
   await expect(page.locator('.graph-message-list a')).not.toHaveCount(0)
   const href = await page.locator('.graph-message-list a').first().getAttribute('href')
   await page.locator('.graph-message-list a').first().click()

@@ -179,7 +179,10 @@ export function Analytics({ monitor: m }: { monitor: Monitor }) {
           </div>
           <div className="source-analytics-list">
             {sources.map((source) => (
-              <Link key={source.id} to={`/?${query}&chat=${encodeURIComponent(source.id)}`}>
+              <Link
+                key={source.key}
+                to={`/?period=${period}&platform=${source.platform}&chat=${encodeURIComponent(source.id)}`}
+              >
                 <Platform platform={source.platform} />
                 <div className="source-analysis-main">
                   <strong>{source.name}</strong>

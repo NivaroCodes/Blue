@@ -72,16 +72,22 @@ export function activityBins(alerts: Alert[], period: Period, now: number) {
   return bins
 }
 
+export function sourceKey(platform: Alert['platform'], chatId: string) {
+  return `${platform}:${chatId}`
+}
+
 export function sourceSummaries(alerts: Alert[]) {
   const groups = new Map<string, Alert[]>()
   for (const alert of alerts) {
-    const group = groups.get(alert.chat_id)
+    const key = sourceKey(alert.platform, alert.chat_id)
+    const group = groups.get(key)
     if (group) group.push(alert)
-    else groups.set(alert.chat_id, [alert])
+    else groups.set(key, [alert])
   }
   return [...groups]
-    .map(([id, messages]) => ({
-      id,
+    .map(([key, messages]) => ({
+      key,
+      id: messages[0].chat_id,
       name: messages[0].chat_name,
       platform: messages[0].platform,
       stats: calculateStats(messages),

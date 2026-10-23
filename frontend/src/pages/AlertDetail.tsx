@@ -81,6 +81,7 @@ export function AlertDetail({
         </div>
       )}
       {error && <ErrorBox message={error} retry={() => setAttempt((n) => n + 1)} />}
+      {!error && m.error && <ErrorBox message={m.error} retry={m.refresh} />}
       {!loading && !error && !alert && (
         <Empty title="Сообщение не найдено" text="Возможно, оно было удалено из источника." />
       )}
@@ -273,7 +274,7 @@ function ReviewForm({
             ? 'Дождитесь успешного анализа сообщения.'
             : m.settings.mode === 'demo'
               ? 'Демо: решение сохранится в этом браузере.'
-              : 'Решение будет отправлено в Backend API.'}
+              : 'Решение будет сохранено на сервере.'}
         </p>
       </form>
     </Panel>

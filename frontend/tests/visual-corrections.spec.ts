@@ -46,7 +46,7 @@ test('source graph uses labelled cards with a real path to message evidence', as
   await expect(page.locator('.brand-intro')).not.toBeAttached()
   await expect(page.locator('.scene-graph')).toHaveCount(0)
   await expect(page.locator('.react-flow')).toBeVisible()
-  await page.getByLabel('Источник графа').selectOption('wa_income')
+  await page.getByLabel('Источник графа').selectOption('whatsapp:wa_income')
   await expect(page.locator('.react-flow__node-message')).not.toHaveCount(0)
   await page.locator('.react-flow__node-message').first().click()
   await expect(page.locator('.focus-panel')).toBeVisible()
@@ -95,7 +95,7 @@ for (const width of [375, 1440])
     await page.setViewportSize({ width, height: 1000 })
     await page.goto('/graph')
     await expect(page.locator('.brand-intro')).not.toBeAttached()
-    await page.getByLabel('Источник графа').selectOption('wa_income')
+    await page.getByLabel('Источник графа').selectOption('whatsapp:wa_income')
     await expect(page.locator('.react-flow__node-message')).toHaveCount(3)
     const boxes = await page.locator('.react-flow__node-message').evaluateAll((nodes) =>
       nodes
