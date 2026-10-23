@@ -1,6 +1,7 @@
 import hashlib
 import json
 import logging
+import os
 from datetime import datetime, timezone, timedelta
 from typing import Optional, List, Dict, Any
 
@@ -14,12 +15,10 @@ from sqlalchemy import (
     Text,
     UniqueConstraint,
     create_engine,
-    event,
     inspect,
     text as sql_text,
 )
 from sqlalchemy.orm import declarative_base, relationship, sessionmaker
-from sqlalchemy.pool import StaticPool
 from sqlalchemy.types import TypeDecorator
 
 logger = logging.getLogger(__name__)
@@ -219,29 +218,39 @@ def _migrate(engine) -> None:
         logger.warning("Could not create unique (platform, chat_id, message_id) index: %s. Re-seed the DB.", e)
 
 
-def init_db(database_url: str = "sqlite:///safenet.db"):
+def validate_postgres_url(database_url: Optional[str]) -> str:
     """
-    Initializes database tables and returns a session factory.
+    Validates that a PostgreSQL database URL is configured.
+    SQLite is explicitly forbidden in runtime.
     """
-    is_sqlite = database_url.startswith("sqlite")
-    is_memory = is_sqlite and ":memory:" in database_url
-    connect_args = {"check_same_thread": False, "timeout": 30} if is_sqlite else {}
-    engine_kwargs: Dict[str, Any] = {"connect_args": connect_args}
-    if is_memory:
-        engine_kwargs["poolclass"] = StaticPool
-    elif not is_sqlite:
-        engine_kwargs["pool_pre_ping"] = True
-    engine = create_engine(database_url, **engine_kwargs)
+    if not database_url or not database_url.strip():
+        raise ValueError(
+            "DATABASE_URL is not set. SafeNet KZ requires PostgreSQL. "
+            "Set DATABASE_URL=postgresql+psycopg2://user:password@host:5432/dbname in environment or .env."
+        )
+    url_lower = database_url.strip().lower()
+    if not (url_lower.startswith("postgresql://") or url_lower.startswith("postgresql+") or url_lower.startswith("postgres://")):
+        raise ValueError(
+            f"Invalid DATABASE_URL scheme '{database_url}'. SafeNet KZ requires PostgreSQL. "
+            "Expected format: postgresql+psycopg2://user:password@host:5432/dbname. SQLite is not allowed."
+        )
+    return database_url.strip()
 
-    if is_sqlite:
-        @event.listens_for(engine, "connect")
-        def _configure_sqlite(dbapi_conn, _record):
-            cur = dbapi_conn.cursor()
-            cur.execute("PRAGMA busy_timeout=30000")
-            cur.execute("PRAGMA foreign_keys=ON")
-            if not is_memory:
-                cur.execute("PRAGMA journal_mode=WAL")
-            cur.close()
+
+def init_db(database_url: Optional[str] = None):
+    """
+    Initializes PostgreSQL database tables and returns a session factory.
+    SQLite is strictly disallowed in runtime.
+    """
+    raw_url = database_url or os.getenv("DATABASE_URL")
+    url = validate_postgres_url(raw_url)
+
+    engine = create_engine(
+        url,
+        pool_pre_ping=True,
+        pool_size=10,
+        max_overflow=20,
+    )
 
     Base.metadata.create_all(engine)
     _migrate(engine)

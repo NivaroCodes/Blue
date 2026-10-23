@@ -1,6 +1,6 @@
 import json
 from datetime import datetime, timezone, timedelta
-from typing import List, Tuple
+from typing import List, Tuple, Optional
 
 from .models import init_db, MessageRecord, AnalysisRecord, ReviewRecord, EntityRecord, make_message_pk
 
@@ -332,7 +332,7 @@ SCENARIOS = [
 ]
 
 
-def seed_database(database_url: str = "sqlite:///safenet.db", clear_existing: bool = True):
+def seed_database(database_url: Optional[str] = None, clear_existing: bool = True):
     SessionLocal = init_db(database_url)
     session = SessionLocal()
 

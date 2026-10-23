@@ -20,7 +20,7 @@ from .worker import process_pending_messages
 from .graph_analysis import analyze_network_graph
 from .media import save_image, resolve_local_media_path, sniff_mime, MediaError
 
-DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///safenet.db")
+DATABASE_URL = os.getenv("DATABASE_URL")
 # 1 = analyse right inside POST /api/messages (demo mode); 0 = leave it to the background worker.
 INLINE_ANALYSIS = os.getenv("INLINE_ANALYSIS", "0") == "1"
 SessionLocal = init_db(DATABASE_URL)
@@ -28,7 +28,7 @@ SessionLocal = init_db(DATABASE_URL)
 app = FastAPI(
     title="SafeNet KZ — Backend API & AI Surveillance Pipeline",
     version="1.1.0",
-    description="API server implementing docs/API.md connected to SQLite database and AI worker."
+    description="API server implementing docs/API.md connected to PostgreSQL database and AI worker."
 )
 
 app.add_middleware(

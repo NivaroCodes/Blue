@@ -247,15 +247,14 @@ def process_pending_messages(
     if is_postgres:
         try:
             # Atomic batch claim on PostgreSQL using SELECT ... FOR UPDATE SKIP LOCKED
+            pq = session.query(MessageRecord).filter(MessageRecord.status == "PENDING")
+            if only_ids is not None:
+                pq = pq.filter(MessageRecord.id.in_(list(only_ids)))
             pq = (
-                session.query(MessageRecord)
-                .filter(MessageRecord.status == "PENDING")
-                .order_by(MessageRecord.timestamp.asc())
+                pq.order_by(MessageRecord.timestamp.asc())
                 .with_for_update(skip_locked=True)
                 .limit(limit)
             )
-            if only_ids is not None:
-                pq = pq.filter(MessageRecord.id.in_(list(only_ids)))
             claimed_recs = pq.all()
             now = utc_now()
             for rec in claimed_recs:
@@ -318,15 +317,22 @@ def process_pending_messages(
     return processed_count
 
 
+def _sanitize_db_url(url: Optional[str]) -> str:
+    """Masks database password in connection string for logging."""
+    if not url:
+        return "None"
+    return re.sub(r"://([^:]+):([^@]+)@", r"://\1:***@", url)
+
+
 def run_worker_loop(database_url: Optional[str] = None, poll_interval: float = 3.0, api_key: Optional[str] = None):
     """
     Continuous background worker loop that watches the database for PENDING messages.
-    Several instances may run in parallel.
+    Several instances may run in parallel. Requires PostgreSQL.
     """
-    db_url = database_url or os.getenv("DATABASE_URL", "sqlite:///safenet.db")
+    db_url = database_url or os.getenv("DATABASE_URL")
     SessionLocal = init_db(db_url)
     worker_id = make_worker_id()
-    logger.info(f"Starting AI Background Worker {worker_id} connected to {db_url}...")
+    logger.info(f"Starting AI Background Worker {worker_id} connected to {_sanitize_db_url(db_url)}...")
 
     while True:
         session = SessionLocal()

@@ -4,12 +4,13 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-# Model and API Configuration
-AI_PROVIDER: str = os.getenv("AI_PROVIDER", "gemini").lower()
+# Mandatory PostgreSQL Configuration (SQLite is forbidden in runtime)
+DATABASE_URL: Optional[str] = os.getenv("DATABASE_URL")
+
+# Google Gemini API Configuration (via Google AI Studio)
+# Single model configuration: default gemini-3.8-flash
 GEMINI_API_KEY: Optional[str] = os.getenv("GEMINI_API_KEY") or os.getenv("AI_API_KEY")
-OPENAI_API_KEY: Optional[str] = os.getenv("OPENAI_API_KEY")
-OPENAI_BASE_URL: str = os.getenv("OPENAI_BASE_URL", "https://api.openai.com/v1")
-MODEL_NAME: str = os.getenv("AI_MODEL_NAME", "gemini-3-flash-preview")
+GEMINI_MODEL: str = os.getenv("GEMINI_MODEL", "gemini-3.8-flash")
 
 # Risk Thresholds conforming to SafeNet KZ MVP Contract
 LOW_RISK_THRESHOLD: int = 30       # 0 - 29: LOW
