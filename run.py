@@ -59,7 +59,7 @@ def main():
             print(f"Evaluation report updated: {md_path}")
         except Exception as e:
             print(f"Evaluation error: {e}")
-            print("Note: To run evaluation with live LLM, make sure GEMINI_API_KEY or OPENAI_API_KEY is set in .env")
+            print("Note: To run evaluation with live LLM, make sure GEMINI_API_KEY and DATABASE_URL are set in .env")
 
     else:
         print(f"Unknown command: '{command}'")

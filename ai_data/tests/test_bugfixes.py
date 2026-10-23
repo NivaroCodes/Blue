@@ -21,6 +21,7 @@ from ai_data.db.models import (
     parse_timestamp,
     serialize_to_alert_dict,
 )
+from ai_data.tests.test_db_helper import get_clean_test_session, get_test_session_factory
 from ai_data.entity_extractor import extract_entities
 from ai_data.graph_analysis import analyze_network_graph
 from ai_data.llm_client import _parse_and_validate_llm_json
@@ -51,8 +52,8 @@ class TestCardLinkingNoCollision(unittest.TestCase):
         self.assertNotEqual(ents_a[0]["value"], ents_b[0]["value"])
         self.assertNotIn("1111", ents_a[0]["value"])  # raw middle digits not stored in plaintext
 
-        Session = init_db("sqlite:///:memory:")
-        session = Session()
+        session = get_clean_test_session()
+
         for idx, (sender, card_ent) in enumerate([("author_1", ents_a[0]), ("author_2", ents_b[0])]):
             m = MessageRecord(
                 id=f"card_m_{idx}",
@@ -85,8 +86,8 @@ class TestCardLinkingNoCollision(unittest.TestCase):
         ents_2 = extract_entities("Карта: 4400-1111-2222-1234")
         self.assertEqual(ents_1[0]["value"], ents_2[0]["value"])
 
-        Session = init_db("sqlite:///:memory:")
-        session = Session()
+        session = get_clean_test_session()
+
         for idx, (sender, card_ent) in enumerate([("bot_1", ents_1[0]), ("bot_2", ents_2[0])]):
             m = MessageRecord(
                 id=f"same_m_{idx}",
@@ -119,8 +120,8 @@ class TestReputationNoSelfAmplification(unittest.TestCase):
     """Issue 2: Auto-HIGH verdicts must not self-amplify; analyst decisions and sample size respected."""
 
     def test_auto_high_does_not_escalate_and_single_message_not_scam_hub(self):
-        Session = init_db("sqlite:///:memory:")
-        session = Session()
+        session = get_clean_test_session()
+
 
         # 1 processed message in chat with unreviewed HIGH (status NEW)
         m1 = MessageRecord(
@@ -160,8 +161,8 @@ class TestReputationNoSelfAmplification(unittest.TestCase):
         self.assertIn("НЕ проверена человеком", block)
 
     def test_false_positive_excluded_and_reviewed_escalates(self):
-        Session = init_db("sqlite:///:memory:")
-        session = Session()
+        session = get_clean_test_session()
+
 
         for i in range(5):
             m = MessageRecord(
@@ -193,8 +194,8 @@ class TestTimezoneSerialization(unittest.TestCase):
     """Issue 3: UTC stored in SQLite must convert to +05:00 (+5h wall clock), not merely append '+05:00'."""
 
     def test_utc_roundtrip_to_kz_offset_no_five_hour_shift(self):
-        Session = init_db("sqlite:///:memory:")
-        session = Session()
+        session = get_clean_test_session()
+
 
         utc_dt = datetime(2026, 10, 23, 14, 0, 0, tzinfo=timezone.utc)
         m = MessageRecord(
@@ -223,7 +224,14 @@ class TestCrossChatDeduplication(unittest.TestCase):
     """Issue 4: Identical chat-local message_id across different chats/platforms must never collide."""
 
     def setUp(self):
-        self.Session = init_db("sqlite:///:memory:")
+        self.Session = get_test_session_factory()
+        _s = self.Session()
+        _s.query(EntityRecord).delete()
+        _s.query(ReviewRecord).delete()
+        _s.query(AnalysisRecord).delete()
+        _s.query(MessageRecord).delete()
+        _s.commit()
+        _s.close()
         self._orig_inline = api_server.INLINE_ANALYSIS
         api_server.INLINE_ANALYSIS = False
 
@@ -288,7 +296,14 @@ class TestMultimodalUnifiedPipeline(unittest.TestCase):
         self._orig_media_dir = media_mod.MEDIA_DIR
         media_mod.MEDIA_DIR = Path(self.tmp_dir.name).resolve()
 
-        self.Session = init_db("sqlite:///:memory:")
+        self.Session = get_test_session_factory()
+        _s = self.Session()
+        _s.query(EntityRecord).delete()
+        _s.query(ReviewRecord).delete()
+        _s.query(AnalysisRecord).delete()
+        _s.query(MessageRecord).delete()
+        _s.commit()
+        _s.close()
 
         def override_get_db():
             db = self.Session()
@@ -404,7 +419,14 @@ class TestAtomicWorkerConcurrency(unittest.TestCase):
     def test_concurrent_workers_never_analyze_same_message_twice(self):
         with tempfile.TemporaryDirectory() as tmp:
             db_path = Path(tmp) / "concurrent.db"
-            Session = init_db(f"sqlite:///{db_path}")
+            Session = get_test_session_factory()
+            clean_s = Session()
+            clean_s.query(EntityRecord).delete()
+            clean_s.query(ReviewRecord).delete()
+            clean_s.query(AnalysisRecord).delete()
+            clean_s.query(MessageRecord).delete()
+            clean_s.commit()
+            clean_s.close()
 
             seed_s = Session()
             now = datetime.now(timezone.utc)
@@ -466,11 +488,11 @@ class TestAtomicWorkerConcurrency(unittest.TestCase):
             rows = check_s.query(MessageRecord).all()
             self.assertTrue(all(r.status == "PROCESSED" and r.attempts == 1 for r in rows))
             check_s.close()
-            Session.kw["bind"].dispose()
+
 
     def test_stale_claim_recovery_and_max_attempts(self):
-        Session = init_db("sqlite:///:memory:")
-        s = Session()
+        session = get_clean_test_session()
+        s = session
         stale_time = datetime.now(timezone.utc) - timedelta(minutes=30)
 
         # Message 1: stuck on attempt 1 -> should return to PENDING

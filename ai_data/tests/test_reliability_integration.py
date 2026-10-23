@@ -11,6 +11,7 @@ import unittest
 from datetime import datetime, timezone, timedelta
 from unittest.mock import patch
 
+from ai_data.tests.test_db_helper import get_clean_test_session, get_test_session_factory, TEST_DB_URL
 from fastapi.testclient import TestClient
 
 import ai_data.api_server as api_server
@@ -32,7 +33,13 @@ from ai_data.models import AnalysisResult, ReasonItem, RiskLevelEnum
 
 class TestReliabilityIntegration(unittest.TestCase):
     def setUp(self):
-        self.Session = init_db("sqlite:///:memory:")
+        self.Session = get_test_session_factory()
+        _s = self.Session()
+        _s.query(ReviewRecord).delete()
+        _s.query(AnalysisRecord).delete()
+        _s.query(MessageRecord).delete()
+        _s.commit()
+        _s.close()
         self._orig_inline = api_server.INLINE_ANALYSIS
         api_server.INLINE_ANALYSIS = False
 
@@ -148,7 +155,13 @@ class TestReliabilityIntegration(unittest.TestCase):
         from pathlib import Path
         with tempfile.TemporaryDirectory() as tmp:
             db_path = Path(tmp) / "concurrent_test.db"
-            Session = init_db(f"sqlite:///{db_path}")
+            Session = get_test_session_factory()
+            clean_s = Session()
+            clean_s.query(ReviewRecord).delete()
+            clean_s.query(AnalysisRecord).delete()
+            clean_s.query(MessageRecord).delete()
+            clean_s.commit()
+            clean_s.close()
 
             db = Session()
             now = datetime.now(timezone.utc)
@@ -194,7 +207,7 @@ class TestReliabilityIntegration(unittest.TestCase):
             self.assertTrue(all(r.status == "PROCESSED" for r in all_recs))
             self.assertTrue(all(r.attempts == 1 for r in all_recs))
             check_s.close()
-            Session.kw["bind"].dispose()
+
 
     # -------------------------------------------------------------------------
     # 5. Gemini error does not produce fake success result

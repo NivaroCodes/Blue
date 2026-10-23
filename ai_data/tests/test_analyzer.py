@@ -10,7 +10,8 @@ from ai_data.models import (
 from ai_data.llm_client import _parse_and_validate_llm_json, AIAnalysisError
 from ai_data.analyzer import analyze_message
 from ai_data.context import get_sender_context, get_chat_context, build_context_block
-from ai_data.db.models import init_db, MessageRecord, AnalysisRecord, ReviewRecord, EntityRecord, serialize_to_alert_dict
+from ai_data.db.models import MessageRecord, AnalysisRecord, ReviewRecord, EntityRecord, serialize_to_alert_dict
+from ai_data.tests.test_db_helper import get_clean_test_session
 from ai_data.worker import process_pending_messages
 
 
@@ -74,8 +75,8 @@ class TestAnalyzerRequiresAPIKey(unittest.TestCase):
 class TestContextEnrichment(unittest.TestCase):
 
     def _make_db(self):
-        Session = init_db("sqlite:///:memory:")
-        return Session()
+        session = get_clean_test_session()
+        return session
 
     def test_sender_reputation_grows(self):
         session = self._make_db()
@@ -137,8 +138,8 @@ class TestContextEnrichment(unittest.TestCase):
 class TestWorkerPipeline(unittest.TestCase):
 
     def test_error_status_on_no_key(self):
-        Session = init_db("sqlite:///:memory:")
-        session = Session()
+        session = get_clean_test_session()
+
         m = MessageRecord(id="w1", platform="telegram", chat_id="c1", chat_name="C",
                           message_id="w1", sender_hash="h", text="test",
                           timestamp=datetime.now(timezone.utc), status="PENDING")
@@ -155,8 +156,8 @@ class TestWorkerPipeline(unittest.TestCase):
             reasons=[ReasonItem(code="UNREALISTIC_RETURN", evidence="получи 10000 завтра")],
             explanation="Пирамида.", confidence=0.92, model_version="gemini-2.0-flash"
         )
-        Session = init_db("sqlite:///:memory:")
-        session = Session()
+        session = get_clean_test_session()
+
         m = MessageRecord(id="w2", platform="telegram", chat_id="c1", chat_name="C",
                           message_id="w2", sender_hash="h", text="Вложи — получи 10000 завтра",
                           timestamp=datetime.now(timezone.utc), status="PENDING")
@@ -176,8 +177,8 @@ class TestGraphAnalysis(unittest.TestCase):
     def test_graph_link_detection(self):
         from ai_data.graph_analysis import analyze_network_graph
 
-        Session = init_db("sqlite:///:memory:")
-        session = Session()
+        session = get_clean_test_session()
+
 
         # Sender bot posting to 2 chats
         for idx, chat in enumerate(["tg_chat_a", "tg_chat_b"]):
@@ -226,8 +227,8 @@ class TestGraphAnalysis(unittest.TestCase):
         self.assertIn("TELEGRAM_USER", types)
 
         # 2. Syndicate detection across senders
-        Session = init_db("sqlite:///:memory:")
-        session = Session()
+        session = get_clean_test_session()
+
 
         # Two different senders posting the same phone number
         for i, s_hash in enumerate(["bot_alpha", "bot_beta"]):

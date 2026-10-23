@@ -79,19 +79,19 @@ npm run dev
 
 ## Подключение рабочих данных
 
-Интегрированный сервис реализован в модуле `ai_data` в соответствии с [контрактом API](docs/API.md):
+Интегрированный сервис реализован в модуле `ai_data` в соответствии с [контрактом API](docs/API.md) на базе **PostgreSQL** и **Google Gemini** (`gemini-3.8-flash`):
 
 ```powershell
-# Запуск FastAPI сервера (порт 8000):
+# Запуск FastAPI сервера (порт 8000, требует PostgreSQL):
 python run.py api
 
-# Запуск фонового AI-воркера:
+# Запуск фонового AI-воркера (PostgreSQL SKIP LOCKED + Google Gemini):
 python run.py worker
 
-# Заполнение базы данных тестовыми сценариями:
+# Заполнение базы данных тестовыми сценариями (PostgreSQL):
 python run.py seed
 
-# Запуск полного набора тестов:
+# Запуск полного набора тестов (53 теста):
 python run.py test
 ```
 

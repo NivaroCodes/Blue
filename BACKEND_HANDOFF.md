@@ -7,7 +7,7 @@
 
 ## 1. Что уже готово (Data / AI)
 
-1. **100% LLM-анализ (Google Gemini / OpenAI-compatible)**: Никаких заглушек. При недоступности ИИ статус становится `ERROR`.
+1. **100% LLM-анализ (Google Gemini)**: Официальный Google Gemini API (`GEMINI_MODEL=gemini-3.8-flash`) с безопасной передачей ключа в заголовке `x-goog-api-key`. Никаких заглушек. При недоступности ИИ статус становится `ERROR`.
 2. **Защита от галлюцинаций**: Улики (`evidence`) валидируются как точные подстроки исходного текста (или OCR-текста изображения с пометкой `source: "image"`).
 3. **Защита от обфускации и скрытых схем**: Распознаёт гомоглифы (`Kаspі`), leet-speak (`вл0жи`, `5ООО`), точки (`в.л.о.ж.и`), таск-скамы («лайки товарам» с залогом) и фейковую помощь с предоплатой доставки на Kaspi.
 4. **Безопасная репутация с учётом решений аналитика**: Повышение оценки по репутации срабатывает **только по подтверждённым аналитиком** вердиктам (`REVIEWED`) и при выборке чата `>= 5` сообщений; `FALSE_POSITIVE` исключается из статистики и графа, а непроверенные авто-оценки не усиливают сами себя.
@@ -92,16 +92,18 @@
 В `.env`:
 ```env
 GEMINI_API_KEY=your_gemini_api_key_here
-AI_MODEL_NAME=gemini-3-flash-preview
-DATABASE_URL=sqlite:///safenet.db
+GEMINI_MODEL=gemini-3.8-flash
+DATABASE_URL=postgresql+psycopg2://postgres:postgres@localhost:5432/safenet
 INLINE_ANALYSIS=0
 ENTITY_HASH_SECRET=change-me-in-production
 ```
 
+> **Важно:** Единственная поддерживаемая СУБД в runtime — **PostgreSQL**. При отсутствии `DATABASE_URL` или попытке указать `sqlite://` сервис завершает работу с понятной ошибкой конфигурации.
+
 Команды:
 ```bash
 python run.py api      # Запуск FastAPI сервера (http://127.0.0.1:8000)
-python run.py worker   # Запуск фонового AI-воркера (безопасно в несколько процессов)
-python run.py seed     # Засев БД тестовыми сценариями
-python run.py test     # Прогон всех 38 модульных, конкурентных и интеграционных тестов
+python run.py worker   # Запуск фонового AI-воркера (PostgreSQL SKIP LOCKED)
+python run.py seed     # Засев PostgreSQL тестовыми сценариями
+python run.py test     # Прогон всех 53 модульных, конкурентных и интеграционных тестов
 ```

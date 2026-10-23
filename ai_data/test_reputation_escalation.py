@@ -14,7 +14,15 @@ from ai_data.context import get_sender_context, get_chat_context, build_context_
 
 
 def test_reputation_and_chat_escalation():
-    Session = init_db("sqlite:///:memory:")
+    import os
+    db_url = os.getenv("DATABASE_URL", "postgresql://postgres:postgres@localhost:5432/safenet_test")
+    Session = init_db(db_url)
+    s_clean = Session()
+    s_clean.query(ReviewRecord).delete()
+    s_clean.query(AnalysisRecord).delete()
+    s_clean.query(MessageRecord).delete()
+    s_clean.commit()
+    s_clean.close()
     session = Session()
 
     print("=" * 60)
