@@ -31,9 +31,24 @@ app = FastAPI(
     description="API server implementing docs/API.md connected to PostgreSQL database and AI worker."
 )
 
+DEFAULT_CORS_ORIGINS = [
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+    "http://localhost:4173",
+    "http://127.0.0.1:4173",
+    "http://localhost:3000",
+    "http://127.0.0.1:3000",
+]
+
+cors_env = os.getenv("CORS_ORIGINS", "")
+if cors_env.strip():
+    cors_origins = [o.strip() for o in cors_env.split(",") if o.strip()]
+else:
+    cors_origins = DEFAULT_CORS_ORIGINS
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=cors_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
