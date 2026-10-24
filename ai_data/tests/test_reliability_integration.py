@@ -159,6 +159,7 @@ class TestReliabilityIntegration(unittest.TestCase):
             db_path = Path(tmp) / "concurrent_test.db"
             Session = get_test_session_factory()
             clean_s = Session()
+            clean_s.query(EntityRecord).delete()
             clean_s.query(ReviewRecord).delete()
             clean_s.query(AnalysisRecord).delete()
             clean_s.query(MessageRecord).delete()

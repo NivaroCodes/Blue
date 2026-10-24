@@ -4,9 +4,10 @@ Verification script: Demonstrates Safe Reputation & Chat Risk Escalation:
 2. A single HIGH message in a chat (1/1) never labels the chat a scam hub.
 3. Analyst-confirmed (REVIEWED) HIGH verdicts + minimal sample (>= 5 messages) properly escalate risk.
 """
-import sys
+import sys, os
 if hasattr(sys.stdout, "reconfigure"):
     sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 from datetime import datetime, timezone, timedelta
 from ai_data.db.models import init_db, MessageRecord, AnalysisRecord, ReviewRecord
@@ -15,9 +16,16 @@ from ai_data.context import get_sender_context, get_chat_context, build_context_
 
 def test_reputation_and_chat_escalation():
     import os
-    db_url = os.getenv("DATABASE_URL", "postgresql://postgres:postgres@localhost:5432/safenet_test")
+    from urllib.parse import urlparse
+    from ai_data.db.models import EntityRecord
+    db_url = os.getenv("TEST_DATABASE_URL") or os.getenv("DATABASE_URL", "postgresql://postgres:postgres@localhost:5432/safenet_test")
+    parsed = urlparse(db_url)
+    db_name = parsed.path.lstrip("/").split("?")[0].lower()
+    if "test" not in db_name:
+        raise RuntimeError(f"SAFETY ABORT: Refusing to clean non-test database '{db_name}'.")
     Session = init_db(db_url)
     s_clean = Session()
+    s_clean.query(EntityRecord).delete()
     s_clean.query(ReviewRecord).delete()
     s_clean.query(AnalysisRecord).delete()
     s_clean.query(MessageRecord).delete()

@@ -12,8 +12,21 @@ load_dotenv()
 from ai_data.db.models import init_db, MessageRecord, AnalysisRecord, ReviewRecord, EntityRecord, make_message_pk, serialize_to_alert_dict
 from ai_data.worker import process_pending_messages
 
+def assert_is_test_database(url: str) -> None:
+    from urllib.parse import urlparse
+    if not url:
+        raise RuntimeError("DATABASE_URL is not set.")
+    parsed = urlparse(url)
+    db_name = parsed.path.lstrip("/").split("?")[0].lower()
+    if "test" not in db_name:
+        raise RuntimeError(
+            f"SAFETY ABORT: Refusing to clean or mutate database '{db_name}'. "
+            "Test operations are only allowed on databases containing 'test' in their name."
+        )
+
 def get_session():
-    db_url = os.getenv("DATABASE_URL")
+    db_url = os.getenv("TEST_DATABASE_URL") or os.getenv("DATABASE_URL") or "postgresql://postgres:postgres@localhost:5432/safenet_test"
+    assert_is_test_database(db_url)
     SessionLocal = init_db(db_url)
     return SessionLocal()
 

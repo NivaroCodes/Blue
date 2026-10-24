@@ -12,19 +12,34 @@ Tests:
 """
 import os
 import sys
+if hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(encoding="utf-8")
 import unittest
 from datetime import datetime, timezone
 from unittest.mock import patch
 
 from fastapi.testclient import TestClient
 
-# Use PostgreSQL if available, otherwise SQLite file
-POSTGRES_URL = "postgresql://postgres:postgres@localhost:5432/safenet_test"
+from urllib.parse import urlparse
+
+def assert_is_test_database(url: str) -> None:
+    if not url:
+        raise RuntimeError("DATABASE_URL is not set.")
+    parsed = urlparse(url)
+    db_name = parsed.path.lstrip("/").split("?")[0].lower()
+    if "test" not in db_name:
+        raise RuntimeError(
+            f"SAFETY ABORT: Refusing to clean or mutate database '{db_name}'. "
+            "E2E test requires an isolated test database whose name contains 'test' (e.g. safenet_test)."
+        )
+
+POSTGRES_URL = os.getenv("TEST_DATABASE_URL") or os.getenv("DATABASE_URL") or "postgresql://postgres:postgres@localhost:5432/safenet_test"
+assert_is_test_database(POSTGRES_URL)
 
 os.environ["DATABASE_URL"] = POSTGRES_URL
 os.environ["INLINE_ANALYSIS"] = "0"
 
-from ai_data.db.models import init_db, MessageRecord, AnalysisRecord, ReviewRecord
+from ai_data.db.models import init_db, MessageRecord, AnalysisRecord, ReviewRecord, EntityRecord
 import ai_data.api_server as api_server
 from ai_data.worker import process_pending_messages
 from ai_data.models import AnalysisResult, ReasonItem, RiskLevelEnum
@@ -39,6 +54,7 @@ def run_e2e_verification():
     print(f"Connecting to Database: {POSTGRES_URL}")
     Session = init_db(POSTGRES_URL)
     session = Session()
+    session.query(EntityRecord).delete()
     session.query(ReviewRecord).delete()
     session.query(AnalysisRecord).delete()
     session.query(MessageRecord).delete()
