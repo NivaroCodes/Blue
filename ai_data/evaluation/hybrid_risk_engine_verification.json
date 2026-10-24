@@ -1,0 +1,1011 @@
+{
+  "title": "SafeNet KZ Hybrid Risk Engine Verification (Cached Flash Lite Output)",
+  "total_evaluated": 50,
+  "confusion_matrix": {
+    "LOW": {
+      "LOW": 20,
+      "MEDIUM": 0,
+      "HIGH": 0
+    },
+    "MEDIUM": {
+      "LOW": 0,
+      "MEDIUM": 9,
+      "HIGH": 1
+    },
+    "HIGH": {
+      "LOW": 0,
+      "MEDIUM": 0,
+      "HIGH": 20
+    }
+  },
+  "per_class_metrics": {
+    "LOW": {
+      "tp": 20,
+      "fp": 0,
+      "fn": 0,
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0
+    },
+    "MEDIUM": {
+      "tp": 9,
+      "fp": 0,
+      "fn": 1,
+      "precision": 1.0,
+      "recall": 0.9,
+      "f1": 0.9474
+    },
+    "HIGH": {
+      "tp": 20,
+      "fp": 1,
+      "fn": 0,
+      "precision": 0.9524,
+      "recall": 1.0,
+      "f1": 0.9756
+    }
+  },
+  "macro_f1": 0.9743,
+  "false_positive_rate_on_low": 0.0,
+  "evidence_exact_match_rate": 1.0,
+  "medium_classified_as_low_count": 0,
+  "medium_as_low_ids": [],
+  "language_accuracy": {
+    "RU": 0.9545,
+    "KZ": 1.0,
+    "MIXED": 1.0
+  },
+  "individual_results": [
+    {
+      "id": "bench_low_01",
+      "lang": "RU",
+      "ground_truth_level": "LOW",
+      "gemini_predicted_level": "LOW",
+      "gemini_risk_score": 0,
+      "hybrid_predicted_level": "LOW",
+      "hybrid_risk_score": 0,
+      "hybrid_reasons": [],
+      "evidence_exact_matches": true
+    },
+    {
+      "id": "bench_low_02",
+      "lang": "RU",
+      "ground_truth_level": "LOW",
+      "gemini_predicted_level": "LOW",
+      "gemini_risk_score": 0,
+      "hybrid_predicted_level": "LOW",
+      "hybrid_risk_score": 0,
+      "hybrid_reasons": [],
+      "evidence_exact_matches": true
+    },
+    {
+      "id": "bench_low_03",
+      "lang": "KZ",
+      "ground_truth_level": "LOW",
+      "gemini_predicted_level": "LOW",
+      "gemini_risk_score": 0,
+      "hybrid_predicted_level": "LOW",
+      "hybrid_risk_score": 0,
+      "hybrid_reasons": [],
+      "evidence_exact_matches": true
+    },
+    {
+      "id": "bench_low_04",
+      "lang": "KZ",
+      "ground_truth_level": "LOW",
+      "gemini_predicted_level": "LOW",
+      "gemini_risk_score": 0,
+      "hybrid_predicted_level": "LOW",
+      "hybrid_risk_score": 0,
+      "hybrid_reasons": [],
+      "evidence_exact_matches": true
+    },
+    {
+      "id": "bench_low_05",
+      "lang": "MIXED",
+      "ground_truth_level": "LOW",
+      "gemini_predicted_level": "LOW",
+      "gemini_risk_score": 0,
+      "hybrid_predicted_level": "LOW",
+      "hybrid_risk_score": 0,
+      "hybrid_reasons": [],
+      "evidence_exact_matches": true
+    },
+    {
+      "id": "bench_low_06",
+      "lang": "RU",
+      "ground_truth_level": "LOW",
+      "gemini_predicted_level": "LOW",
+      "gemini_risk_score": 0,
+      "hybrid_predicted_level": "LOW",
+      "hybrid_risk_score": 0,
+      "hybrid_reasons": [],
+      "evidence_exact_matches": true
+    },
+    {
+      "id": "bench_low_07",
+      "lang": "RU",
+      "ground_truth_level": "LOW",
+      "gemini_predicted_level": "LOW",
+      "gemini_risk_score": 0,
+      "hybrid_predicted_level": "LOW",
+      "hybrid_risk_score": 0,
+      "hybrid_reasons": [],
+      "evidence_exact_matches": true
+    },
+    {
+      "id": "bench_low_08",
+      "lang": "KZ",
+      "ground_truth_level": "LOW",
+      "gemini_predicted_level": "LOW",
+      "gemini_risk_score": 0,
+      "hybrid_predicted_level": "LOW",
+      "hybrid_risk_score": 0,
+      "hybrid_reasons": [],
+      "evidence_exact_matches": true
+    },
+    {
+      "id": "bench_low_09",
+      "lang": "KZ",
+      "ground_truth_level": "LOW",
+      "gemini_predicted_level": "LOW",
+      "gemini_risk_score": 0,
+      "hybrid_predicted_level": "LOW",
+      "hybrid_risk_score": 0,
+      "hybrid_reasons": [],
+      "evidence_exact_matches": true
+    },
+    {
+      "id": "bench_low_10",
+      "lang": "RU",
+      "ground_truth_level": "LOW",
+      "gemini_predicted_level": "LOW",
+      "gemini_risk_score": 0,
+      "hybrid_predicted_level": "LOW",
+      "hybrid_risk_score": 0,
+      "hybrid_reasons": [],
+      "evidence_exact_matches": true
+    },
+    {
+      "id": "bench_low_11",
+      "lang": "KZ",
+      "ground_truth_level": "LOW",
+      "gemini_predicted_level": "LOW",
+      "gemini_risk_score": 0,
+      "hybrid_predicted_level": "LOW",
+      "hybrid_risk_score": 0,
+      "hybrid_reasons": [],
+      "evidence_exact_matches": true
+    },
+    {
+      "id": "bench_low_12",
+      "lang": "RU",
+      "ground_truth_level": "LOW",
+      "gemini_predicted_level": "LOW",
+      "gemini_risk_score": 0,
+      "hybrid_predicted_level": "LOW",
+      "hybrid_risk_score": 0,
+      "hybrid_reasons": [],
+      "evidence_exact_matches": true
+    },
+    {
+      "id": "bench_low_13",
+      "lang": "KZ",
+      "ground_truth_level": "LOW",
+      "gemini_predicted_level": "LOW",
+      "gemini_risk_score": 15,
+      "hybrid_predicted_level": "LOW",
+      "hybrid_risk_score": 15,
+      "hybrid_reasons": [],
+      "evidence_exact_matches": true
+    },
+    {
+      "id": "bench_low_14",
+      "lang": "MIXED",
+      "ground_truth_level": "LOW",
+      "gemini_predicted_level": "LOW",
+      "gemini_risk_score": 10,
+      "hybrid_predicted_level": "LOW",
+      "hybrid_risk_score": 10,
+      "hybrid_reasons": [],
+      "evidence_exact_matches": true
+    },
+    {
+      "id": "bench_low_15",
+      "lang": "RU",
+      "ground_truth_level": "LOW",
+      "gemini_predicted_level": "LOW",
+      "gemini_risk_score": 0,
+      "hybrid_predicted_level": "LOW",
+      "hybrid_risk_score": 0,
+      "hybrid_reasons": [],
+      "evidence_exact_matches": true
+    },
+    {
+      "id": "bench_low_16",
+      "lang": "KZ",
+      "ground_truth_level": "LOW",
+      "gemini_predicted_level": "LOW",
+      "gemini_risk_score": 0,
+      "hybrid_predicted_level": "LOW",
+      "hybrid_risk_score": 0,
+      "hybrid_reasons": [],
+      "evidence_exact_matches": true
+    },
+    {
+      "id": "bench_low_17",
+      "lang": "RU",
+      "ground_truth_level": "LOW",
+      "gemini_predicted_level": "LOW",
+      "gemini_risk_score": 0,
+      "hybrid_predicted_level": "LOW",
+      "hybrid_risk_score": 0,
+      "hybrid_reasons": [],
+      "evidence_exact_matches": true
+    },
+    {
+      "id": "bench_low_18",
+      "lang": "KZ",
+      "ground_truth_level": "LOW",
+      "gemini_predicted_level": "LOW",
+      "gemini_risk_score": 0,
+      "hybrid_predicted_level": "LOW",
+      "hybrid_risk_score": 0,
+      "hybrid_reasons": [],
+      "evidence_exact_matches": true
+    },
+    {
+      "id": "bench_low_19",
+      "lang": "MIXED",
+      "ground_truth_level": "LOW",
+      "gemini_predicted_level": "LOW",
+      "gemini_risk_score": 0,
+      "hybrid_predicted_level": "LOW",
+      "hybrid_risk_score": 0,
+      "hybrid_reasons": [],
+      "evidence_exact_matches": true
+    },
+    {
+      "id": "bench_low_20",
+      "lang": "RU",
+      "ground_truth_level": "LOW",
+      "gemini_predicted_level": "LOW",
+      "gemini_risk_score": 0,
+      "hybrid_predicted_level": "LOW",
+      "hybrid_risk_score": 0,
+      "hybrid_reasons": [],
+      "evidence_exact_matches": true
+    },
+    {
+      "id": "bench_med_01",
+      "lang": "RU",
+      "ground_truth_level": "MEDIUM",
+      "gemini_predicted_level": "LOW",
+      "gemini_risk_score": 10,
+      "hybrid_predicted_level": "MEDIUM",
+      "hybrid_risk_score": 55,
+      "hybrid_reasons": [
+        {
+          "code": "MONEY_REQUEST",
+          "evidence": "Делимся сигналами"
+        },
+        {
+          "code": "REFERRAL",
+          "evidence": "торговой команде"
+        }
+      ],
+      "evidence_exact_matches": true
+    },
+    {
+      "id": "bench_med_02",
+      "lang": "KZ",
+      "ground_truth_level": "MEDIUM",
+      "gemini_predicted_level": "LOW",
+      "gemini_risk_score": 15,
+      "hybrid_predicted_level": "MEDIUM",
+      "hybrid_risk_score": 30,
+      "hybrid_reasons": [
+        {
+          "code": "MONEY_REQUEST",
+          "evidence": "трейдинг бойынша жеке кеңестер"
+        }
+      ],
+      "evidence_exact_matches": true
+    },
+    {
+      "id": "bench_med_03",
+      "lang": "MIXED",
+      "ground_truth_level": "MEDIUM",
+      "gemini_predicted_level": "LOW",
+      "gemini_risk_score": 15,
+      "hybrid_predicted_level": "MEDIUM",
+      "hybrid_risk_score": 30,
+      "hybrid_reasons": [
+        {
+          "code": "MONEY_REQUEST",
+          "evidence": "арбитраж жасауды үйретемін"
+        }
+      ],
+      "evidence_exact_matches": true
+    },
+    {
+      "id": "bench_med_04",
+      "lang": "RU",
+      "ground_truth_level": "MEDIUM",
+      "gemini_predicted_level": "LOW",
+      "gemini_risk_score": 15,
+      "hybrid_predicted_level": "MEDIUM",
+      "hybrid_risk_score": 55,
+      "hybrid_reasons": [
+        {
+          "code": "MONEY_REQUEST",
+          "evidence": "Пишите в WhatsApp"
+        },
+        {
+          "code": "REFERRAL",
+          "evidence": "Партнерская программа"
+        }
+      ],
+      "evidence_exact_matches": true
+    },
+    {
+      "id": "bench_med_05",
+      "lang": "KZ",
+      "ground_truth_level": "MEDIUM",
+      "gemini_predicted_level": "MEDIUM",
+      "gemini_risk_score": 45,
+      "hybrid_predicted_level": "MEDIUM",
+      "hybrid_risk_score": 55,
+      "hybrid_reasons": [
+        {
+          "code": "REFERRAL",
+          "evidence": "команда құру бонустары"
+        },
+        {
+          "code": "MONEY_REQUEST",
+          "evidence": "Ватсапқа жазыңыз"
+        }
+      ],
+      "evidence_exact_matches": true
+    },
+    {
+      "id": "bench_med_06",
+      "lang": "MIXED",
+      "ground_truth_level": "MEDIUM",
+      "gemini_predicted_level": "MEDIUM",
+      "gemini_risk_score": 45,
+      "hybrid_predicted_level": "MEDIUM",
+      "hybrid_risk_score": 55,
+      "hybrid_reasons": [
+        {
+          "code": "REFERRAL",
+          "evidence": "өз командаңды жинап тауар сатасың"
+        },
+        {
+          "code": "MONEY_REQUEST",
+          "evidence": "қалғанын ЛС-та түсіндіремін"
+        }
+      ],
+      "evidence_exact_matches": true
+    },
+    {
+      "id": "bench_med_07",
+      "lang": "RU",
+      "ground_truth_level": "MEDIUM",
+      "gemini_predicted_level": "LOW",
+      "gemini_risk_score": 10,
+      "hybrid_predicted_level": "HIGH",
+      "hybrid_risk_score": 75,
+      "hybrid_reasons": [
+        {
+          "code": "UNREALISTIC_RETURN",
+          "evidence": "заработок от 300 000 тг"
+        },
+        {
+          "code": "MONEY_REQUEST",
+          "evidence": "Стоимость курса 25 000 тг"
+        }
+      ],
+      "evidence_exact_matches": true
+    },
+    {
+      "id": "bench_med_08",
+      "lang": "KZ",
+      "ground_truth_level": "MEDIUM",
+      "gemini_predicted_level": "LOW",
+      "gemini_risk_score": 10,
+      "hybrid_predicted_level": "MEDIUM",
+      "hybrid_risk_score": 45,
+      "hybrid_reasons": [
+        {
+          "code": "UNREALISTIC_RETURN",
+          "evidence": "айына 500 000 теңге табуға болады"
+        }
+      ],
+      "evidence_exact_matches": true
+    },
+    {
+      "id": "bench_med_09",
+      "lang": "RU",
+      "ground_truth_level": "MEDIUM",
+      "gemini_predicted_level": "LOW",
+      "gemini_risk_score": 15,
+      "hybrid_predicted_level": "MEDIUM",
+      "hybrid_risk_score": 30,
+      "hybrid_reasons": [
+        {
+          "code": "MONEY_REQUEST",
+          "evidence": "под залог авто"
+        }
+      ],
+      "evidence_exact_matches": true
+    },
+    {
+      "id": "bench_med_10",
+      "lang": "KZ",
+      "ground_truth_level": "MEDIUM",
+      "gemini_predicted_level": "LOW",
+      "gemini_risk_score": 15,
+      "hybrid_predicted_level": "MEDIUM",
+      "hybrid_risk_score": 30,
+      "hybrid_reasons": [
+        {
+          "code": "MONEY_REQUEST",
+          "evidence": "несие беру мүмкіндігі"
+        }
+      ],
+      "evidence_exact_matches": true
+    },
+    {
+      "id": "bench_high_01",
+      "lang": "RU",
+      "ground_truth_level": "HIGH",
+      "gemini_predicted_level": "HIGH",
+      "gemini_risk_score": 95,
+      "hybrid_predicted_level": "HIGH",
+      "hybrid_risk_score": 98,
+      "hybrid_reasons": [
+        {
+          "code": "UNREALISTIC_RETURN",
+          "evidence": "Вложи 50000 тг прямо сейчас и получи 150000 тг завтра!"
+        },
+        {
+          "code": "GUARANTEED_PROFIT",
+          "evidence": "100% гарантия дохода"
+        },
+        {
+          "code": "MONEY_REQUEST",
+          "evidence": "Вложи 50000 тг"
+        },
+        {
+          "code": "REFERRAL",
+          "evidence": "выплаты новым участникам из кассы взаимопомощи"
+        }
+      ],
+      "evidence_exact_matches": true
+    },
+    {
+      "id": "bench_high_02",
+      "lang": "KZ",
+      "ground_truth_level": "HIGH",
+      "gemini_predicted_level": "HIGH",
+      "gemini_risk_score": 95,
+      "hybrid_predicted_level": "HIGH",
+      "hybrid_risk_score": 98,
+      "hybrid_reasons": [
+        {
+          "code": "UNREALISTIC_RETURN",
+          "evidence": "20 000 теңге салып, 3 күнде 80 000 теңге алып шығыңыз"
+        },
+        {
+          "code": "GUARANTEED_PROFIT",
+          "evidence": "Ешқандай тәуекел жоқ, 100% кепілдік береміз"
+        },
+        {
+          "code": "MONEY_REQUEST",
+          "evidence": "20 000 теңге салып"
+        },
+        {
+          "code": "URGENCY",
+          "evidence": "Орындар шектеулі!"
+        }
+      ],
+      "evidence_exact_matches": true
+    },
+    {
+      "id": "bench_high_03",
+      "lang": "MIXED",
+      "ground_truth_level": "HIGH",
+      "gemini_predicted_level": "HIGH",
+      "gemini_risk_score": 95,
+      "hybrid_predicted_level": "HIGH",
+      "hybrid_risk_score": 98,
+      "hybrid_reasons": [
+        {
+          "code": "UNREALISTIC_RETURN",
+          "evidence": "30 000 тг салсаң, ертең 90 000 тг аласың"
+        },
+        {
+          "code": "GUARANTEED_PROFIT",
+          "evidence": "Қорғау бар, 100% гарантия!"
+        },
+        {
+          "code": "MONEY_REQUEST",
+          "evidence": "30 000 тг салсаң"
+        },
+        {
+          "code": "URGENCY",
+          "evidence": "орын аз қалды"
+        },
+        {
+          "code": "PERSONAL_TRANSFER",
+          "evidence": "Кураторға жаз"
+        }
+      ],
+      "evidence_exact_matches": true
+    },
+    {
+      "id": "bench_high_04",
+      "lang": "RU",
+      "ground_truth_level": "HIGH",
+      "gemini_predicted_level": "HIGH",
+      "gemini_risk_score": 95,
+      "hybrid_predicted_level": "HIGH",
+      "hybrid_risk_score": 95,
+      "hybrid_reasons": [
+        {
+          "code": "UNREALISTIC_RETURN",
+          "evidence": "Закрой матрицу и забери 1 000 000 тг!"
+        },
+        {
+          "code": "MONEY_REQUEST",
+          "evidence": "Вход всего 15 000 тг"
+        },
+        {
+          "code": "REFERRAL",
+          "evidence": "пригласи 3 друзей, каждый из них приглашает по 3"
+        },
+        {
+          "code": "PERSONAL_TRANSFER",
+          "evidence": "Деньги идут на карту Kaspi"
+        }
+      ],
+      "evidence_exact_matches": true
+    },
+    {
+      "id": "bench_high_05",
+      "lang": "KZ",
+      "ground_truth_level": "HIGH",
+      "gemini_predicted_level": "HIGH",
+      "gemini_risk_score": 90,
+      "hybrid_predicted_level": "HIGH",
+      "hybrid_risk_score": 90,
+      "hybrid_reasons": [
+        {
+          "code": "UNREALISTIC_RETURN",
+          "evidence": "10 000 теңге жарна құйып, 5 досыңды шақыр. Әр шақырған адамнан 50% бонус"
+        },
+        {
+          "code": "MONEY_REQUEST",
+          "evidence": "10 000 теңге жарна құйып"
+        },
+        {
+          "code": "REFERRAL",
+          "evidence": "5 досыңды шақыр. Әр шақырған адамнан 50% бонус"
+        },
+        {
+          "code": "PERSONAL_TRANSFER",
+          "evidence": "жеке Kaspi картаңа түседі!"
+        }
+      ],
+      "evidence_exact_matches": true
+    },
+    {
+      "id": "bench_high_06",
+      "lang": "RU",
+      "ground_truth_level": "HIGH",
+      "gemini_predicted_level": "HIGH",
+      "gemini_risk_score": 95,
+      "hybrid_predicted_level": "HIGH",
+      "hybrid_risk_score": 95,
+      "hybrid_reasons": [
+        {
+          "code": "UNREALISTIC_RETURN",
+          "evidence": "получай пассивный доход 20000 тенге каждый день пожизненно"
+        },
+        {
+          "code": "MONEY_REQUEST",
+          "evidence": "Вход 25000 тенге"
+        },
+        {
+          "code": "REFERRAL",
+          "evidence": "Приведи 2 партнеров"
+        }
+      ],
+      "evidence_exact_matches": true
+    },
+    {
+      "id": "bench_high_07",
+      "lang": "RU",
+      "ground_truth_level": "HIGH",
+      "gemini_predicted_level": "HIGH",
+      "gemini_risk_score": 95,
+      "hybrid_predicted_level": "HIGH",
+      "hybrid_risk_score": 95,
+      "hybrid_reasons": [
+        {
+          "code": "UNREALISTIC_RETURN",
+          "evidence": "приносит от 15% прибыли в сутки"
+        },
+        {
+          "code": "GUARANTEED_PROFIT",
+          "evidence": "Без рисков, депозит застрахован"
+        },
+        {
+          "code": "MONEY_REQUEST",
+          "evidence": "Перевод депозита"
+        },
+        {
+          "code": "PERSONAL_TRANSFER",
+          "evidence": "на номер +77011234567"
+        }
+      ],
+      "evidence_exact_matches": true
+    },
+    {
+      "id": "bench_high_08",
+      "lang": "KZ",
+      "ground_truth_level": "HIGH",
+      "gemini_predicted_level": "HIGH",
+      "gemini_risk_score": 95,
+      "hybrid_predicted_level": "HIGH",
+      "hybrid_risk_score": 95,
+      "hybrid_reasons": [
+        {
+          "code": "UNREALISTIC_RETURN",
+          "evidence": "Крипто-бот тәулігіне 20% таза пайда береді!"
+        },
+        {
+          "code": "GUARANTEED_PROFIT",
+          "evidence": "Тәуекелсіз, толық кепілдік."
+        },
+        {
+          "code": "MONEY_REQUEST",
+          "evidence": "Ақшаны Kaspi арқылы менеджердің картасына аударасыз."
+        },
+        {
+          "code": "PERSONAL_TRANSFER",
+          "evidence": "Kaspi арқылы менеджердің картасына аударасыз"
+        }
+      ],
+      "evidence_exact_matches": true
+    },
+    {
+      "id": "bench_high_09",
+      "lang": "MIXED",
+      "ground_truth_level": "HIGH",
+      "gemini_predicted_level": "HIGH",
+      "gemini_risk_score": 95,
+      "hybrid_predicted_level": "HIGH",
+      "hybrid_risk_score": 95,
+      "hybrid_reasons": [
+        {
+          "code": "UNREALISTIC_RETURN",
+          "evidence": "күн сайын +30% гарантированный доход"
+        },
+        {
+          "code": "GUARANTEED_PROFIT",
+          "evidence": "гарантированный доход"
+        },
+        {
+          "code": "MONEY_REQUEST",
+          "evidence": "Салатын сумма минимум 40 000 тг"
+        },
+        {
+          "code": "PERSONAL_TRANSFER",
+          "evidence": "куратор номеріне перевод жасайсыз"
+        }
+      ],
+      "evidence_exact_matches": true
+    },
+    {
+      "id": "bench_high_10",
+      "lang": "RU",
+      "ground_truth_level": "HIGH",
+      "gemini_predicted_level": "HIGH",
+      "gemini_risk_score": 90,
+      "hybrid_predicted_level": "HIGH",
+      "hybrid_risk_score": 90,
+      "hybrid_reasons": [
+        {
+          "code": "UNREALISTIC_RETURN",
+          "evidence": "Оплата 35000 тг в день."
+        },
+        {
+          "code": "MONEY_REQUEST",
+          "evidence": "Для активации рабочего кабинета переведите 5000 тг залога на Kaspi."
+        },
+        {
+          "code": "PERSONAL_TRANSFER",
+          "evidence": "на Kaspi"
+        }
+      ],
+      "evidence_exact_matches": true
+    },
+    {
+      "id": "bench_high_11",
+      "lang": "KZ",
+      "ground_truth_level": "HIGH",
+      "gemini_predicted_level": "HIGH",
+      "gemini_risk_score": 90,
+      "hybrid_predicted_level": "HIGH",
+      "hybrid_risk_score": 90,
+      "hybrid_reasons": [
+        {
+          "code": "UNREALISTIC_RETURN",
+          "evidence": "Үйде отырып күніне 40 000 тг табыс табу!"
+        },
+        {
+          "code": "MONEY_REQUEST",
+          "evidence": "Жұмысты бастау үшін тіркелу жарнасы 4 000 теңге жеке картаға аударылады."
+        },
+        {
+          "code": "PERSONAL_TRANSFER",
+          "evidence": "жеке картаға аударылады"
+        }
+      ],
+      "evidence_exact_matches": true
+    },
+    {
+      "id": "bench_high_12",
+      "lang": "RU",
+      "ground_truth_level": "HIGH",
+      "gemini_predicted_level": "HIGH",
+      "gemini_risk_score": 90,
+      "hybrid_predicted_level": "HIGH",
+      "hybrid_risk_score": 90,
+      "hybrid_reasons": [
+        {
+          "code": "MONEY_REQUEST",
+          "evidence": "оплатите только доставку курьеру 4500 тг на карту куратора"
+        },
+        {
+          "code": "PERSONAL_TRANSFER",
+          "evidence": "на карту куратора"
+        },
+        {
+          "code": "URGENCY",
+          "evidence": "прямо сейчас"
+        }
+      ],
+      "evidence_exact_matches": true
+    },
+    {
+      "id": "bench_high_13",
+      "lang": "KZ",
+      "ground_truth_level": "HIGH",
+      "gemini_predicted_level": "HIGH",
+      "gemini_risk_score": 90,
+      "hybrid_predicted_level": "HIGH",
+      "hybrid_risk_score": 90,
+      "hybrid_reasons": [
+        {
+          "code": "UNREALISTIC_RETURN",
+          "evidence": "Мемлекеттен 85 000 теңге көлемінде әлеуметтік төлем!"
+        },
+        {
+          "code": "MONEY_REQUEST",
+          "evidence": "3500 теңгені Kaspi-ге аударып тексеріңіз"
+        },
+        {
+          "code": "PERSONAL_TRANSFER",
+          "evidence": "Kaspi-ге аударып тексеріңіз"
+        }
+      ],
+      "evidence_exact_matches": true
+    },
+    {
+      "id": "bench_high_14",
+      "lang": "RU",
+      "ground_truth_level": "HIGH",
+      "gemini_predicted_level": "HIGH",
+      "gemini_risk_score": 95,
+      "hybrid_predicted_level": "HIGH",
+      "hybrid_risk_score": 95,
+      "hybrid_reasons": [
+        {
+          "code": "UNREALISTIC_RETURN",
+          "evidence": "В.л.0.ж.и 20 000 тг и з@р@б0тай 70 000 тг за 2 дня!"
+        },
+        {
+          "code": "GUARANTEED_PROFIT",
+          "evidence": "100% г@р@нтия, без риска!"
+        },
+        {
+          "code": "MONEY_REQUEST",
+          "evidence": "В.л.0.ж.и 20 000 тг"
+        },
+        {
+          "code": "PERSONAL_TRANSFER",
+          "evidence": "Перевод на Kаspі."
+        }
+      ],
+      "evidence_exact_matches": true
+    },
+    {
+      "id": "bench_high_15",
+      "lang": "KZ",
+      "ground_truth_level": "HIGH",
+      "gemini_predicted_level": "HIGH",
+      "gemini_risk_score": 95,
+      "hybrid_predicted_level": "HIGH",
+      "hybrid_risk_score": 95,
+      "hybrid_reasons": [
+        {
+          "code": "UNREALISTIC_RETURN",
+          "evidence": "Т_а_б_ы_с күнделікті 50 000 тг!"
+        },
+        {
+          "code": "GUARANTEED_PROFIT",
+          "evidence": "1ОО% к-е-п-і-л-д-і-к!"
+        },
+        {
+          "code": "MONEY_REQUEST",
+          "evidence": "Бастапқы жарнаны кураторға Kаspі-мен аудар."
+        },
+        {
+          "code": "PERSONAL_TRANSFER",
+          "evidence": "кураторға Kаspі-мен аудар."
+        }
+      ],
+      "evidence_exact_matches": true
+    },
+    {
+      "id": "bench_high_16",
+      "lang": "MIXED",
+      "ground_truth_level": "HIGH",
+      "gemini_predicted_level": "HIGH",
+      "gemini_risk_score": 95,
+      "hybrid_predicted_level": "HIGH",
+      "hybrid_risk_score": 95,
+      "hybrid_reasons": [
+        {
+          "code": "UNREALISTIC_RETURN",
+          "evidence": "15 000 тг с@л, ертең 50 000 тг ал"
+        },
+        {
+          "code": "MONEY_REQUEST",
+          "evidence": "15 000 тг с@л"
+        },
+        {
+          "code": "URGENCY",
+          "evidence": "Тек бүгін 2 орын қалды, личкаға жаз"
+        },
+        {
+          "code": "PERSONAL_TRANSFER",
+          "evidence": "личкаға жаз"
+        }
+      ],
+      "evidence_exact_matches": true
+    },
+    {
+      "id": "bench_high_17",
+      "lang": "RU",
+      "ground_truth_level": "HIGH",
+      "gemini_predicted_level": "HIGH",
+      "gemini_risk_score": 95,
+      "hybrid_predicted_level": "HIGH",
+      "hybrid_risk_score": 95,
+      "hybrid_reasons": [
+        {
+          "code": "URGENCY",
+          "evidence": "Срочно! Осталось 1 место в пуле инвесторов!"
+        },
+        {
+          "code": "UNREALISTIC_RETURN",
+          "evidence": "Доход х5 за сутки."
+        },
+        {
+          "code": "GUARANTEED_PROFIT",
+          "evidence": "100% гарантия без просадок."
+        },
+        {
+          "code": "MONEY_REQUEST",
+          "evidence": "Успей перевести на +77771234567."
+        },
+        {
+          "code": "PERSONAL_TRANSFER",
+          "evidence": "перевести на +77771234567"
+        }
+      ],
+      "evidence_exact_matches": true
+    },
+    {
+      "id": "bench_high_18",
+      "lang": "KZ",
+      "ground_truth_level": "HIGH",
+      "gemini_predicted_level": "HIGH",
+      "gemini_risk_score": 90,
+      "hybrid_predicted_level": "HIGH",
+      "hybrid_risk_score": 98,
+      "hybrid_reasons": [
+        {
+          "code": "UNREALISTIC_RETURN",
+          "evidence": "100 000 тг салып, аптасына 300% дивиденд ал"
+        },
+        {
+          "code": "GUARANTEED_PROFIT",
+          "evidence": "Толық сенімді кепілдік"
+        },
+        {
+          "code": "MONEY_REQUEST",
+          "evidence": "100 000 тг салып"
+        },
+        {
+          "code": "PERSONAL_TRANSFER",
+          "evidence": "куратор жеке бағыттайды"
+        }
+      ],
+      "evidence_exact_matches": true
+    },
+    {
+      "id": "bench_high_19",
+      "lang": "MIXED",
+      "ground_truth_level": "HIGH",
+      "gemini_predicted_level": "HIGH",
+      "gemini_risk_score": 90,
+      "hybrid_predicted_level": "HIGH",
+      "hybrid_risk_score": 90,
+      "hybrid_reasons": [
+        {
+          "code": "UNREALISTIC_RETURN",
+          "evidence": "әр адамнан +30% пайыз ал"
+        },
+        {
+          "code": "MONEY_REQUEST",
+          "evidence": "вход 10000 тг"
+        },
+        {
+          "code": "REFERRAL",
+          "evidence": "Достарыңды ертіп кел"
+        },
+        {
+          "code": "URGENCY",
+          "evidence": "Бүгін соңғы күн!"
+        }
+      ],
+      "evidence_exact_matches": true
+    },
+    {
+      "id": "bench_high_20",
+      "lang": "RU",
+      "ground_truth_level": "HIGH",
+      "gemini_predicted_level": "HIGH",
+      "gemini_risk_score": 95,
+      "hybrid_predicted_level": "HIGH",
+      "hybrid_risk_score": 95,
+      "hybrid_reasons": [
+        {
+          "code": "UNREALISTIC_RETURN",
+          "evidence": "удвоение депозита каждые 48 часов!"
+        },
+        {
+          "code": "GUARANTEED_PROFIT",
+          "evidence": "Никаких рисков"
+        },
+        {
+          "code": "MONEY_REQUEST",
+          "evidence": "депозита"
+        },
+        {
+          "code": "URGENCY",
+          "evidence": "каждые 48 часов!"
+        },
+        {
+          "code": "PERSONAL_TRANSFER",
+          "evidence": "личный куратор ведет сделку"
+        }
+      ],
+      "evidence_exact_matches": true
+    }
+  ]
+}

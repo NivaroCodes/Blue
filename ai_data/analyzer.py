@@ -27,7 +27,7 @@ def analyze_message(
     3. Deterministic heuristics: rule-based pyramid indicator detection and disclaimer check.
     4. Entity extraction: cards, phones, crypto wallets, invite links.
     5. Context & graph enrichment: factual database signals from context_block.
-    6. Google Gemini analysis: single configured model (default gemini-3.8-flash).
+    6. Google Gemini analysis: single configured model (default gemini-3.5-flash-lite).
     7. Hybrid Risk Engine: synthesizes signals, avoids double-counting, enforces thresholds.
     8. Anti-hallucination validation: strict exact substring match of all evidence fragments.
     """
@@ -134,9 +134,12 @@ def synthesize_risk(
                     reasons_by_code[hr.code] = ReasonItem(code=hr.code, evidence=exact, source="text")
 
     final_reasons = list(reasons_by_code.values())
+    codes = set(reasons_by_code.keys())
 
-    # Base score from Gemini
-    score = gemini_result.risk_score
+    # Base score from Gemini fused with verified deterministic heuristics
+    gemini_score = gemini_result.risk_score
+    heur_score = heuristic_result.risk_score if heuristic_result else 0
+    score = max(gemini_score, heur_score if final_reasons else 0)
 
     # Check for educational / benign disclaimers in original text
     has_disclaimer = False
@@ -144,16 +147,37 @@ def synthesize_risk(
         import re
         has_disclaimer = any(re.search(pat, original_text, re.IGNORECASE) for pat in DISCLAIMERS)
 
-    if has_disclaimer:
-        # Legitimate investment/educational discussion with disclaimers: suppress score
-        score = min(score, 25)
-        final_reasons = []
+    # Contextual check for consumer promotions and courses
+    is_consumer_promo = bool(original_text and re.search(r"\b(?:yandex\s*go|такси|киім\s+дүкен|поездк[а-я]|скидк[а-я]*\s+на|жеңілдік|kaspi\s*red)\b", original_text, re.IGNORECASE))
+    is_course = bool(original_text and re.search(r"\b(?:обучени[ея]|курс[а-я]*|мамандық|оқу\s+мерзімі|выпускник[а-я]*)\b", original_text, re.IGNORECASE))
 
-    # If critical pyramid triad is deterministically present (unrealistic return + money request/personal card),
-    # ensure score does not drop below HIGH threshold
-    codes = set(reasons_by_code.keys())
-    if "UNREALISTIC_RETURN" in codes and ("MONEY_REQUEST" in codes or "PERSONAL_TRANSFER" in codes or "REFERRAL" in codes):
-        if not has_disclaimer:
+    # Critical pyramid / fraud indicators (overt scam)
+    is_critical_pyramid = (
+        ("UNREALISTIC_RETURN" in codes and bool(codes & {"MONEY_REQUEST", "PERSONAL_TRANSFER", "REFERRAL"}))
+        or ("PERSONAL_TRANSFER" in codes and bool(codes & {"MONEY_REQUEST", "GUARANTEED_PROFIT"}))
+        or (gemini_result.risk_level == RiskLevelEnum.HIGH and len(final_reasons) >= 1)
+    )
+
+    if is_consumer_promo and not is_critical_pyramid and "PERSONAL_TRANSFER" not in codes:
+        # Benign retail / ride-sharing promos: suppress to LOW and clear non-scam reasons
+        score = min(score, 15)
+        final_reasons = []
+    elif is_course and score >= 60 and "PERSONAL_TRANSFER" not in codes:
+        # Training / skills courses with high income prospect: classify as MEDIUM, not HIGH
+        score = 45
+    elif has_disclaimer:
+        if is_critical_pyramid:
+            # Pro-forma / fake disclaimer on overt pyramid: scam cannot be sanitized, retain HIGH
+            score = max(score, 75)
+        elif final_reasons:
+            # Ambiguous grey-zone signals with disclaimer: moderate to MEDIUM, retain reasons
+            score = min(45, max(35, score))
+        else:
+            # Legitimate investment/educational discussion with disclaimers: suppress score
+            score = min(score, 20)
+            final_reasons = []
+    else:
+        if is_critical_pyramid:
             score = max(score, 75)
 
     # Bound score [0, 100]

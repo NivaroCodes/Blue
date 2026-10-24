@@ -1,0 +1,545 @@
+[
+  {
+    "id": "bench_low_01",
+    "lang": "RU",
+    "text": "Продам горный велосипед Trek в хорошем состоянии за 45000 тг. Самовывоз из Бостандыкского района.",
+    "ground_truth_level": "LOW",
+    "explanation": "Обычная бытовая продажа личной вещи без признаков мошенничества или финансовых схем.",
+    "expected_reasons": [],
+    "is_obfuscated": false
+  },
+  {
+    "id": "bench_low_02",
+    "lang": "RU",
+    "text": "Коллеги, напоминаю, что завтра в 10:00 состоится общее собрание отдела маркетинга в Zoom.",
+    "ground_truth_level": "LOW",
+    "explanation": "Рабочая переписка сотрудников, не связанная с финансами.",
+    "expected_reasons": [],
+    "is_obfuscated": false
+  },
+  {
+    "id": "bench_low_03",
+    "lang": "KZ",
+    "text": "Сәлеметсіздер ме! Ертең сағат 14:00-де мектепте ата-аналар жиналысы болады. Барлықтарыңыздың қатысуларыңызды сұраймыз.",
+    "ground_truth_level": "LOW",
+    "explanation": "Мектептегі ата-аналар жиналысы туралы күнделікті хабарландыру.",
+    "expected_reasons": [],
+    "is_obfuscated": false
+  },
+  {
+    "id": "bench_low_04",
+    "lang": "KZ",
+    "text": "Алматы қаласында 2 бөлмелі пәтер жалға беріледі. Бағасы 250 000 теңге, барлық жағдайы жасалған.",
+    "ground_truth_level": "LOW",
+    "explanation": "Пәтерді жалға беру туралы стандартты жылжымайтын мүлік хабарландыруы.",
+    "expected_reasons": [],
+    "is_obfuscated": false
+  },
+  {
+    "id": "bench_low_05",
+    "lang": "MIXED",
+    "text": "Сәлем бәріне! Кім ертең Медеуге барады? Погода жақсы болады дейді, бірге барайық.",
+    "ground_truth_level": "LOW",
+    "explanation": "Дружеское общение о совместной поездке в горы, смешанный язык.",
+    "expected_reasons": [],
+    "is_obfuscated": false
+  },
+  {
+    "id": "bench_low_06",
+    "lang": "RU",
+    "text": "Kaspi Депозит: эффективная ставка 14% годовых, защита КФГД до 20 млн тенге. Деньги застрахованы государством.",
+    "ground_truth_level": "LOW",
+    "explanation": "Официальная реклама регулируемого банковского депозита с государственной гарантией.",
+    "expected_reasons": [],
+    "is_obfuscated": false
+  },
+  {
+    "id": "bench_low_07",
+    "lang": "RU",
+    "text": "Инвестиции в акции на KASE через официального брокера Halyk Finance. Помните: стоимость ценных бумаг может колебаться, доходность в прошлом не гарантирует доход в будущем.",
+    "ground_truth_level": "LOW",
+    "explanation": "Легальный инвестиционный сервис лицензированного брокера со стандартным обязательным дисклеймером.",
+    "expected_reasons": [],
+    "is_obfuscated": false
+  },
+  {
+    "id": "bench_low_08",
+    "lang": "KZ",
+    "text": "Банк депозиті бойынша сыйақы мөлшерлемесі жылдық 14,5%. Салымдар мемлекеттік сақтандыру қорымен (ҚДКҚ) қорғалған.",
+    "ground_truth_level": "LOW",
+    "explanation": "Ресми банктік депозит туралы ақпарат, мемлекеттік кепілдікпен қорғалған.",
+    "expected_reasons": [],
+    "is_obfuscated": false
+  },
+  {
+    "id": "bench_low_09",
+    "lang": "KZ",
+    "text": "KASE биржасында акциялар сатып алу. Ескерту: инвестициялар тәуекелмен байланысты, өткен кірістілік болашақ табысқа кепілдік бермейді.",
+    "ground_truth_level": "LOW",
+    "explanation": "Лицензияланған қор нарығындағы инвестициялар, ресми ескерту және тәуекел дисклеймері бар.",
+    "expected_reasons": [],
+    "is_obfuscated": false
+  },
+  {
+    "id": "bench_low_10",
+    "lang": "RU",
+    "text": "Курс 'Основы финансовой грамотности для начинающих'. Стоимость 12000 тг. Учим вести личный бюджет и анализировать расходы. Доходов не обещаем.",
+    "ground_truth_level": "LOW",
+    "explanation": "Обычный образовательный курс с фиксированной ценой и явным отказом от обещаний заработка.",
+    "expected_reasons": [],
+    "is_obfuscated": false
+  },
+  {
+    "id": "bench_low_11",
+    "lang": "KZ",
+    "text": "Excel курсы: формулалар мен таблицалармен жұмыс істеуді үйретеміз. Бағасы 15 000 теңге. 1 айлық оқу.",
+    "ground_truth_level": "LOW",
+    "explanation": "Кәсіби дағдыларды дамыту бойынша стандартты ақылы курс.",
+    "expected_reasons": [],
+    "is_obfuscated": false
+  },
+  {
+    "id": "bench_low_12",
+    "lang": "RU",
+    "text": "Пригласи друга в Yandex Go и получи скидку 500 тг на следующую поездку при заказе такси.",
+    "ground_truth_level": "LOW",
+    "explanation": "Легальная потребительская реферальная программа сервиса такси со скидкой на поездку.",
+    "expected_reasons": [],
+    "is_obfuscated": false
+  },
+  {
+    "id": "bench_low_13",
+    "lang": "KZ",
+    "text": "Досыңды шақыр да, киім дүкеніндегі келесі сатып алуға 10% жеңілдік ал. Науқан апта соңына дейін.",
+    "ground_truth_level": "LOW",
+    "explanation": "Дүкендегі тұтынушылық жеңілдік науқаны, қаржылық пирамидаға жатпайды.",
+    "expected_reasons": [],
+    "is_obfuscated": false
+  },
+  {
+    "id": "bench_low_14",
+    "lang": "MIXED",
+    "text": "Kaspi Red арқылы рассрочкаға товар алсаңыз, бонустар жиналады. Досыңа промокод беріп 1000 бонус алуға болады.",
+    "ground_truth_level": "LOW",
+    "explanation": "Легальная бонусная программа банка для постоянных клиентов.",
+    "expected_reasons": [],
+    "is_obfuscated": false
+  },
+  {
+    "id": "bench_low_15",
+    "lang": "RU",
+    "text": "Ищу репетитора по математике для подготовки к ЕНТ, 11 класс. Занятия 2 раза в неделю, оплата 4000 тг/час.",
+    "ground_truth_level": "LOW",
+    "explanation": "Обычное частное объявление о поиске преподавателя.",
+    "expected_reasons": [],
+    "is_obfuscated": false
+  },
+  {
+    "id": "bench_low_16",
+    "lang": "KZ",
+    "text": "Ертең қалалық сенбілікке барлық тұрғындарды шақырамыз! Басталуы сағат 9:00-де саябақта.",
+    "ground_truth_level": "LOW",
+    "explanation": "Қоғамдық ерікті іс-шара, коммерциялық емес.",
+    "expected_reasons": [],
+    "is_obfuscated": false
+  },
+  {
+    "id": "bench_low_17",
+    "lang": "RU",
+    "text": "Отдам даром котят в добрые руки, приучены к лотку. Район Самал-2.",
+    "ground_truth_level": "LOW",
+    "explanation": "Бесплатное бытовое объявление.",
+    "expected_reasons": [],
+    "is_obfuscated": false
+  },
+  {
+    "id": "bench_low_18",
+    "lang": "KZ",
+    "text": "Қазақ тілі мен әдебиеті пәнінен кітаптар сатылады, жағдайы жаңа. Бағасы келісімді.",
+    "ground_truth_level": "LOW",
+    "explanation": "Кітаптар сату туралы қарапайым жеке хабарландыру.",
+    "expected_reasons": [],
+    "is_obfuscated": false
+  },
+  {
+    "id": "bench_low_19",
+    "lang": "MIXED",
+    "text": "Жұмыс бар: курьер керек, график свободный. Оплата за каждый заказ, официальное оформление.",
+    "ground_truth_level": "LOW",
+    "explanation": "Обычная вакансия курьера с официальным оформлением без требований предоплаты.",
+    "expected_reasons": [],
+    "is_obfuscated": false
+  },
+  {
+    "id": "bench_low_20",
+    "lang": "RU",
+    "text": "Сервисный центр: ремонт стиральных машин и холодильников с выездом на дом. Гарантия на работу 6 месяцев.",
+    "ground_truth_level": "LOW",
+    "explanation": "Бытовые ремонтные услуги с гарантией на выполненные работы.",
+    "expected_reasons": [],
+    "is_obfuscated": false
+  },
+  {
+    "id": "bench_med_01",
+    "lang": "RU",
+    "text": "Присоединяйтесь к нашей торговой команде на Forex. Делимся сигналами, но помните о рисках: торговля на финансовых рынках сопряжена с риском потери капитала.",
+    "ground_truth_level": "MEDIUM",
+    "explanation": "Сигналы Forex в закрытой группе с дисклеймером о рисках. Требует проверки аналитиком.",
+    "expected_reasons": [],
+    "is_obfuscated": false
+  },
+  {
+    "id": "bench_med_02",
+    "lang": "KZ",
+    "text": "Криптовалюта нарығындағы трейдинг бойынша жеке кеңестер. Тәуекелдер бар, бірақ нарықты дұрыс талдау арқылы жақсы нәтижеге жетуге болады. Толығырақ жекеде.",
+    "ground_truth_level": "MEDIUM",
+    "explanation": "Криптовалюта бойынша жеке консультациялар, тәуекелдер ескертілген, бірақ жабық топқа шақырады.",
+    "expected_reasons": [],
+    "is_obfuscated": false
+  },
+  {
+    "id": "bench_med_03",
+    "lang": "MIXED",
+    "text": "Криптада арбитраж жасауды үйретемін. Схема легальная, бірақ нарық құбылмалы (риск бар). Личкаға жазыңыз.",
+    "ground_truth_level": "MEDIUM",
+    "explanation": "Обучение крипто-арбитражу с упоминанием риска, увод в личные сообщения.",
+    "expected_reasons": [],
+    "is_obfuscated": false
+  },
+  {
+    "id": "bench_med_04",
+    "lang": "RU",
+    "text": "Партнерская программа интернет-магазина эко-продукции: строй свою команду консультантов и получай процент от объема продаж товаров. Пишите в WhatsApp.",
+    "ground_truth_level": "MEDIUM",
+    "explanation": "Многоуровневый маркетинг (MLM) реальных товаров. Нужна проверка на структуру выплат.",
+    "expected_reasons": [
+      "REFERRAL"
+    ],
+    "is_obfuscated": false
+  },
+  {
+    "id": "bench_med_05",
+    "lang": "KZ",
+    "text": "Косметика сату бойынша желілік компанияға серіктестер қабылдаймыз. Тауар сатудан түскен пайда және команда құру бонустары. Ватсапқа жазыңыз.",
+    "ground_truth_level": "MEDIUM",
+    "explanation": "Тауарлық желілік маркетинг (MLM), команда құру және сату бонустары.",
+    "expected_reasons": [
+      "REFERRAL"
+    ],
+    "is_obfuscated": false
+  },
+  {
+    "id": "bench_med_06",
+    "lang": "MIXED",
+    "text": "Сетевой маркетинг емес, бірақ өз командаңды жинап тауар сатасың. Тек активный адамдар керек, қалғанын ЛС-та түсіндіремін.",
+    "ground_truth_level": "MEDIUM",
+    "explanation": "Скрытые формулировки, отрицание сетевого маркетинга с признаками привлечения команды в ЛС.",
+    "expected_reasons": [
+      "REFERRAL"
+    ],
+    "is_obfuscated": false
+  },
+  {
+    "id": "bench_med_07",
+    "lang": "RU",
+    "text": "Обучение таргетированной рекламе с нуля. Наши выпускники выходят на заработок от 300 000 тг в месяц при усердной работе. Стоимость курса 25 000 тг.",
+    "ground_truth_level": "MEDIUM",
+    "explanation": "Обещание высокого заработка после платного курса без гарантий трудоустройства.",
+    "expected_reasons": [],
+    "is_obfuscated": false
+  },
+  {
+    "id": "bench_med_08",
+    "lang": "KZ",
+    "text": "IT мамандығын меңгеріп, айына 500 000 теңге табуға болады. Оқу мерзімі 3 ай, еңбекқорлық қажет.",
+    "ground_truth_level": "MEDIUM",
+    "explanation": "Курстар жарнамасындағы жоғары табыс уәдесі, шекті жағдай.",
+    "expected_reasons": [],
+    "is_obfuscated": false
+  },
+  {
+    "id": "bench_med_09",
+    "lang": "RU",
+    "text": "Срочная финансовая помощь под залог авто или недвижимости. Оформление через нотариуса, процентная ставка от 3% в месяц.",
+    "ground_truth_level": "MEDIUM",
+    "explanation": "Частное кредитование под залог, высокий риск кабальной сделки, требует внимания.",
+    "expected_reasons": [],
+    "is_obfuscated": false
+  },
+  {
+    "id": "bench_med_10",
+    "lang": "KZ",
+    "text": "Қаржылай көмек: жеке кәсіпкерлерге несие беру мүмкіндігі. Шарттары мен құжаттары кеңседе талқыланады.",
+    "ground_truth_level": "MEDIUM",
+    "explanation": "Бейресми жеке қарыз беру ұсынысы, қаржылық сараптаманы қажет етеді.",
+    "expected_reasons": [],
+    "is_obfuscated": false
+  },
+  {
+    "id": "bench_high_01",
+    "lang": "RU",
+    "text": "Вложи 50000 тг прямо сейчас и получи 150000 тг завтра! 100% гарантия дохода, выплаты новым участникам из кассы взаимопомощи.",
+    "ground_truth_level": "HIGH",
+    "explanation": "Классическая пирамида Понци: обещание утроения депозита за сутки и 100% гарантия прибыли.",
+    "expected_reasons": [
+      "UNREALISTIC_RETURN",
+      "GUARANTEED_PROFIT",
+      "MONEY_REQUEST",
+      "REFERRAL"
+    ],
+    "is_obfuscated": false
+  },
+  {
+    "id": "bench_high_02",
+    "lang": "KZ",
+    "text": "Бар болғаны 20 000 теңге салып, 3 күнде 80 000 теңге алып шығыңыз! Ешқандай тәуекел жоқ, 100% кепілдік береміз. Орындар шектеулі!",
+    "ground_truth_level": "HIGH",
+    "explanation": "Қаржылық пирамида: 3 күнде 4 есе табыс, тәуекелсіз кепілдік және жасанды асықтыру.",
+    "expected_reasons": [
+      "UNREALISTIC_RETURN",
+      "GUARANTEED_PROFIT",
+      "MONEY_REQUEST",
+      "URGENCY"
+    ],
+    "is_obfuscated": false
+  },
+  {
+    "id": "bench_high_03",
+    "lang": "MIXED",
+    "text": "Супер проект! 30 000 тг салсаң, ертең 90 000 тг аласың. Қорғау бар, 100% гарантия! Кураторға жаз, орын аз қалды.",
+    "ground_truth_level": "HIGH",
+    "explanation": "Смешанный язык: нереалистичная доходность х3 за день, гарантия дохода и искусственная срочность.",
+    "expected_reasons": [
+      "UNREALISTIC_RETURN",
+      "GUARANTEED_PROFIT",
+      "MONEY_REQUEST",
+      "URGENCY"
+    ],
+    "is_obfuscated": false
+  },
+  {
+    "id": "bench_high_04",
+    "lang": "RU",
+    "text": "Закрой матрицу и забери 1 000 000 тг! Вход всего 15 000 тг, пригласи 3 друзей, каждый из них приглашает по 3. Деньги идут на карту Kaspi.",
+    "ground_truth_level": "HIGH",
+    "explanation": "Матричная пирамида с многоуровневым вовлечением и переводами на карту.",
+    "expected_reasons": [
+      "UNREALISTIC_RETURN",
+      "REFERRAL",
+      "MONEY_REQUEST",
+      "PERSONAL_TRANSFER"
+    ],
+    "is_obfuscated": false
+  },
+  {
+    "id": "bench_high_05",
+    "lang": "KZ",
+    "text": "Касса взаимопомощи 'Береке': 10 000 теңге жарна құйып, 5 досыңды шақыр. Әр шақырған адамнан 50% бонус жеке Kaspi картаңа түседі!",
+    "ground_truth_level": "HIGH",
+    "explanation": "Көпдеңгейлі өзара көмек кассасы, жаңа салымшыларды тартудан түсетін бонустар, жеке карта.",
+    "expected_reasons": [
+      "REFERRAL",
+      "MONEY_REQUEST",
+      "PERSONAL_TRANSFER"
+    ],
+    "is_obfuscated": false
+  },
+  {
+    "id": "bench_high_06",
+    "lang": "RU",
+    "text": "Новая финансовая касса взаимопомощи! Вход 25000 тенге. Приведи 2 партнеров и получай пассивный доход 20000 тенге каждый день пожизненно.",
+    "ground_truth_level": "HIGH",
+    "explanation": "Пирамидальная касса с гарантированным ежедневным пассивным доходом за привлечение партнеров.",
+    "expected_reasons": [
+      "UNREALISTIC_RETURN",
+      "GUARANTEED_PROFIT",
+      "REFERRAL",
+      "MONEY_REQUEST"
+    ],
+    "is_obfuscated": false
+  },
+  {
+    "id": "bench_high_07",
+    "lang": "RU",
+    "text": "Автоматический крипто-робот приносит от 15% прибыли в сутки на полном автомате! Без рисков, депозит застрахован. Перевод депозита на номер +77011234567.",
+    "ground_truth_level": "HIGH",
+    "explanation": "Фейковый торговый робот: нереалистичная ежедневная доходность 15% в сутки без риска и перевод на телефон.",
+    "expected_reasons": [
+      "UNREALISTIC_RETURN",
+      "GUARANTEED_PROFIT",
+      "PERSONAL_TRANSFER"
+    ],
+    "is_obfuscated": false
+  },
+  {
+    "id": "bench_high_08",
+    "lang": "KZ",
+    "text": "Крипто-бот тәулігіне 20% таза пайда береді! Тәуекелсіз, толық кепілдік. Ақшаны Kaspi арқылы менеджердің картасына аударасыз.",
+    "ground_truth_level": "HIGH",
+    "explanation": "Фейк крипто-бот: күніне 20% пайда, тәуекелсіз кепілдік, куратордың картасына аудару.",
+    "expected_reasons": [
+      "UNREALISTIC_RETURN",
+      "GUARANTEED_PROFIT",
+      "PERSONAL_TRANSFER"
+    ],
+    "is_obfuscated": false
+  },
+  {
+    "id": "bench_high_09",
+    "lang": "MIXED",
+    "text": "Криптада арбитраж: күн сайын +30% гарантированный доход. Салатын сумма минимум 40 000 тг, куратор номеріне перевод жасайсыз.",
+    "ground_truth_level": "HIGH",
+    "explanation": "Смешанный язык: фейковый арбитраж, гарантированные 30% в день, перевод куратору.",
+    "expected_reasons": [
+      "UNREALISTIC_RETURN",
+      "GUARANTEED_PROFIT",
+      "MONEY_REQUEST",
+      "PERSONAL_TRANSFER"
+    ],
+    "is_obfuscated": false
+  },
+  {
+    "id": "bench_high_10",
+    "lang": "RU",
+    "text": "Работа на дому: ставить лайки товарам на Kaspi и Wildberries! Оплата 35000 тг в день. Для активации рабочего кабинета переведите 5000 тг залога на Kaspi.",
+    "ground_truth_level": "HIGH",
+    "explanation": "Task scam (скам с лайками товаров): завышенная оплата и требование предоплаты залога.",
+    "expected_reasons": [
+      "UNREALISTIC_RETURN",
+      "MONEY_REQUEST",
+      "PERSONAL_TRANSFER"
+    ],
+    "is_obfuscated": false
+  },
+  {
+    "id": "bench_high_11",
+    "lang": "KZ",
+    "text": "Үйде отырып күніне 40 000 тг табыс табу! Тауарларға лайк басу қажет. Жұмысты бастау үшін тіркелу жарнасы 4 000 теңге жеке картаға аударылады.",
+    "ground_truth_level": "HIGH",
+    "explanation": "Тапсырма скамы: лайк басқаны үшін күніне 40 000 тг, бастау үшін жарна талап ету.",
+    "expected_reasons": [
+      "UNREALISTIC_RETURN",
+      "MONEY_REQUEST",
+      "PERSONAL_TRANSFER"
+    ],
+    "is_obfuscated": false
+  },
+  {
+    "id": "bench_high_12",
+    "lang": "RU",
+    "text": "Бесплатная продуктовая корзина для семей! Продукты бесплатно от фонда, но оплатите только доставку курьеру 4500 тг на карту куратора прямо сейчас.",
+    "ground_truth_level": "HIGH",
+    "explanation": "Food aid scam: обещание бесплатной помощи с требованием перевода денег курьеру на карту.",
+    "expected_reasons": [
+      "MONEY_REQUEST",
+      "URGENCY",
+      "PERSONAL_TRANSFER"
+    ],
+    "is_obfuscated": false
+  },
+  {
+    "id": "bench_high_13",
+    "lang": "KZ",
+    "text": "Мемлекеттен 85 000 теңге көлемінде әлеуметтік төлем! Ақшаны алу үшін мемлекеттік комиссия 3500 теңгені Kaspi-ге аударып тексеріңіз.",
+    "ground_truth_level": "HIGH",
+    "explanation": "Әлеуметтік төлем скамы: төлем уәде етіп, алдын ала комиссия талап ету.",
+    "expected_reasons": [
+      "MONEY_REQUEST",
+      "PERSONAL_TRANSFER"
+    ],
+    "is_obfuscated": false
+  },
+  {
+    "id": "bench_high_14",
+    "lang": "RU",
+    "text": "В.л.0.ж.и 20 000 тг и з@р@б0тай 70 000 тг за 2 дня! 100% г@р@нтия, без риска! Перевод на Kаspі.",
+    "ground_truth_level": "HIGH",
+    "explanation": "Обфусцированная пирамида (leet-speak и латинские замены в Kaspi): утроение средств с гарантией.",
+    "expected_reasons": [
+      "UNREALISTIC_RETURN",
+      "GUARANTEED_PROFIT",
+      "MONEY_REQUEST",
+      "PERSONAL_TRANSFER"
+    ],
+    "is_obfuscated": true
+  },
+  {
+    "id": "bench_high_15",
+    "lang": "KZ",
+    "text": "Т_а_б_ы_с күнделікті 50 000 тг! 1ОО% к-е-п-і-л-д-і-к! Бастапқы жарнаны кураторға Kаspі-мен аудар.",
+    "ground_truth_level": "HIGH",
+    "explanation": "Обфускацияланған қазақша скам (әріптер арасы сызықша, нөл орнына О): күнделікті табыс пен кепілдік.",
+    "expected_reasons": [
+      "UNREALISTIC_RETURN",
+      "GUARANTEED_PROFIT",
+      "MONEY_REQUEST",
+      "PERSONAL_TRANSFER"
+    ],
+    "is_obfuscated": true
+  },
+  {
+    "id": "bench_high_16",
+    "lang": "MIXED",
+    "text": "З@р@б0т0к н@ д0му: 15 000 тг с@л, ертең 50 000 тг ал! Тек бүгін 2 орын қалды, личкаға жаз!",
+    "ground_truth_level": "HIGH",
+    "explanation": "Обфусцированный смешанный скам: заработок на дому, утроение депозита, искусственная срочность.",
+    "expected_reasons": [
+      "UNREALISTIC_RETURN",
+      "MONEY_REQUEST",
+      "URGENCY"
+    ],
+    "is_obfuscated": true
+  },
+  {
+    "id": "bench_high_17",
+    "lang": "RU",
+    "text": "Срочно! Осталось 1 место в пуле инвесторов! Доход х5 за сутки. 100% гарантия без просадок. Успей перевести на +77771234567.",
+    "ground_truth_level": "HIGH",
+    "explanation": "Давление срочностью, обещание пятикратного дохода за сутки, 100% гарантия и личный перевод.",
+    "expected_reasons": [
+      "UNREALISTIC_RETURN",
+      "GUARANTEED_PROFIT",
+      "URGENCY",
+      "PERSONAL_TRANSFER"
+    ],
+    "is_obfuscated": false
+  },
+  {
+    "id": "bench_high_18",
+    "lang": "KZ",
+    "text": "Инвестициялық жоба: 100 000 тг салып, аптасына 300% дивиденд ал. Толық сенімді кепілдік, куратор жеке бағыттайды.",
+    "ground_truth_level": "HIGH",
+    "explanation": "Аптасына 300% дивиденд, толық сенімді кепілдік және кураторға уәкілдік ету.",
+    "expected_reasons": [
+      "UNREALISTIC_RETURN",
+      "GUARANTEED_PROFIT",
+      "MONEY_REQUEST"
+    ],
+    "is_obfuscated": false
+  },
+  {
+    "id": "bench_high_19",
+    "lang": "MIXED",
+    "text": "Жаңа касса взаимопомощи: вход 10000 тг. Достарыңды ертіп кел де, әр адамнан +30% пайыз ал. Бүгін соңғы күн!",
+    "ground_truth_level": "HIGH",
+    "explanation": "Пирамида кассасы: жарна 10 000 тг, досты тарту бонустары, соңғы күн қысымы.",
+    "expected_reasons": [
+      "REFERRAL",
+      "MONEY_REQUEST",
+      "URGENCY"
+    ],
+    "is_obfuscated": false
+  },
+  {
+    "id": "bench_high_20",
+    "lang": "RU",
+    "text": "Закрытый инвестиционный клуб миллиардеров: удвоение депозита каждые 48 часов! Никаких рисков, личный куратор ведет сделку.",
+    "ground_truth_level": "HIGH",
+    "explanation": "Удвоение каждые 48 часов, утверждение об отсутствии рисков и куратор.",
+    "expected_reasons": [
+      "UNREALISTIC_RETURN",
+      "GUARANTEED_PROFIT"
+    ],
+    "is_obfuscated": false
+  }
+]

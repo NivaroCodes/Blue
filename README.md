@@ -79,7 +79,7 @@ npm run dev
 
 ## Подключение рабочих данных
 
-Интегрированный сервис реализован в модуле `ai_data` в соответствии с [контрактом API](docs/API.md) на базе **PostgreSQL** и **Google Gemini** (`gemini-3.8-flash`):
+Интегрированный сервис реализован в модуле `ai_data` в соответствии с [контрактом API](docs/API.md) на базе **PostgreSQL** и **Google Gemini** (`gemini-3.5-flash-lite`):
 
 ```powershell
 # Запуск FastAPI сервера (порт 8000, требует PostgreSQL):

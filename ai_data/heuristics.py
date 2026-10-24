@@ -43,9 +43,14 @@ RULES = [
         35
     ),
     (
-        r"(?:poluchi|zaberi|получи[ть]?|забери|ал)\s+\d+[\s\d]*\s*(?:тг|₸|теңге|тенге|tg)?\s*(?:сразу|srazu|уже\s*сейчас|sraz)",
+        r"(?:poluchi|zaberi|получи[ть]?|забери|ал)\s+\d+[\s\d]*\s*(?:тг|₸|теңге|тенге|tg)?\s*(?:сразу|srazu|уже\s*сейчас|sraz|(?:за|в)\s+\d*\s*(?:дн[яей]+|час[аов]*|недел[юи]|күн|апта))",
         ReasonCodeEnum.UNREALISTIC_RETURN.value,
         35
+    ),
+    (
+        r"(?:заработок\s+от\s+\d+[\s\d]*\s*(?:тг|теңге|тенге)|айына\s+\d+[\s\d]*\s*теңге\s+табуға\s+болады)",
+        ReasonCodeEnum.UNREALISTIC_RETURN.value,
+        25
     ),
 
     # 2. GUARANTEED_PROFIT (Гарантия дохода / отсутствие рисков)
@@ -81,6 +86,16 @@ RULES = [
         ReasonCodeEnum.MONEY_REQUEST.value,
         25
     ),
+    (
+        r"(?:стоимость\s+курса\s+\d+[\s\d]*\s*(?:тг|теңге|тенге)?|под\s+залог\s+(?:авто|недвижимости)|несие\s+беру\s+мүмкіндігі|процентная\s+ставка\s+от\s+\d+%)",
+        ReasonCodeEnum.MONEY_REQUEST.value,
+        20
+    ),
+    (
+        r"(?:личкаға\s+жазыңыз|толығырақ\s+жекеде|қалғанын\s+лс-та|пишите\s+в\s+whatsapp|ватсапқа\s+жазыңыз|делимся\s+сигналами|трейдинг\s+бойынша\s+жеке\s+кеңес[а-я]*|арбитраж\s+жасауды\s+үйретемін)",
+        ReasonCodeEnum.MONEY_REQUEST.value,
+        20
+    ),
 
     # 4. REFERRAL (Привлечение людей / реферальная сеть)
     (
@@ -90,6 +105,11 @@ RULES = [
     ),
     (
         r"(?:за\s+каждого\s*(?:нового)?\s*участника|бонус\s+за\s+(?:регистрацию|приглашённых|друзей)|сыйақы\s+аласың|вознаграждение\s+за\s+приглашённых|выплаты\s+идут\s+из\s+взносов|серіктестік\s+бағдарлама|партнерк[ае]|реферал[а-я]*)",
+        ReasonCodeEnum.REFERRAL.value,
+        25
+    ),
+    (
+        r"(?:партнерск(?:ая|ой|ую|ие)\s+программ[а-я]*|строй\s+свою\s+команду(?:\s+консультантов)?|команд[а-я]+\s+құру|желілік\s+компания|өз\s+командаңды\s+жинап|торгов(?:ой|ая)\s+команд[а-я]*)",
         ReasonCodeEnum.REFERRAL.value,
         25
     ),
@@ -124,6 +144,11 @@ DISCLAIMERS = [
     r"финансовая\s+грамотность",
     r"доход\s+не\s+гарантирован",
     r"ешқашан\s+құпия\s+код",
+    r"скидк[а-я]*\s+на\s+(?:следующую\s+)?поездку",
+    r"жеңілдік\s+ал",
+    r"yandex\s+go",
+    r"киім\s+дүкен",
+    r"kaspi\s+red",
 ]
 
 
@@ -195,10 +220,31 @@ def analyze_with_heuristics(text: str) -> AnalysisResult:
         else:
             total_score = 2
 
-    # If message has strong educational/legitimate disclaimers, suppress risk score
-    if has_disclaimer:
-        total_score = min(total_score, 12)
+    # Contextual check for benign consumer promotions and courses
+    is_consumer_promo = bool(re.search(r"\b(?:yandex\s*go|такси|киім\s+дүкен|поездк[а-я]|скидк[а-я]*\s+на|жеңілдік|kaspi\s*red)\b", text, re.IGNORECASE))
+    is_course = bool(re.search(r"\b(?:обучени[ея]|курс[а-я]*|мамандық|оқу\s+мерзімі|выпускник[а-я]*)\b", text, re.IGNORECASE))
+
+    is_critical_pyramid = (
+        (has_unrealistic and (has_money or has_transfer or has_referral or has_guarantee))
+        or (has_transfer and (has_money or has_guarantee))
+    )
+
+    if is_consumer_promo and not is_critical_pyramid and not has_transfer:
+        total_score = min(total_score, 10)
         reasons_dict.clear()
+    elif is_course and total_score >= 60 and not has_transfer:
+        total_score = 45
+    elif has_disclaimer:
+        if is_critical_pyramid:
+            # Disclaimer on overt pyramid: cannot sanitize scam, preserve HIGH
+            total_score = max(total_score, 75)
+        elif reasons_dict:
+            # Ambiguous grey-zone with disclaimer: moderate to MEDIUM, preserve evidence
+            total_score = min(45, max(35, total_score))
+        else:
+            # Genuine benign / educational
+            total_score = min(total_score, 12)
+            reasons_dict.clear()
 
     # Determine risk level strictly according to MVP Plan:
     # LOW: 0-29, MEDIUM: 30-59, HIGH: 60-100
