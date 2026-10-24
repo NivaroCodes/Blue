@@ -2,7 +2,16 @@ import logging
 import re
 from typing import Optional, Union, List, Dict, Set
 
-from .models import MessageInput, AnalysisResult, ReasonItem, RiskLevelEnum, Alert, StatusEnum, ReviewStatusEnum
+from .models import (
+    MessageInput,
+    AnalysisResult,
+    ReasonItem,
+    RiskLevelEnum,
+    Alert,
+    StatusEnum,
+    ReviewStatusEnum,
+    compute_calibrated_confidence,
+)
 from .config import GEMINI_API_KEY, GEMINI_MODEL, LOW_RISK_THRESHOLD, HIGH_RISK_THRESHOLD, ANALYZER_VERSION
 from .llm_client import call_gemini_api, AIAnalysisError
 from .normalizer import detect_language, canonical_fold, find_exact_substring, normalize_text_for_search, detect_obfuscation
@@ -301,12 +310,14 @@ def synthesize_risk(
     else:
         level = RiskLevelEnum.LOW
 
-    # Build confidence (heuristic measure of evidence completeness, capped at 0.95)
-    confidence = min(0.95, max(0.0, float(gemini_result.confidence)))
-    if final_reasons and len(final_reasons) >= 2:
-        confidence = min(0.95, max(confidence, 0.90))
-    elif not final_reasons and level == RiskLevelEnum.LOW:
-        confidence = min(0.85, max(0.60, confidence))
+    # Build calibrated confidence reflecting signal clarity and context sufficiency
+    confidence = compute_calibrated_confidence(
+        risk_level=level,
+        reasons_count=len(final_reasons),
+        text=original_text,
+        raw_model_confidence=gemini_result.confidence,
+        has_image=bool(gemini_result.image_text),
+    )
 
     explanation = sanitize_explanation(gemini_result.explanation, level.value)
 

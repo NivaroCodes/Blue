@@ -82,12 +82,63 @@ class MessageInput(BaseModel):
         return v
 
 
+def compute_calibrated_confidence(
+    risk_level: RiskLevelEnum,
+    reasons_count: int,
+    text: Optional[str] = None,
+    raw_model_confidence: Optional[float] = None,
+    has_image: bool = False,
+) -> float:
+    """
+    Computes an uncalibrated heuristic measure of signal clarity and context sufficiency
+    for the assigned classification tier (bounded within [0.0, 0.95]).
+
+    Semantics:
+    - HIGH with multiple (>=2) corroborating signals: 0.85 - 0.95 (strong multi-signal corroboration)
+    - HIGH with 1 signal: 0.70 - 0.80 (elevated risk with limited single-signal corroboration)
+    - MEDIUM (inherent grey-zone uncertainty, isolated or conflicting signals): 0.45 - 0.65
+    - LOW with sufficient informative context (>=15 chars, >=3 words): 0.75 - 0.85 (context is sufficient to rule out scam)
+    - LOW with sparse / fragmentary input (<15 chars, <3 words): 0.30 - 0.45 (insufficient data for firm conclusion)
+    """
+    clean_text = (text or "").strip()
+    words = clean_text.split()
+    is_sparse = len(clean_text) < 15 or len(words) < 3
+
+    if risk_level == RiskLevelEnum.HIGH:
+        if reasons_count >= 2:
+            base = 0.90
+            if raw_model_confidence is not None:
+                base = (base + float(raw_model_confidence)) / 2
+            return round(min(0.95, max(0.85, base)), 2)
+        else:
+            base = 0.75
+            if raw_model_confidence is not None:
+                base = (base + float(raw_model_confidence)) / 2
+            return round(min(0.80, max(0.70, base)), 2)
+
+    elif risk_level == RiskLevelEnum.MEDIUM:
+        # Inherent ambiguity of the medium tier
+        base = 0.55
+        if raw_model_confidence is not None:
+            base = (base + float(raw_model_confidence)) / 2
+        return round(min(0.65, max(0.45, base)), 2)
+
+    else:  # LOW
+        if is_sparse and not has_image:
+            # Data is sparse/fragmentary — low confidence in excluding risk
+            return 0.35
+        base = 0.80
+        if raw_model_confidence is not None:
+            base = (base + float(raw_model_confidence)) / 2
+        return round(min(0.85, max(0.70, base)), 2)
+
+
 class AnalysisResult(BaseModel):
     risk_score: int = Field(..., ge=0, le=100, description="Risk score from 0 to 100")
     risk_level: RiskLevelEnum = Field(..., description="Risk category: LOW, MEDIUM, or HIGH")
     reasons: List[ReasonItem] = Field(default_factory=list, description="Identified pyramid traits with exact evidence")
     explanation: str = Field(..., description="Human-readable explanation in Russian or Kazakh")
-    confidence: float = Field(..., ge=0.0, le=1.0, description="Model confidence score")
+    confidence: float = Field(..., ge=0.0, le=1.0, description="Heuristic measure of signal clarity and context sufficiency (0.0-0.95)")
     model_version: str = Field(default="safenet-analyzer-v1.0")
     image_text: Optional[str] = Field(default=None, description="Verbatim text transcribed from the attached image (OCR by the model)")
 
@@ -116,7 +167,7 @@ class Alert(BaseModel):
         default=None,
         ge=0.0,
         le=1.0,
-        description="Uncalibrated heuristic measure of evidence density and model certainty (0.0–0.95; not a statistical probability of guilt or legal violation)"
+        description="Heuristic measure of signal clarity and context sufficiency for the assigned risk tier (0.0–0.95; uncalibrated, not a statistical or legal probability of guilt)"
     )
     image_analyzed: Optional[bool] = Field(default=False, description="Whether an attached image was OCR-analyzed")
     image_text: Optional[str] = Field(default=None, description="OCR text extracted from image if present")

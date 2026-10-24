@@ -129,6 +129,93 @@ class TestExplanationQualityAndConfidence(unittest.TestCase):
             self.assertLessEqual(res.confidence, 0.95, "Fused confidence must be capped at 0.95")
             self.assertNotIn("классические признаки классической", res.explanation.lower())
 
+    def test_confidence_semantics_for_high_with_multiple_confirmed_signals(self):
+        """
+        HIGH tier with 2+ corroborated signals (unrealistic return + money request)
+        yields high signal clarity confidence in [0.85, 0.95].
+        """
+        fake_gemini_high = AnalysisResult(
+            risk_score=90,
+            risk_level=RiskLevelEnum.HIGH,
+            reasons=[
+                ReasonItem(code="UNREALISTIC_RETURN", evidence="получи 100000 тг уже завтра"),
+                ReasonItem(code="MONEY_REQUEST", evidence="Вложи 5000 тг"),
+            ],
+            explanation="В тексте зафиксированы явные индикаторы финансовой пирамиды: обещание сверхдоходности и сбор взносов.",
+            confidence=0.92,
+            model_version="gemini-3.5-flash-lite",
+        )
+        with patch("ai_data.analyzer.call_gemini_api", return_value=fake_gemini_high):
+            text = "Вложи 5000 тг и получи 100000 тг уже завтра! Перевод на карту Kaspi."
+            res = analyze_message(text, api_key="fake_key")
+            self.assertEqual(res.risk_level, RiskLevelEnum.HIGH)
+            self.assertGreaterEqual(len(res.reasons), 2)
+            self.assertGreaterEqual(res.confidence, 0.85)
+            self.assertLessEqual(res.confidence, 0.95)
+
+    def test_confidence_semantics_for_medium_with_ambiguous_signals(self):
+        """
+        MEDIUM tier represents an inherent grey zone (isolated signals, course with fee, unclear mechanics).
+        Confidence is calibrated to a moderate band [0.45, 0.65], reflecting uncertainty that requires human review.
+        """
+        fake_gemini_medium = AnalysisResult(
+            risk_score=45,
+            risk_level=RiskLevelEnum.MEDIUM,
+            reasons=[
+                ReasonItem(code="MONEY_REQUEST", evidence="Стоимость курса 15000 тг"),
+            ],
+            explanation="Выявлены признаки платного обучения. Признаков пирамиды нет, но требуется ручная проверка условий.",
+            confidence=0.55,
+            model_version="gemini-3.5-flash-lite",
+        )
+        with patch("ai_data.analyzer.call_gemini_api", return_value=fake_gemini_medium):
+            text = "Обучение основам инвестиций. Стоимость курса 15000 тг. Запись в лс."
+            res = analyze_message(text, api_key="fake_key")
+            self.assertEqual(res.risk_level, RiskLevelEnum.MEDIUM)
+            self.assertGreaterEqual(res.confidence, 0.45)
+            self.assertLessEqual(res.confidence, 0.65)
+
+    def test_confidence_semantics_for_low_without_signals(self):
+        """
+        LOW tier with complete, informative everyday context (>=15 chars, >=3 words)
+        yields confidence in [0.75, 0.85] because context is sufficient to reliably rule out scam signals.
+        """
+        fake_gemini_low = AnalysisResult(
+            risk_score=5,
+            risk_level=RiskLevelEnum.LOW,
+            reasons=[],
+            explanation="Материал носит нейтральный характер, признаков финансовых пирамид не выявлено.",
+            confidence=0.80,
+            model_version="gemini-3.5-flash-lite",
+        )
+        with patch("ai_data.analyzer.call_gemini_api", return_value=fake_gemini_low):
+            text = "Привет всем! Напоминаю, что завтра в 10:00 у нас лекция по высшей математике в 304 аудитории. Не забудьте тетради."
+            res = analyze_message(text, api_key="fake_key")
+            self.assertEqual(res.risk_level, RiskLevelEnum.LOW)
+            self.assertEqual(len(res.reasons), 0)
+            self.assertGreaterEqual(res.confidence, 0.75)
+            self.assertLessEqual(res.confidence, 0.85)
+
+    def test_confidence_semantics_for_low_with_insufficient_sparse_data(self):
+        """
+        LOW tier with sparse or fragmentary text (<15 chars, <3 words, e.g. 'ок' or 'привет')
+        yields reduced confidence in [0.30, 0.45], explicitly indicating data insufficiency.
+        """
+        fake_gemini_sparse = AnalysisResult(
+            risk_score=0,
+            risk_level=RiskLevelEnum.LOW,
+            reasons=[],
+            explanation="Сообщение слишком краткое, признаки не выявлены.",
+            confidence=0.35,
+            model_version="gemini-3.5-flash-lite",
+        )
+        with patch("ai_data.analyzer.call_gemini_api", return_value=fake_gemini_sparse):
+            text = "ок"
+            res = analyze_message(text, api_key="fake_key")
+            self.assertEqual(res.risk_level, RiskLevelEnum.LOW)
+            self.assertGreaterEqual(res.confidence, 0.30)
+            self.assertLessEqual(res.confidence, 0.45)
+
 
 class TestAPIReturnTypesValidation(unittest.TestCase):
     def setUp(self):

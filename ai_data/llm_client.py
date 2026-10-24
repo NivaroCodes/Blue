@@ -230,7 +230,7 @@ HIGH:   60 – 100 (явные признаки финансовой пирам�
     }
   ],
   "explanation": "<развёрнутое объективное аналитическое заключение по требованиям выше>",
-  "confidence": <число 0.0 – 0.95: эвристическая оценка полноты доказательной базы и уверенности эвристики/модели; не является вероятностью вины или преступления>
+  "confidence": <число 0.0 – 0.95: показатель однозначности признаков и достаточности контекста для квалификации; 0.85–0.95 для явного HIGH с 2+ признаками, 0.45–0.65 для неоднозначного MEDIUM, 0.75–0.85 для полного LOW, 0.30–0.45 при кратком тексте или нехватке данных>
 }
 """
 
@@ -544,8 +544,16 @@ def _parse_and_validate_llm_json(
         score = 25
         level = RiskLevelEnum.LOW
 
-    confidence = float(data.get("confidence", 0.85))
-    confidence = max(0.0, min(0.95, confidence))
+    raw_conf = data.get("confidence")
+    model_conf = float(raw_conf) if raw_conf is not None else None
+    from .models import compute_calibrated_confidence
+    confidence = compute_calibrated_confidence(
+        risk_level=level,
+        reasons_count=len(validated_reasons),
+        text=original_text,
+        raw_model_confidence=model_conf,
+        has_image=has_image,
+    )
 
     raw_expl = str(data.get("explanation", "")).strip()
     try:

@@ -1,6 +1,6 @@
 import re
 from typing import List, Tuple, Dict, Any
-from .models import ReasonCodeEnum, ReasonItem, RiskLevelEnum, AnalysisResult
+from .models import ReasonCodeEnum, ReasonItem, RiskLevelEnum, AnalysisResult, compute_calibrated_confidence
 from .normalizer import find_exact_substring, detect_language
 
 
@@ -263,8 +263,12 @@ def analyze_with_heuristics(text: str) -> AnalysisResult:
 
     # Generate contextual explanation
     explanation = _generate_explanation(reasons_list, level, lang)
-    # Heuristic confidence reflects signal density (never arbitrarily hardcoded to 1.0 or inflated on empty reasons)
-    confidence = 0.92 if len(reasons_list) >= 2 else (0.85 if reasons_list else 0.80)
+    # Calibrated confidence reflects signal clarity and context sufficiency (bounded [0.0, 0.95])
+    confidence = compute_calibrated_confidence(
+        risk_level=level,
+        reasons_count=len(reasons_list),
+        text=text,
+    )
 
     return AnalysisResult(
         risk_score=total_score,
