@@ -251,6 +251,42 @@ class TestExplanationQualityAndConfidence(unittest.TestCase):
         conf_clamped = compute_calibrated_confidence(RiskLevelEnum.HIGH, reasons_count=5, text="любой текст", raw_model_confidence=1.0)
         self.assertLessEqual(conf_clamped, 0.95)
 
+    def test_confidence_boundary_clamping_and_extremes(self):
+        # Even with extreme raw_model_confidence (0.0 or 1.0 or beyond),
+        # each tier stays strictly within its documented benchmark boundaries:
+        # HIGH >= 2 reasons: [0.85, 0.95]
+        self.assertEqual(compute_calibrated_confidence(RiskLevelEnum.HIGH, 2, "длинный текст с признаками", raw_model_confidence=0.0), 0.85)
+        self.assertEqual(compute_calibrated_confidence(RiskLevelEnum.HIGH, 2, "длинный текст с признаками", raw_model_confidence=1.0), 0.95)
+        self.assertEqual(compute_calibrated_confidence(RiskLevelEnum.HIGH, 2, "длинный текст с признаками", raw_model_confidence=2.0), 0.95)
+
+        # HIGH 1 reason: [0.70, 0.80]
+        self.assertEqual(compute_calibrated_confidence(RiskLevelEnum.HIGH, 1, "длинный текст с признаками", raw_model_confidence=0.0), 0.70)
+        self.assertEqual(compute_calibrated_confidence(RiskLevelEnum.HIGH, 1, "длинный текст с признаками", raw_model_confidence=1.0), 0.80)
+
+        # MEDIUM: [0.45, 0.65]
+        self.assertEqual(compute_calibrated_confidence(RiskLevelEnum.MEDIUM, 1, "платный курс", raw_model_confidence=0.0), 0.45)
+        self.assertEqual(compute_calibrated_confidence(RiskLevelEnum.MEDIUM, 1, "платный курс", raw_model_confidence=1.0), 0.65)
+
+        # LOW normal: [0.70, 0.85]
+        self.assertEqual(compute_calibrated_confidence(RiskLevelEnum.LOW, 0, "обычный длинный нейтральный текст для теста", raw_model_confidence=0.0), 0.70)
+        self.assertEqual(compute_calibrated_confidence(RiskLevelEnum.LOW, 0, "обычный длинный нейтральный текст для теста", raw_model_confidence=1.0), 0.85)
+
+        # LOW sparse: exactly 0.35 regardless of raw_model_confidence
+        self.assertEqual(compute_calibrated_confidence(RiskLevelEnum.LOW, 0, "ок", raw_model_confidence=0.9), 0.35)
+
+    def test_confidence_overlap_across_different_risk_levels(self):
+        # A normal neutral message in LOW tier has default confidence 0.80
+        conf_low = compute_calibrated_confidence(RiskLevelEnum.LOW, 0, "Завтра в 10:00 состоится лекция по математике в ауд. 301")
+        self.assertEqual(conf_low, 0.80)
+
+        # A HIGH message with 1 reason and raw_model_confidence 0.85 also yields 0.80
+        conf_high = compute_calibrated_confidence(RiskLevelEnum.HIGH, 1, "Срочно переведи 10000 тг", raw_model_confidence=0.85)
+        self.assertEqual(conf_high, 0.80)
+
+        # Both have the exact same confidence (0.80) because both have high signal clarity
+        # for their respective verdicts: one is clearly safe informative context, the other has a clear scam signal.
+        self.assertEqual(conf_low, conf_high)
+
     def test_heuristics_non_categorical_explanations(self):
         # HIGH
         high_expl = _generate_explanation([], RiskLevelEnum.HIGH, "ru")

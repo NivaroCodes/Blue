@@ -93,12 +93,17 @@ def compute_calibrated_confidence(
     Computes an uncalibrated heuristic measure of signal clarity and context sufficiency
     for the assigned classification tier (bounded within [0.0, 0.95]).
 
-    Semantics:
+    Confidence measures the clarity and sufficiency of evidence for the assigned tier, NOT the tier itself.
+    Different risk levels (e.g. HIGH with 1 reason vs. LOW with rich text) can naturally produce
+    overlapping confidence values (e.g. 0.75 - 0.80), because both represent high clarity for their respective verdict.
+    Confidence CANNOT and SHOULD NOT be used to infer or filter Risk Level (which is determined by risk_score and reasons).
+
+    Illustrative benchmark ranges (typical examples, not mutually exclusive across tiers):
     - HIGH with multiple (>=2) corroborating signals: 0.85 - 0.95 (strong multi-signal corroboration)
     - HIGH with 1 signal: 0.70 - 0.80 (elevated risk with limited single-signal corroboration)
     - MEDIUM (inherent grey-zone uncertainty, isolated or conflicting signals): 0.45 - 0.65
-    - LOW with sufficient informative context (>=15 chars, >=3 words): 0.75 - 0.85 (context is sufficient to rule out scam)
-    - LOW with sparse / fragmentary input (<15 chars, <3 words): 0.30 - 0.45 (insufficient data for firm conclusion)
+    - LOW with sufficient informative context (>=15 chars, >=3 words): 0.70 - 0.85 (context is sufficient to rule out scam; default 0.80)
+    - LOW with sparse / fragmentary input (<15 chars, <3 words): 0.30 - 0.45 (insufficient data for firm conclusion; default 0.35)
     """
     clean_text = (text or "").strip()
     words = clean_text.split()
