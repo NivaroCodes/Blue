@@ -176,7 +176,7 @@ def synthesize_risk(
     if not explanation or len(explanation.strip()) < 10:
         explanation = "Анализ сообщения завершен модулем выявления финансовых рисков SafeNet KZ."
 
-    model_ver = gemini_result.model_version or f"safenet-engine-gemini-{target_model}"
+    model_ver = gemini_result.model_version or (target_model if target_model.startswith("gemini-") else f"gemini-{target_model}")
 
     return AnalysisResult(
         risk_score=score,

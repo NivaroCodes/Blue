@@ -1,7 +1,10 @@
 import json
 import logging
+import random
 import re
 import time
+from datetime import datetime, timezone
+from email.utils import parsedate_to_datetime
 from typing import Optional, Dict, Any, List
 
 import httpx
@@ -12,15 +15,80 @@ from .normalizer import find_exact_substring
 
 logger = logging.getLogger(__name__)
 
+# Constants for exponential backoff recovery and wall-clock deadlines
+DEFAULT_MAX_ATTEMPTS = 4
+DEFAULT_BASE_DELAY = 1.0  # seconds
+DEFAULT_MAX_DELAY = 10.0  # seconds cap for single delay
+DEFAULT_OPERATION_TIMEOUT = 30.0  # seconds wall-clock budget for the entire operation
+DEFAULT_PER_REQUEST_TIMEOUT = 12.0  # seconds per individual HTTP read attempt
+MAX_ALLOWED_RETRY_AFTER = 20.0  # seconds threshold; if server asks longer, abort to avoid holding worker
+
 
 class AIAnalysisError(Exception):
     """Raised when the AI model call or response validation fails."""
     pass
 
 
-def _sanitize_error_msg(error_msg: str) -> str:
-    """Strips API keys and tokens from error messages."""
-    return re.sub(r"(key|api_key|token|password|secret)=[^\s&\"']+", r"\1=[REDACTED]", error_msg)[:2000]
+def _sanitize_error_msg(error_msg: Any) -> str:
+    """Strips API keys, tokens, and credentials from error messages."""
+    if not error_msg:
+        return ""
+    if not isinstance(error_msg, str):
+        error_msg = str(error_msg)
+    # Mask key=, token=, etc.
+    s = re.sub(r"(key|api_key|token|password|secret)=[^\s&\"']+", r"\1=[REDACTED]", error_msg)
+    # Mask x-goog-api-key header / json values
+    s = re.sub(r"(x-goog-api-key[\"':\s]+)[^\s,}\"']+", r"\1[REDACTED]", s, flags=re.IGNORECASE)
+    # Mask Google AI Studio keys (AQ. or AIza format)
+    s = re.sub(r"AQ\.[A-Za-z0-9_-]{20,}", "[REDACTED_KEY]", s)
+    s = re.sub(r"AIza[A-Za-z0-9_-]{20,}", "[REDACTED_KEY]", s)
+    # Mask Bearer tokens
+    s = re.sub(r"Bearer\s+[A-Za-z0-9_\-\.]+", "Bearer [REDACTED]", s, flags=re.IGNORECASE)
+    return s[:2000]
+
+
+def _parse_retry_after(header_val: Optional[str]) -> Optional[float]:
+    """Parses Retry-After header as either seconds or HTTP-date string."""
+    if not header_val:
+        return None
+    val_str = header_val.strip()
+    try:
+        val = float(val_str)
+        return max(0.0, val)
+    except ValueError:
+        pass
+    try:
+        dt = parsedate_to_datetime(val_str)
+        if dt:
+            now = datetime.now(timezone.utc)
+            delta = (dt - now).total_seconds()
+            return max(0.0, delta)
+    except Exception:
+        pass
+    return None
+
+
+def _compute_backoff_delay(
+    attempt: int,
+    base_delay: float = DEFAULT_BASE_DELAY,
+    max_delay: float = DEFAULT_MAX_DELAY,
+    retry_after: Optional[float] = None,
+) -> float:
+    """
+    Computes delay with exponential backoff and random jitter following Google API guidance:
+    - Base delay * 2^attempt
+    - Adds random jitter to prevent synchronized retry stampedes
+    - Respects Retry-After if provided
+    - Capped at max_delay
+    """
+    if retry_after is not None and retry_after >= 0:
+        return min(max_delay, retry_after + random.uniform(0.1, 0.4))
+
+    exp_delay = base_delay * (2 ** attempt)
+    max_jitter = min(1.0, max(0.01, exp_delay * 0.5))
+    jitter = random.uniform(0.01, max_jitter)
+    delay = exp_delay + jitter
+    return round(min(delay, max_delay), 3)
 
 
 SYSTEM_PROMPT = """Ты — ведущий AI-аналитик финансовой безопасности в системе SafeNet KZ (Казахстан).
@@ -185,11 +253,20 @@ def call_gemini_api(
     context_block: str = "",
     image_base64: Optional[str] = None,
     image_mime: str = "image/jpeg",
+    max_attempts: int = DEFAULT_MAX_ATTEMPTS,
+    base_delay: float = DEFAULT_BASE_DELAY,
+    max_delay: float = DEFAULT_MAX_DELAY,
+    max_total_wait: float = DEFAULT_OPERATION_TIMEOUT,
+    per_request_timeout: float = DEFAULT_PER_REQUEST_TIMEOUT,
 ) -> AnalysisResult:
     """
     Calls Google Gemini Generative Language REST API using the single configured model.
     Passes API key securely via the 'x-goog-api-key' header (never in query parameters).
-    Retries temporary 429/503 errors on the SAME model with exponential backoff.
+    Enforces a strict wall-clock deadline across all network requests and backoff pauses.
+    Constrains connect/read/write/pool timeouts on each attempt to the remaining operation budget.
+    Retries temporary 429/503 errors on the SAME model with exponential backoff and random jitter.
+    Respects 'Retry-After' header if returned by the server.
+    Does not start any attempt or backoff pause if the overall budget is exhausted.
     No multi-model fallback or cross-provider switching.
     Raises AIAnalysisError if the call fails or API key is invalid.
     """
@@ -226,32 +303,92 @@ def call_gemini_api(
         "Content-Type": "application/json",
     }
 
-    max_attempts = 3
-    backoff_delays = [1.5, 3.0, 6.0]
     last_error = ""
+    attempts_done = 0
 
-    with httpx.Client(timeout=35.0) as client:
+    with httpx.Client() as client:
+        start_time = time.monotonic()
+        deadline = start_time + max_total_wait
         for attempt in range(max_attempts):
+            now = time.monotonic()
+            remaining_budget = deadline - now
+            if remaining_budget <= 0.05:
+                logger.warning(
+                    f"Gemini call aborted before attempt {attempt + 1}: operation budget of {max_total_wait:.1f}s exhausted."
+                )
+                last_error = f"Operation deadline of {max_total_wait:.1f}s exhausted before attempt {attempt + 1}. Last error: {last_error}"
+                break
+
+            attempts_done += 1
+
+            connect_t = max(0.01, min(5.0, remaining_budget))
+            read_t = max(0.01, min(per_request_timeout, remaining_budget))
+            write_t = max(0.01, min(5.0, remaining_budget))
+            pool_t = max(0.01, min(5.0, remaining_budget))
+            attempt_timeout = httpx.Timeout(
+                timeout=remaining_budget,
+                connect=connect_t,
+                read=read_t,
+                write=write_t,
+                pool=pool_t,
+            )
+
             try:
-                resp = client.post(url, json=payload, headers=headers)
+                resp = client.post(url, json=payload, headers=headers, timeout=attempt_timeout)
                 if resp.status_code == 200:
                     data = resp.json()
                     candidates = data.get("candidates", [])
                     if candidates:
                         raw_text = candidates[0]["content"]["parts"][0]["text"]
-                        return _parse_and_validate_llm_json(raw_text, text, f"gemini-{target_model}", has_image=bool(image_base64))
+                        model_id = target_model if target_model.startswith("gemini-") else f"gemini-{target_model}"
+                        return _parse_and_validate_llm_json(
+                            raw_text, text, model_id, has_image=bool(image_base64)
+                        )
                     raise AIAnalysisError(f"Gemini API returned 200 but candidate list is empty: {data}")
-                elif resp.status_code == 429:
-                    last_error = f"Gemini status 429 (Rate limit) on {target_model}"
-                    if attempt < max_attempts - 1:
-                        time.sleep(backoff_delays[attempt])
-                        continue
+
+                retry_after_hdr = resp.headers.get("Retry-After") or resp.headers.get("retry-after")
+                retry_after_sec = _parse_retry_after(retry_after_hdr)
+
+                if resp.status_code == 429:
+                    err_body = _sanitize_error_msg(resp.text)
+                    error_obj = {}
+                    try:
+                        parsed = resp.json()
+                        if isinstance(parsed, dict):
+                            cand_err = parsed.get("error")
+                            if isinstance(cand_err, dict):
+                                error_obj = cand_err
+                    except Exception:
+                        pass
+                    status_str = str(error_obj.get("status") or "RESOURCE_EXHAUSTED")
+                    raw_msg = error_obj.get("message")
+                    err_msg = str(raw_msg) if (raw_msg is not None and isinstance(raw_msg, str)) else err_body
+                    cat_desc = "Quota exceeded" if "quota" in err_msg.lower() else "Rate limit exceeded"
+                    last_error = f"Gemini 429 ({cat_desc} / {status_str}) on {target_model}: {_sanitize_error_msg(err_msg)}"
+                    logger.warning(
+                        f"Gemini API 429 on {target_model} (attempt {attempt + 1}/{max_attempts}): "
+                        f"Category={cat_desc}, Status={status_str}, Details={_sanitize_error_msg(err_msg)}"
+                    )
                 elif resp.status_code == 503:
-                    last_error = f"Gemini status 503 (Service unavailable) on {target_model}"
-                    if attempt < max_attempts - 1:
-                        time.sleep(backoff_delays[attempt])
-                        continue
-                elif resp.status_code in (400, 404):
+                    err_body = _sanitize_error_msg(resp.text)
+                    error_obj = {}
+                    try:
+                        parsed = resp.json()
+                        if isinstance(parsed, dict):
+                            cand_err = parsed.get("error")
+                            if isinstance(cand_err, dict):
+                                error_obj = cand_err
+                    except Exception:
+                        pass
+                    status_str = str(error_obj.get("status") or "UNAVAILABLE")
+                    raw_msg = error_obj.get("message")
+                    err_msg = str(raw_msg) if (raw_msg is not None and isinstance(raw_msg, str)) else err_body
+                    last_error = f"Gemini 503 (Service Unavailable / High Demand / {status_str}) on {target_model}: {_sanitize_error_msg(err_msg)}"
+                    logger.warning(
+                        f"Gemini API 503 Service Unavailable [{status_str}] on {target_model} (attempt {attempt + 1}/{max_attempts}): "
+                        f"{_sanitize_error_msg(err_msg)}"
+                    )
+                elif resp.status_code in (400, 401, 403, 404):
                     err_body = _sanitize_error_msg(resp.text)
                     raise AIAnalysisError(
                         f"Gemini API error for model '{target_model}': HTTP {resp.status_code}. "
@@ -260,14 +397,67 @@ def call_gemini_api(
                 else:
                     err_body = _sanitize_error_msg(resp.text)
                     last_error = f"Gemini HTTP {resp.status_code}: {err_body}"
+                    logger.warning(f"Gemini API HTTP {resp.status_code} on {target_model}: {last_error}")
+
+                if resp.status_code in (429, 503, 500, 502, 504):
+                    if retry_after_sec is not None and retry_after_sec > MAX_ALLOWED_RETRY_AFTER:
+                        raise AIAnalysisError(
+                            f"Gemini API requested Retry-After {retry_after_sec:.1f}s, exceeding maximum allowed retry window of {MAX_ALLOWED_RETRY_AFTER}s. Last error: {last_error}"
+                        )
+                    if attempt < max_attempts - 1:
+                        delay = _compute_backoff_delay(
+                            attempt, base_delay=base_delay, max_delay=max_delay, retry_after=retry_after_sec
+                        )
+                        remaining_after_req = deadline - time.monotonic()
+                        if delay >= remaining_after_req:
+                            logger.warning(
+                                f"Gemini retry aborting on {target_model}: delay {delay:.2f}s exceeds remaining budget {remaining_after_req:.2f}s."
+                            )
+                            break
+                        logger.info(f"Gemini backing off for {delay:.2f}s before retry {attempt + 2}/{max_attempts} on {target_model}...")
+                        time.sleep(delay)
+                        continue
+                else:
                     break
-            except httpx.RequestError as e:
-                last_error = f"Network error calling Gemini ({target_model}): {e}"
+
+            except httpx.TimeoutException as e:
+                clean_err = _sanitize_error_msg(str(e))
+                timeout_type = type(e).__name__
+                last_error = f"Timeout ({timeout_type}) calling Gemini ({target_model}): {clean_err}"
+                logger.warning(f"Timeout ({timeout_type}) on {target_model} (attempt {attempt + 1}/{max_attempts}): {clean_err}")
                 if attempt < max_attempts - 1:
-                    time.sleep(backoff_delays[attempt])
+                    delay = _compute_backoff_delay(attempt, base_delay=base_delay, max_delay=max_delay)
+                    remaining_after_req = deadline - time.monotonic()
+                    if delay >= remaining_after_req:
+                        logger.warning(
+                            f"Gemini retry aborting on {target_model}: delay {delay:.2f}s exceeds remaining budget {remaining_after_req:.2f}s."
+                        )
+                        break
+                    logger.info(f"Gemini backing off for {delay:.2f}s before retry {attempt + 2}/{max_attempts} on {target_model}...")
+                    time.sleep(delay)
                     continue
 
-    raise AIAnalysisError(f"Gemini model '{target_model}' call failed after {max_attempts} attempts. Last error: {last_error}")
+            except httpx.RequestError as e:
+                clean_err = _sanitize_error_msg(str(e))
+                last_error = f"Network error calling Gemini ({target_model}): {clean_err}"
+                logger.warning(f"Network error on {target_model} (attempt {attempt + 1}/{max_attempts}): {clean_err}")
+                if attempt < max_attempts - 1:
+                    delay = _compute_backoff_delay(attempt, base_delay=base_delay, max_delay=max_delay)
+                    remaining_after_req = deadline - time.monotonic()
+                    if delay >= remaining_after_req:
+                        logger.warning(
+                            f"Gemini retry aborting on {target_model}: delay {delay:.2f}s exceeds remaining budget {remaining_after_req:.2f}s."
+                        )
+                        break
+                    logger.info(f"Gemini backing off for {delay:.2f}s before retry {attempt + 2}/{max_attempts} on {target_model}...")
+                    time.sleep(delay)
+                    continue
+
+    elapsed_total = time.monotonic() - start_time
+    raise AIAnalysisError(
+        f"Gemini model '{target_model}' call failed after {attempts_done} attempts "
+        f"(elapsed: {elapsed_total:.2f}s / budget: {max_total_wait:.1f}s). Last error: {last_error}"
+    )
 
 
 def _parse_and_validate_llm_json(
