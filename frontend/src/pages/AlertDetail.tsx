@@ -152,12 +152,25 @@ export function AlertDetail({
                     Версия: <b className="mono">{alert.model_version}</b>
                   </span>
                   {alert.confidence !== null && (
-                    <span>
-                      Уверенность {m.settings.mode === 'demo' ? '(демо)' : 'модели'}:{' '}
+                    <span title="Показатель отражает однозначность и достаточность наблюдаемых признаков для присвоенной категории риска (не является вероятностью вины или безошибочности)">
+                      Однозначность оценки{m.settings.mode === 'demo' ? ' (демо)' : ''}:{' '}
                       <b>{Math.round(alert.confidence * 100)}%</b>
                     </span>
                   )}
                 </div>
+                {alert.confidence !== null && (
+                  <p
+                    className="confidence-hint"
+                    style={{
+                      fontSize: '0.8rem',
+                      color: 'var(--text-muted, #888)',
+                      marginTop: '0.5rem',
+                      lineHeight: '1.4',
+                    }}
+                  >
+                    Показатель отражает однозначность и достаточность наблюдаемых признаков для отнесения к присвоенной категории риска (не является вероятностью вины или статистической безошибочностью).
+                  </p>
+                )}
               </details>
             )}
           </div>

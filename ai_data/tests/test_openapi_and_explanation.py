@@ -13,8 +13,10 @@ from ai_data.models import (
     ReasonItem,
     RiskLevelEnum,
     AnalysisResult,
+    compute_calibrated_confidence,
 )
 from ai_data.analyzer import sanitize_explanation, analyze_message
+from ai_data.heuristics import _generate_explanation
 from ai_data.heuristics import analyze_with_heuristics
 from ai_data.llm_client import _parse_and_validate_llm_json
 from ai_data.db.models import MessageRecord, AnalysisRecord, serialize_to_alert_dict, utc_now
@@ -217,6 +219,54 @@ class TestExplanationQualityAndConfidence(unittest.TestCase):
             self.assertLessEqual(res.confidence, 0.45)
 
 
+    def test_calibrated_confidence_matrix(self):
+        # 1. HIGH with multiple (>= 2) reasons -> [0.85, 0.95]
+        conf_high_multi = compute_calibrated_confidence(RiskLevelEnum.HIGH, reasons_count=2, text="Длинный текст с признаками")
+        self.assertGreaterEqual(conf_high_multi, 0.85)
+        self.assertLessEqual(conf_high_multi, 0.95)
+
+        # 2. HIGH with single isolated reason -> [0.70, 0.80]
+        conf_high_single = compute_calibrated_confidence(RiskLevelEnum.HIGH, reasons_count=1, text="Длинный текст с признаками")
+        self.assertGreaterEqual(conf_high_single, 0.70)
+        self.assertLessEqual(conf_high_single, 0.80)
+
+        # 3. MEDIUM -> [0.45, 0.65]
+        conf_med = compute_calibrated_confidence(RiskLevelEnum.MEDIUM, reasons_count=1, text="Платный курс по инвестициям")
+        self.assertGreaterEqual(conf_med, 0.45)
+        self.assertLessEqual(conf_med, 0.65)
+
+        # 4. LOW normal informative context -> [0.70, 0.85]
+        conf_low_norm = compute_calibrated_confidence(RiskLevelEnum.LOW, reasons_count=0, text="Обычное длинное сообщение о встрече выпускников")
+        self.assertGreaterEqual(conf_low_norm, 0.70)
+        self.assertLessEqual(conf_low_norm, 0.85)
+
+        # 5. LOW sparse / fragmentary context (<15 chars or <3 words) -> [0.30, 0.45]
+        conf_low_sparse1 = compute_calibrated_confidence(RiskLevelEnum.LOW, reasons_count=0, text="привет")
+        conf_low_sparse2 = compute_calibrated_confidence(RiskLevelEnum.LOW, reasons_count=0, text="ок")
+        self.assertGreaterEqual(conf_low_sparse1, 0.30)
+        self.assertLessEqual(conf_low_sparse1, 0.45)
+        self.assertEqual(conf_low_sparse2, 0.35)
+
+        # 6. Upper bound never exceeds 0.95 even if model returns 1.0
+        conf_clamped = compute_calibrated_confidence(RiskLevelEnum.HIGH, reasons_count=5, text="любой текст", raw_model_confidence=1.0)
+        self.assertLessEqual(conf_clamped, 0.95)
+
+    def test_heuristics_non_categorical_explanations(self):
+        # HIGH
+        high_expl = _generate_explanation([], RiskLevelEnum.HIGH, "ru")
+        self.assertIn("признаков, характерных для схем", high_expl)
+        self.assertNotIn("доказано", high_expl.lower())
+
+        # MEDIUM
+        med_expl = _generate_explanation([], RiskLevelEnum.MEDIUM, "ru")
+        self.assertIn("признаки риска", med_expl)
+
+        # LOW
+        low_expl = _generate_explanation([], RiskLevelEnum.LOW, "ru")
+        self.assertIn("не обнаружены", low_expl)
+        self.assertIn("не является гарантией абсолютной безопасности", low_expl)
+
+
 class TestAPIReturnTypesValidation(unittest.TestCase):
     def setUp(self):
         self.client = TestClient(app)
@@ -265,6 +315,33 @@ class TestAPIReturnTypesValidation(unittest.TestCase):
         detail_val = Alert.model_validate(detail_resp.json())
         self.assertEqual(detail_val.id, ingest_val.id)
         self.assertEqual(detail_val.platform.value, "telegram")
+
+
+    def test_pending_alert_has_null_confidence_and_validates(self):
+        # Direct check on PENDING alert serialization
+        from ai_data.db.models import MessageRecord, serialize_to_alert_dict, utc_now
+        msg = MessageRecord(
+            id="telegram_testnull_1",
+            platform="telegram",
+            chat_id="testnull",
+            chat_name="Test Null Chat",
+            message_id="1",
+            sender_hash="sender123",
+            text="Тестовое сообщение в очереди",
+            timestamp=utc_now(),
+            status="PENDING",
+        )
+        api_dict = serialize_to_alert_dict(msg)
+        self.assertIsNone(api_dict["confidence"])
+        self.assertIsNone(api_dict["risk_score"])
+        self.assertIsNone(api_dict["risk_level"])
+        self.assertEqual(api_dict["reasons"], [])
+
+        # Validate with Alert Pydantic schema
+        alert_model = Alert.model_validate(api_dict)
+        self.assertIsNone(alert_model.confidence)
+        self.assertIsNone(alert_model.risk_score)
+        self.assertIsNone(alert_model.risk_level)
 
 
 if __name__ == "__main__":
