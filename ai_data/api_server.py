@@ -3,7 +3,8 @@ import csv
 import io
 import uuid
 from datetime import timedelta
-from typing import Optional
+from typing import Optional, List, Dict, Any, Union
+from .models import Alert, StatsResponse, MessageIngestResponse
 
 from fastapi import FastAPI, HTTPException, Depends
 from fastapi.responses import Response
@@ -169,7 +170,7 @@ def _ingest(db: Session, req: MessageCreateRequest) -> MessageRecord:
     return rec
 
 
-@app.get("/api/alerts")
+@app.get("/api/alerts", response_model=List[Alert])
 def get_alerts(level: Optional[str] = None, db: Session = Depends(get_db)):
     """
     Returns full snapshot of alerts from the database.
@@ -183,7 +184,7 @@ def get_alerts(level: Optional[str] = None, db: Session = Depends(get_db)):
     return alerts
 
 
-@app.get("/api/alerts/{alert_id}")
+@app.get("/api/alerts/{alert_id}", response_model=Alert)
 def get_alert_detail(alert_id: str, db: Session = Depends(get_db)):
     """
     Returns single alert details by alert_id.
@@ -191,7 +192,7 @@ def get_alert_detail(alert_id: str, db: Session = Depends(get_db)):
     return serialize_to_alert_dict(_find_message(db, alert_id))
 
 
-@app.get("/api/stats")
+@app.get("/api/stats", response_model=StatsResponse)
 def get_stats(db: Session = Depends(get_db)):
     """
     Computes real-time message and alert statistics from the database.
@@ -224,7 +225,7 @@ def get_stats(db: Session = Depends(get_db)):
     }
 
 
-@app.get("/api/network-graph")
+@app.get("/api/network-graph", response_model=Dict[str, Any])
 def get_network_graph(db: Session = Depends(get_db)):
     """
     Returns graph and link analysis: bot clusters, cross-chat syndicates,
@@ -233,7 +234,7 @@ def get_network_graph(db: Session = Depends(get_db)):
     return analyze_network_graph(db)
 
 
-@app.post("/api/alerts/{alert_id}/review")
+@app.post("/api/alerts/{alert_id}/review", response_model=Alert)
 def update_review(alert_id: str, req: ReviewRequest, db: Session = Depends(get_db)):
     """
     Saves reviewer decision (NEW / REVIEWED / FALSE_POSITIVE) and reviewer_note in database.
@@ -269,7 +270,7 @@ def update_review(alert_id: str, req: ReviewRequest, db: Session = Depends(get_d
     return serialize_to_alert_dict(rec)
 
 
-@app.post("/api/messages")
+@app.post("/api/messages", response_model=MessageIngestResponse)
 def ingest_message(req: MessageCreateRequest, db: Session = Depends(get_db)):
     """
     Ingests raw message (text and/or image), saves to DB with status PENDING.
@@ -297,7 +298,7 @@ class ImageAnalyzeRequest(BaseModel):
     timestamp: Optional[str] = None
 
 
-@app.post("/api/analyze-image")
+@app.post("/api/analyze-image", response_model=Alert)
 def analyze_image_endpoint(req: ImageAnalyzeRequest, db: Session = Depends(get_db)):
     """
     Multimodal AI endpoint: analyses payment screenshots, fake bank receipts or promo graphics.
@@ -333,7 +334,7 @@ def get_media_file(filename: str):
     return Response(content=data, media_type=mime)
 
 
-@app.get("/api/export")
+@app.get("/api/export", response_model=Union[List[Alert], str])
 def export_alerts(format: str = "json", db: Session = Depends(get_db)):
     """
     Exports surveillance dataset as JSON or CSV for regulatory / forensic reporting (АФМ / АРРФР).

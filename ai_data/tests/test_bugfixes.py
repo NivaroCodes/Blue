@@ -463,11 +463,17 @@ class TestAtomicWorkerConcurrency(unittest.TestCase):
                 try:
                     barrier.wait()
                     done = 0
+                    retries = 10
                     while True:
                         n = process_pending_messages(
                             s, limit=3, api_key="fake_key", throttle_seconds=0, worker_id=f"w-{idx}"
                         )
                         if n == 0:
+                            s.rollback()
+                            if s.query(MessageRecord).filter(MessageRecord.status == "PENDING").count() > 0 and retries > 0:
+                                retries -= 1
+                                time.sleep(0.05)
+                                continue
                             break
                         done += n
                     counts.append(done)

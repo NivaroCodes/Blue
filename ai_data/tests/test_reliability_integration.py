@@ -20,6 +20,7 @@ from ai_data.db.models import (
     MessageRecord,
     AnalysisRecord,
     ReviewRecord,
+    EntityRecord,
     serialize_to_alert_dict,
     parse_timestamp,
     format_timestamp,
@@ -35,6 +36,7 @@ class TestReliabilityIntegration(unittest.TestCase):
     def setUp(self):
         self.Session = get_test_session_factory()
         _s = self.Session()
+        _s.query(EntityRecord).delete()
         _s.query(ReviewRecord).delete()
         _s.query(AnalysisRecord).delete()
         _s.query(MessageRecord).delete()

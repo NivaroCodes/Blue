@@ -263,7 +263,8 @@ def analyze_with_heuristics(text: str) -> AnalysisResult:
 
     # Generate contextual explanation
     explanation = _generate_explanation(reasons_list, level, lang)
-    confidence = 0.92 if len(reasons_list) >= 2 else (0.85 if reasons_list else 0.95)
+    # Heuristic confidence reflects signal density (never arbitrarily hardcoded to 1.0 or inflated on empty reasons)
+    confidence = 0.92 if len(reasons_list) >= 2 else (0.85 if reasons_list else 0.80)
 
     return AnalysisResult(
         risk_score=total_score,

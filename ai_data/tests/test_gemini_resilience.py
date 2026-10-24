@@ -269,10 +269,10 @@ class TestGeminiResilience(unittest.TestCase):
                 model="gemini-3.8-flash",
                 max_attempts=5,
                 base_delay=1.8,
-                max_total_wait=2.5,  # Cap at 2.5s so after 1st retry it stops
+                max_total_wait=3.0,  # Cap at 3.0s so after 1st retry (delay in [1.8, 2.8]) it sleeps, then 2nd retry (>3.6s) aborts
             )
 
-        # First delay ~2.0s is slept, second delay ~3.8s exceeds 2.5s budget, so aborts
+        # First delay ~2.0s is slept, second delay exceeds 3.0s budget, so aborts
         self.assertEqual(mock_sleep.call_count, 1)
 
 
