@@ -6,7 +6,7 @@ from unittest.mock import patch, MagicMock
 import httpx
 from fastapi.testclient import TestClient
 
-from ai_data.tests.test_db_helper import get_clean_test_session, get_test_session_factory, TEST_DB_URL
+from ai_data.tests.test_db_helper import get_clean_test_session, get_test_session_factory, clean_test_database, TEST_DB_URL
 from ai_data.db.models import (
     validate_postgres_url,
     init_db,
@@ -235,11 +235,7 @@ class TestStageDEndToEndPipelineOnPostgres(unittest.TestCase):
     def setUp(self):
         self.Session = get_test_session_factory()
         s = self.Session()
-        s.query(EntityRecord).delete()
-        s.query(ReviewRecord).delete()
-        s.query(AnalysisRecord).delete()
-        s.query(MessageRecord).delete()
-        s.commit()
+        clean_test_database(s)
         s.close()
 
         self._orig_inline = api_server.INLINE_ANALYSIS

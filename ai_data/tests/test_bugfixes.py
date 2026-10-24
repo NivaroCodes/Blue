@@ -21,7 +21,7 @@ from ai_data.db.models import (
     parse_timestamp,
     serialize_to_alert_dict,
 )
-from ai_data.tests.test_db_helper import get_clean_test_session, get_test_session_factory
+from ai_data.tests.test_db_helper import get_clean_test_session, get_test_session_factory, clean_test_database
 from ai_data.entity_extractor import extract_entities
 from ai_data.graph_analysis import analyze_network_graph
 from ai_data.llm_client import _parse_and_validate_llm_json
@@ -226,11 +226,7 @@ class TestCrossChatDeduplication(unittest.TestCase):
     def setUp(self):
         self.Session = get_test_session_factory()
         _s = self.Session()
-        _s.query(EntityRecord).delete()
-        _s.query(ReviewRecord).delete()
-        _s.query(AnalysisRecord).delete()
-        _s.query(MessageRecord).delete()
-        _s.commit()
+        clean_test_database(_s)
         _s.close()
         self._orig_inline = api_server.INLINE_ANALYSIS
         api_server.INLINE_ANALYSIS = False
@@ -298,11 +294,7 @@ class TestMultimodalUnifiedPipeline(unittest.TestCase):
 
         self.Session = get_test_session_factory()
         _s = self.Session()
-        _s.query(EntityRecord).delete()
-        _s.query(ReviewRecord).delete()
-        _s.query(AnalysisRecord).delete()
-        _s.query(MessageRecord).delete()
-        _s.commit()
+        clean_test_database(_s)
         _s.close()
 
         def override_get_db():
@@ -421,11 +413,7 @@ class TestAtomicWorkerConcurrency(unittest.TestCase):
             db_path = Path(tmp) / "concurrent.db"
             Session = get_test_session_factory()
             clean_s = Session()
-            clean_s.query(EntityRecord).delete()
-            clean_s.query(ReviewRecord).delete()
-            clean_s.query(AnalysisRecord).delete()
-            clean_s.query(MessageRecord).delete()
-            clean_s.commit()
+            clean_test_database(clean_s)
             clean_s.close()
 
             seed_s = Session()

@@ -16,20 +16,12 @@ from ai_data.context import get_sender_context, get_chat_context, build_context_
 
 def test_reputation_and_chat_escalation():
     import os
-    from urllib.parse import urlparse
-    from ai_data.db.models import EntityRecord
+    from ai_data.tests.test_db_helper import assert_is_test_database, clean_test_database
     db_url = os.getenv("TEST_DATABASE_URL") or os.getenv("DATABASE_URL", "postgresql://postgres:postgres@localhost:5432/safenet_test")
-    parsed = urlparse(db_url)
-    db_name = parsed.path.lstrip("/").split("?")[0].lower()
-    if "test" not in db_name:
-        raise RuntimeError(f"SAFETY ABORT: Refusing to clean non-test database '{db_name}'.")
+    assert_is_test_database(db_url)
     Session = init_db(db_url)
     s_clean = Session()
-    s_clean.query(EntityRecord).delete()
-    s_clean.query(ReviewRecord).delete()
-    s_clean.query(AnalysisRecord).delete()
-    s_clean.query(MessageRecord).delete()
-    s_clean.commit()
+    clean_test_database(s_clean, db_url)
     s_clean.close()
     session = Session()
 

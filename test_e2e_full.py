@@ -1,5 +1,5 @@
 """
-SafeNet KZ — End-to-End Verification Scenario (Этап 7)
+SafeNet KZ — PostgreSQL E2E Verification Scenario with Mocked AI Model
 Tests:
 1. Ingest test message via POST /api/messages.
 2. Verify status is PENDING.
@@ -20,18 +20,7 @@ from unittest.mock import patch
 
 from fastapi.testclient import TestClient
 
-from urllib.parse import urlparse
-
-def assert_is_test_database(url: str) -> None:
-    if not url:
-        raise RuntimeError("DATABASE_URL is not set.")
-    parsed = urlparse(url)
-    db_name = parsed.path.lstrip("/").split("?")[0].lower()
-    if "test" not in db_name:
-        raise RuntimeError(
-            f"SAFETY ABORT: Refusing to clean or mutate database '{db_name}'. "
-            "E2E test requires an isolated test database whose name contains 'test' (e.g. safenet_test)."
-        )
+from ai_data.tests.test_db_helper import assert_is_test_database, clean_test_database
 
 POSTGRES_URL = os.getenv("TEST_DATABASE_URL") or os.getenv("DATABASE_URL") or "postgresql://postgres:postgres@localhost:5432/safenet_test"
 assert_is_test_database(POSTGRES_URL)
@@ -47,18 +36,14 @@ from ai_data.models import AnalysisResult, ReasonItem, RiskLevelEnum
 
 def run_e2e_verification():
     print("=" * 60)
-    print("STARTING END-TO-END VERIFICATION (ЭТАП 7)")
+    print("STARTING POSTGRESQL E2E VERIFICATION (WITH MOCKED AI MODEL)")
     print("=" * 60)
 
-    # 0. Connect and clean test DB
+    # 0. Connect and clean test DB via unified protective cleanup
     print(f"Connecting to Database: {POSTGRES_URL}")
     Session = init_db(POSTGRES_URL)
     session = Session()
-    session.query(EntityRecord).delete()
-    session.query(ReviewRecord).delete()
-    session.query(AnalysisRecord).delete()
-    session.query(MessageRecord).delete()
-    session.commit()
+    clean_test_database(session, POSTGRES_URL)
     session.close()
 
     def override_get_db():

@@ -11,7 +11,7 @@ import unittest
 from datetime import datetime, timezone, timedelta
 from unittest.mock import patch
 
-from ai_data.tests.test_db_helper import get_clean_test_session, get_test_session_factory, TEST_DB_URL
+from ai_data.tests.test_db_helper import get_clean_test_session, get_test_session_factory, clean_test_database, TEST_DB_URL
 from fastapi.testclient import TestClient
 
 import ai_data.api_server as api_server
@@ -36,11 +36,7 @@ class TestReliabilityIntegration(unittest.TestCase):
     def setUp(self):
         self.Session = get_test_session_factory()
         _s = self.Session()
-        _s.query(EntityRecord).delete()
-        _s.query(ReviewRecord).delete()
-        _s.query(AnalysisRecord).delete()
-        _s.query(MessageRecord).delete()
-        _s.commit()
+        clean_test_database(_s)
         _s.close()
         self._orig_inline = api_server.INLINE_ANALYSIS
         api_server.INLINE_ANALYSIS = False
@@ -159,11 +155,7 @@ class TestReliabilityIntegration(unittest.TestCase):
             db_path = Path(tmp) / "concurrent_test.db"
             Session = get_test_session_factory()
             clean_s = Session()
-            clean_s.query(EntityRecord).delete()
-            clean_s.query(ReviewRecord).delete()
-            clean_s.query(AnalysisRecord).delete()
-            clean_s.query(MessageRecord).delete()
-            clean_s.commit()
+            clean_test_database(clean_s)
             clean_s.close()
 
             db = Session()
@@ -544,10 +536,7 @@ class TestPostgresReliability(unittest.TestCase):
             self.skipTest(f"PostgreSQL not accessible: {self.skip_reason}")
         # Clean test tables
         s = self.Session()
-        s.query(ReviewRecord).delete()
-        s.query(AnalysisRecord).delete()
-        s.query(MessageRecord).delete()
-        s.commit()
+        clean_test_database(s)
         s.close()
 
     @patch("ai_data.analyzer.call_gemini_api")
