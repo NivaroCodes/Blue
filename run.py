@@ -19,7 +19,13 @@ def main():
 
     command = sys.argv[1].lower()
 
-    if command == "api":
+    if command == "init-db":
+        from ai_data.db.models import init_db
+        database_url = os.getenv("DATABASE_URL", "sqlite:///safenet.db")
+        init_db(database_url)
+        print("Database schema initialized.")
+
+    elif command == "api":
         import uvicorn
         host = os.getenv("HOST", "0.0.0.0")
         port = int(os.getenv("PORT", "8000"))
