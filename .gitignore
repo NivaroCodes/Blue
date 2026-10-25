@@ -7,10 +7,10 @@ test-results/
 playwright-report/
 .DS_Store
 *.tsbuildinfo
-
 *.db
 *.db-wal
 *.db-shm
 media/
 __pycache__/
 *.pyc
+.taste-skill/

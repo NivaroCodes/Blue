@@ -1,0 +1,380 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-10-23T08:25:45.465796Z",
+  "title": "Design System: Blue",
+  "extensions": {
+    "colorMeta": {
+      "accent": {
+        "role": "primary",
+        "displayName": "Royal Blue"
+      },
+      "accent-hover": {
+        "role": "primary",
+        "displayName": "Deep Royal Blue"
+      },
+      "accent-soft": {
+        "role": "primary",
+        "displayName": "Pale Blue"
+      },
+      "page": {
+        "role": "neutral",
+        "displayName": "Cool Ground"
+      },
+      "surface": {
+        "role": "neutral",
+        "displayName": "White Sheet"
+      },
+      "surface-raised": {
+        "role": "neutral",
+        "displayName": "Raised Cool Neutral"
+      },
+      "ink": {
+        "role": "neutral",
+        "displayName": "Deep Ink"
+      },
+      "muted": {
+        "role": "neutral",
+        "displayName": "Slate Text"
+      },
+      "border": {
+        "role": "neutral",
+        "displayName": "Fine Divider"
+      },
+      "high": {
+        "role": "secondary",
+        "displayName": "Risk Red"
+      },
+      "high-bg": {
+        "role": "secondary",
+        "displayName": "Pale Risk Red"
+      },
+      "medium": {
+        "role": "secondary",
+        "displayName": "Risk Ochre"
+      },
+      "medium-bg": {
+        "role": "secondary",
+        "displayName": "Pale Risk Ochre"
+      },
+      "low": {
+        "role": "secondary",
+        "displayName": "Risk Green"
+      },
+      "low-bg": {
+        "role": "secondary",
+        "displayName": "Pale Risk Green"
+      },
+      "evidence": {
+        "role": "secondary",
+        "displayName": "Evidence Yellow"
+      },
+      "evidence-ink": {
+        "role": "secondary",
+        "displayName": "Evidence Ink"
+      },
+      "selected-row": {
+        "role": "neutral",
+        "displayName": "Selected Row"
+      },
+      "hover-row": {
+        "role": "neutral",
+        "displayName": "Hover Row"
+      },
+      "chart-high": {
+        "role": "secondary",
+        "displayName": "Muted Risk Red"
+      },
+      "chart-medium": {
+        "role": "secondary",
+        "displayName": "Muted Risk Ochre"
+      },
+      "chart-low": {
+        "role": "secondary",
+        "displayName": "Muted Risk Green"
+      },
+      "chart-unscored": {
+        "role": "secondary",
+        "displayName": "Unscored Chart Fill"
+      },
+      "connector": {
+        "role": "neutral",
+        "displayName": "Relationship Blue"
+      }
+    },
+    "typographyMeta": {
+      "headline": {
+        "displayName": "Headline",
+        "purpose": "Responsive page headings."
+      },
+      "title": {
+        "displayName": "Title",
+        "purpose": "Section headings."
+      },
+      "panel-title": {
+        "displayName": "Panel Title",
+        "purpose": "Inbox and evidence headings."
+      },
+      "body": {
+        "displayName": "Body",
+        "purpose": "Workspace body copy."
+      },
+      "message": {
+        "displayName": "Message",
+        "purpose": "Multiline message previews."
+      },
+      "label": {
+        "displayName": "Label",
+        "purpose": "Compact action labels."
+      },
+      "score": {
+        "displayName": "Score",
+        "purpose": "Tabular evidence score."
+      },
+      "mono": {
+        "displayName": "Mono",
+        "purpose": "Code and technical identifiers."
+      },
+      "metric": {
+        "displayName": "Metric",
+        "purpose": "Tabular dashboard risk-summary values."
+      }
+    },
+    "shadows": [
+      {
+        "name": "toast",
+        "value": "0 12px 28px #121c3526",
+        "purpose": "Soft elevation for transient toast messages."
+      },
+      {
+        "name": "relationship-card",
+        "value": "0 4px 10px #1b356006",
+        "purpose": "Minimal separation for labeled diagram cards."
+      },
+      {
+        "name": "activity-tooltip",
+        "value": "0 8px 24px #1a30541c",
+        "purpose": "Temporary chart interval detail."
+      }
+    ],
+    "motion": [
+      {
+        "name": "control-state",
+        "value": "150ms ease-out",
+        "purpose": "Background, border and text color transitions."
+      },
+      {
+        "name": "route-entry",
+        "value": "250ms cubic-bezier(0.16, 1, 0.3, 1)",
+        "purpose": "Opacity 0.75 to 1 and vertical translation 8px to 0; suppressed under reduced motion."
+      },
+      {
+        "name": "brand-entrance",
+        "value": "2100ms",
+        "purpose": "Finite skippable entrance; reduced motion uses a brief static state."
+      },
+      {
+        "name": "mark-loop-stop",
+        "value": "4400ms",
+        "purpose": "Stop the finite decorative 3D animation loop."
+      },
+      {
+        "name": "analysis-ease",
+        "value": "cubic-bezier(0.23, 1, 0.32, 1)",
+        "purpose": "Analytics and relationship motion."
+      },
+      {
+        "name": "relationship-card-entry",
+        "value": "250ms",
+        "purpose": "Opacity 0.5 to 1 and translation -8px to 0; disabled under reduced motion."
+      },
+      {
+        "name": "relationship-connector",
+        "value": "280ms",
+        "purpose": "Finite smooth-step SVG path drawing; immediate under reduced motion."
+      },
+      {
+        "name": "relationship-view",
+        "value": "180ms",
+        "purpose": "Zoom/fit controls; duration 0 under reduced motion."
+      },
+      {
+        "name": "metric-reveal",
+        "value": "280ms cubic-bezier(0.23, 1, 0.32, 1)",
+        "purpose": "Distribution/source tracks reveal once; disabled under reduced motion."
+      },
+      {
+        "name": "chart-series-entry",
+        "value": "280ms ease-out",
+        "purpose": "Time-series area and line reveal; disabled under reduced motion."
+      },
+      {
+        "name": "reason-bar-change",
+        "value": "250ms cubic-bezier(0.23, 1, 0.32, 1)",
+        "purpose": "Reason-frequency scale changes."
+      }
+    ],
+    "breakpoints": [
+      {
+        "name": "compact-single-column",
+        "value": "560px"
+      },
+      {
+        "name": "analysis-mobile",
+        "value": "650px"
+      },
+      {
+        "name": "base-mobile",
+        "value": "700px"
+      },
+      {
+        "name": "top-navigation",
+        "value": "800px"
+      },
+      {
+        "name": "base-detail-stack",
+        "value": "1000px"
+      },
+      {
+        "name": "stack-evidence",
+        "value": "1250px"
+      },
+      {
+        "name": "wide-workspace",
+        "value": "1600px"
+      }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Filled blue action, with hover, focus, disabled and pointer-active states.",
+      "html": "<button class=\"ds-primary\">Открыть проверку</button>",
+      "css": ".ds-primary{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:40px;padding:10px 14px;border:1px solid var(--accent,#2455ed);border-radius:8px;background:var(--accent,#2455ed);color:var(--on-accent,#ffffff);font-family:Manrope,-apple-system,BlinkMacSystemFont,sans-serif;font-size:12px;line-height:1.5;font-weight:600;cursor:pointer;transition:background-color 150ms ease-out,border-color 150ms ease-out,color 150ms ease-out;}.ds-primary:hover{background:var(--accent-hover,#1943c9);border-color:var(--accent-hover,#1943c9);}.ds-primary:focus-visible{outline:2px solid var(--accent,#2455ed);outline-offset:4px;}.ds-primary:disabled{opacity:.4;cursor:not-allowed;}@media(hover:hover) and (pointer:fine){.ds-primary:not(:disabled):active{transform:translateY(1px);}}@media(prefers-reduced-motion:reduce){.ds-primary{transition-duration:.01ms;}}"
+    },
+    {
+      "name": "Secondary Button",
+      "kind": "button",
+      "refersTo": "button-secondary",
+      "description": "Quiet bordered action used beside the primary action.",
+      "html": "<button class=\"ds-secondary\">Экспорт</button>",
+      "css": ".ds-secondary{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:40px;padding:10px 14px;border:1px solid var(--border,#e4e9f2);border-radius:8px;background:var(--surface,#ffffff);color:var(--ink,#121c35);font-family:Manrope,-apple-system,BlinkMacSystemFont,sans-serif;font-size:12px;line-height:1.5;font-weight:600;cursor:pointer;transition:background-color 150ms ease-out,border-color 150ms ease-out,color 150ms ease-out;}.ds-secondary:hover{background:var(--surface-raised,#edf1f8);}.ds-secondary:focus-visible{outline:2px solid var(--accent,#2455ed);outline-offset:4px;}.ds-secondary:disabled{opacity:.4;cursor:not-allowed;}@media(hover:hover) and (pointer:fine){.ds-secondary:not(:disabled):active{transform:translateY(1px);}}@media(prefers-reduced-motion:reduce){.ds-secondary{transition-duration:.01ms;}}"
+    },
+    {
+      "name": "Input",
+      "kind": "input",
+      "refersTo": "input",
+      "description": "White bordered text field with visible keyboard focus.",
+      "html": "<label class=\"ds-field-label\" for=\"ds-field\">Источник</label><input id=\"ds-field\" class=\"ds-field\" placeholder=\"Введите название\" />",
+      "css": ".ds-field-label{display:block;margin-bottom:6px;color:var(--muted,#596780);font-family:Manrope,-apple-system,BlinkMacSystemFont,sans-serif;font-size:12px;}.ds-field{max-width:100%;min-height:40px;padding:9px 12px;border:1px solid var(--border,#e4e9f2);border-radius:8px;background:var(--surface,#ffffff);color:var(--ink,#121c35);caret-color:var(--accent,#2455ed);font-family:Manrope,-apple-system,BlinkMacSystemFont,sans-serif;font-size:14px;transition:background-color 150ms ease-out,border-color 150ms ease-out,color 150ms ease-out;}.ds-field::placeholder{color:#66718a;}.ds-field:focus-visible{outline:2px solid var(--accent,#2455ed);outline-offset:4px;}"
+    },
+    {
+      "name": "Navigation",
+      "kind": "nav",
+      "refersTo": "navigation-active",
+      "description": "Icon and text route links; pale blue identifies the active route.",
+      "html": "<nav class=\"ds-nav\" aria-label=\"Главная навигация\"><a class=\"ds-nav-link ds-nav-active\" href=\"#inbox\" aria-current=\"page\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" aria-hidden=\"true\"><path d=\"M4 4h16l2 12v4H2v-4L4 4Z\"/><path d=\"M2 14h6l2 3h4l2-3h6\"/></svg>Входящие</a><a class=\"ds-nav-link\" href=\"#sources\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" aria-hidden=\"true\"><ellipse cx=\"12\" cy=\"5\" rx=\"8\" ry=\"3\"/><path d=\"M4 5v14c0 4 16 4 16 0V5M4 12c0 4 16 4 16 0\"/></svg>Источники</a></nav>",
+      "css": ".ds-nav{display:flex;flex-direction:column;gap:7px;font-family:Manrope,-apple-system,BlinkMacSystemFont,sans-serif;font-size:13px;}.ds-nav-link{display:flex;align-items:center;gap:11px;min-height:43px;padding:10px 12px;border-radius:8px;color:var(--muted,#596780);text-decoration:none;transition:background-color 150ms ease-out,border-color 150ms ease-out,color 150ms ease-out;}.ds-nav-link:hover{background:var(--page,#f5f7fb);color:var(--ink,#121c35);}.ds-nav-active,.ds-nav-active:hover{color:var(--accent,#2455ed);background:var(--accent-soft,#eaf0ff);font-weight:600;}.ds-nav-link:focus-visible{outline:2px solid var(--accent,#2455ed);outline-offset:4px;}"
+    },
+    {
+      "name": "Workspace Mode",
+      "kind": "chip",
+      "refersTo": "workspace-status",
+      "description": "Text and dot identify the actual connection mode.",
+      "html": "<span class=\"ds-mode\"><i class=\"ds-mode-dot\" aria-hidden=\"true\"></i>Деморежим</span>",
+      "css": ".ds-mode{display:inline-flex;align-items:center;gap:12px;padding:5px 10px;border-radius:20px;color:var(--accent,#2455ed);background:var(--accent-soft,#eaf0ff);font-family:Manrope,-apple-system,BlinkMacSystemFont,sans-serif;font-size:10px;line-height:1.5;}.ds-mode-dot{width:6px;height:6px;border-radius:50%;background:var(--accent,#2455ed);}"
+    },
+    {
+      "name": "Review Panel",
+      "kind": "card",
+      "refersTo": "panel",
+      "description": "Flat bordered review sheet with a clear heading.",
+      "html": "<section class=\"ds-panel\"><h2 class=\"ds-panel-title\">В фокусе</h2><p class=\"ds-panel-copy\">Выберите сообщение, чтобы увидеть контекст и причины оценки.</p></section>",
+      "css": ".ds-panel{padding:22px;border:1px solid var(--border,#e4e9f2);border-radius:12px;background:var(--surface,#ffffff);color:var(--ink,#121c35);font-family:Manrope,-apple-system,BlinkMacSystemFont,sans-serif;}.ds-panel-title{margin:0 0 24px;font-size:20px;font-weight:600;letter-spacing:-.025em;line-height:1.5;}.ds-panel-copy{margin:0;color:var(--muted,#596780);font-size:12px;line-height:1.9;}"
+    },
+    {
+      "name": "Evidence Quote",
+      "kind": "custom",
+      "refersTo": "evidence-quote",
+      "description": "Original text keeps literal evidence highlighted; the example is explicitly synthetic.",
+      "html": "<blockquote class=\"ds-quote\">Синтетический пример: <mark class=\"ds-evidence\">доход гарантирован</mark>.</blockquote>",
+      "css": ".ds-quote{margin:8px 0 0;padding:12px;max-height:210px;overflow-y:auto;overflow-wrap:anywhere;border-radius:8px;background:var(--page,#f5f7fb);color:var(--ink,#121c35);font-family:Manrope,-apple-system,BlinkMacSystemFont,sans-serif;font-size:13px;line-height:1.9;}.ds-evidence{padding:1px 0;border-radius:3px;background:#ffebad;color:#443416;}"
+    },
+    {
+      "name": "Relationship Source Card",
+      "kind": "card",
+      "refersTo": "relationship-card",
+      "description": "Labeled source card with recognizable platform identity; pointer and keyboard activation open its messages.",
+      "html": "<button class=\"ds-flow-card\" type=\"button\"><svg class=\"ds-platform-mark\" aria-hidden=\"true\" xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 512 512\"><path fill=\"#26A5E4\" d=\"M256 8a248 248 0 1 0 0 496 248 248 0 1 0 0-496zM371 176.7c-3.7 39.2-19.9 134.4-28.1 178.3-3.5 18.6-10.3 24.8-16.9 25.4-14.4 1.3-25.3-9.5-39.3-18.7-21.8-14.3-34.2-23.2-55.3-37.2-24.5-16.1-8.6-25 5.3-39.5 3.7-3.8 67.1-61.5 68.3-66.7 .2-.7 .3-3.1-1.2-4.4s-3.6-.8-5.1-.5c-2.2 .5-37.1 23.5-104.6 69.1-9.9 6.8-18.9 10.1-26.9 9.9-8.9-.2-25.9-5-38.6-9.1-15.5-5-27.9-7.7-26.8-16.3 .6-4.5 6.7-9 18.4-13.7 72.3-31.5 120.5-52.3 144.6-62.3 68.9-28.6 83.2-33.6 92.5-33.8 2.1 0 6.6 .5 9.6 2.9 2 1.7 3.2 4.1 3.5 6.7 .5 3.2 .6 6.5 .4 9.8z\"/></svg><span class=\"ds-flow-copy\"><strong>Telegram</strong><span>Открыть сообщения источника</span></span></button>",
+      "css": ".ds-flow-card{display:flex;align-items:center;gap:9px;width:250px;min-height:78px;padding:14px 16px;border:1px solid #dfe6f2;border-radius:10px;background:var(--surface,#ffffff);color:var(--ink,#121c35);box-shadow:0 4px 10px #1b356006;text-align:left;cursor:pointer;font-family:Manrope,-apple-system,BlinkMacSystemFont,sans-serif;}.ds-platform-mark{width:23px;height:23px;flex-shrink:0;}.ds-flow-copy{display:flex;flex-direction:column;gap:7px;}.ds-flow-copy strong{font-size:12px;font-weight:600;}.ds-flow-copy>span{font-size:10px;color:var(--muted,#596780);}.ds-flow-card:focus-visible{outline:2px solid var(--accent,#2455ed);outline-offset:4px;}.ds-flow-card[aria-pressed=\"true\"]{background:#f0f5ff;border-color:var(--accent,#2455ed);}"
+    },
+    {
+      "name": "Blue Mark",
+      "kind": "custom",
+      "description": "Vector signature and non-WebGL fallback for the sculptural lowercase b.",
+      "html": "<svg class=\"ds-blue-mark\" viewBox=\"0 0 40 48\" fill=\"none\" role=\"img\" aria-label=\"Blue\"><path d=\"M8 3 18 9v15c5-6 16-5 18 3 3 11-6 20-17 18L8 38V3Z\" fill=\"currentColor\"/><path d=\"M18 25v12c5 0 10-4 10-8 0-5-6-5-10-4Z\" fill=\"var(--surface,#ffffff)\"/><path d=\"M8 3v35l10 7V9L8 3Z\" fill=\"currentColor\" opacity=\".58\"/></svg>",
+      "css": ".ds-blue-mark{display:block;width:32px;height:40px;color:var(--accent,#2455ed);}"
+    },
+    {
+      "name": "Analytics Period Selector",
+      "kind": "custom",
+      "refersTo": "period-selected",
+      "description": "One shared period selection controls every analytics panel.",
+      "html": "<div class=\"ds-period\" role=\"group\" aria-label=\"Период аналитики\"><button aria-pressed=\"true\">24 часа</button><button aria-pressed=\"false\">7 дней</button><button aria-pressed=\"false\">Вся выборка</button></div>",
+      "css": ".ds-period{display:inline-flex;align-items:center;padding:4px;gap:3px;border:1px solid var(--border,#e4e9f2);background:var(--surface,#ffffff);border-radius:9px;}.ds-period button{min-height:35px;padding:7px 13px;border:0;border-radius:6px;background:transparent;color:var(--muted,#596780);font-family:Manrope,-apple-system,BlinkMacSystemFont,sans-serif;font-size:12px;cursor:pointer;transition:background-color 150ms ease-out,color 150ms ease-out;}.ds-period button[aria-pressed=\"true\"]{background:var(--accent-soft,#eaf0ff);color:var(--accent,#2455ed);font-weight:600;}.ds-period button:focus-visible{outline:2px solid var(--accent,#2455ed);outline-offset:4px;}@media(prefers-reduced-motion:reduce){.ds-period button{transition-duration:.01ms;}}"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Daylit Analyst Workspace",
+    "overview": "Blue is an operating workspace: a cool ground, white review surfaces, dark ink and a precise royal-blue accent. Message content, source context and review actions share one calm working field. This light direction replaces the previous dark orange identity.\n\nA folded lowercase b is the signature, shared by the vector mark and a lit extruded 3D form. Dimensional branding stays beside the analyst's work or inside a short, skippable entrance; review surfaces remain mostly flat. Relationships use labeled two-dimensional source and message cards rather than a spatial 3D model. The generated concept supplies composition reference only; actual application data and implemented components define the shipped system.",
+    "keyCharacteristics": [
+      "Cool daylight surfaces and restrained royal-blue emphasis.",
+      "Self-hosted Manrope with Cyrillic, Cyrillic extended and Latin glyph coverage.",
+      "Dense message review with adjacent evidence and explicit human judgment.",
+      "Recognizable platform marks, shared-sample analytics and labeled source/message relationships.",
+      "Finite animation, keyboard controls and a usable non-WebGL path."
+    ],
+    "rules": [
+      {
+        "name": "The Action and Evidence Rule",
+        "body": "Blue marks navigation, actions and source identity. Risk colors describe labeled risk; yellow marks evidence text.",
+        "section": "colors"
+      },
+      {
+        "name": "The One Text Voice Rule",
+        "body": "Use Manrope throughout the workspace and wordmark; reserve monospace for technical content and tabular numerals for comparable values.",
+        "section": "typography"
+      },
+      {
+        "name": "The Reserved Depth Rule",
+        "body": "Keep review surfaces flat; reserve 3D material for the b signature. Source/message relationships use a two-dimensional labeled hierarchy.",
+        "section": "elevation"
+      },
+      {
+        "name": "The One Sample Rule",
+        "body": "Every analytics panel uses the same selected period and platform; drill-through links retain that sample.",
+        "section": "components"
+      },
+      {
+        "name": "The Actual Membership Rule",
+        "body": "An edge means a message belongs to a source; it must never imply an inferred account relationship or a fraud verdict.",
+        "section": "components"
+      }
+    ],
+    "dos": [
+      "**Do** use the cool ground, white sheets and blue actions consistently across routes.",
+      "**Do** keep message evidence, source context, risk labels and human review readable together.",
+      "**Do** retain keyboard controls, source/message lists and reduced motion; keep vector fallbacks for the 3D brand.",
+      "**Do** preserve recognizable platform marks and a shared period/platform sample across analytics.",
+      "**Do** show actual application counts and distinguish synthetic demonstration scores from evaluated model results."
+    ],
+    "donts": [
+      "**Don't** reuse the discarded dark orange identity for new Blue surfaces.",
+      "**Don't** turn the workspace into a landing-first 3D spectacle or repeat the entrance during SPA navigation.",
+      "**Don't** introduce decorative glass cards, neon glow or stock robot imagery.",
+      "**Don't** invent AI performance metrics, graph relationships or legal verdicts.",
+      "**Don't** use an atom-like 3D model for source/message relationships or expose endpoint and port setup in analyst settings."
+    ]
+  }
+}

@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test'
+
 import type { Page } from '@playwright/test'
 
 const fixture = {
@@ -51,6 +52,7 @@ test('real adapter uses list, stats, detail and review endpoints', async ({ page
     else await route.fulfill({ json: fixture })
   })
   await page.goto('/')
+  await expect(page.locator('.brand-intro')).not.toBeAttached()
   await expect(page.locator('.alerts-table tbody tr')).toHaveCount(1)
   await expect(
     page.locator('.alerts-table').getByText('API Test Group', { exact: true }),
@@ -77,7 +79,8 @@ test('API failures show error, retry works, synthetic records never replace the 
     ),
   )
   await page.goto('/')
-  await expect(page.getByRole('alert')).toContainText('503')
+  await expect(page.locator('.brand-intro')).not.toBeAttached()
+  await expect(page.getByRole('alert')).toContainText('Сервис данных временно недоступен')
   await expect(page.locator('.alerts-table tbody tr')).toHaveCount(0)
   await expect(page.getByRole('button', { name: 'Демо-сообщение' })).toHaveCount(0)
   broken = false
@@ -98,7 +101,8 @@ test('malformed processed result is rejected rather than displayed as low risk',
     }),
   )
   await page.goto('/')
-  await expect(page.getByRole('alert')).toContainText('не соответствует контракту')
+  await expect(page.locator('.brand-intro')).not.toBeAttached()
+  await expect(page.getByRole('alert')).toContainText('неполные данные')
   await expect(page.locator('.alerts-table tbody tr')).toHaveCount(0)
 })
 
@@ -113,9 +117,10 @@ test('failed review preserves note and never announces success', async ({ page }
     )
   })
   await page.goto('/alerts/api-1')
+  await expect(page.locator('.brand-intro')).not.toBeAttached()
   await page.getByLabel('Комментарий').fill('Не терять комментарий')
   await page.getByRole('button', { name: 'Сохранить решение' }).click()
-  await expect(page.getByRole('alert')).toContainText('500')
+  await expect(page.getByRole('alert')).toContainText('Сервис данных временно недоступен')
   await expect(page.getByLabel('Комментарий')).toHaveValue('Не терять комментарий')
   await expect(page.getByRole('status')).toHaveCount(0)
 })
@@ -138,12 +143,12 @@ test('polling receives new records and pause stops subsequent requests', async (
     })
   })
   await page.goto('/')
+  await expect(page.locator('.brand-intro')).not.toBeAttached()
   await expect(page.locator('.alerts-table tbody tr')).toHaveCount(1)
   newMessage = true
   await page.clock.fastForward(11_000)
   await expect(page.locator('.alerts-table tbody tr')).toHaveCount(2)
-  await page.getByRole('button', { name: /Уведомления:/ }).click()
-  await expect(page.locator('.notification-popover')).toContainText('Новых сообщений: 1')
+  await expect(page.locator('.new-count')).toContainText('+1 новых')
   await page.getByRole('button', { name: 'Приостановить live-обновления' }).click()
   await expect(page.getByText('Обновление на паузе', { exact: true })).toBeVisible()
   await expect(page.locator('.alerts-table tbody tr')).toHaveCount(2)
@@ -152,24 +157,25 @@ test('polling receives new records and pause stops subsequent requests', async (
   expect(requests).toBe(pausedRequests)
 })
 
-test('settings switch to API, validate URL and remember selected mode', async ({ page }) => {
+test('settings select working data and remember mode without exposing service configuration', async ({
+  page,
+}) => {
   await page.route('**/api/**', (route) =>
     route.fulfill({
       json: new URL(route.request().url()).pathname === '/api/stats' ? stats : [fixture],
     }),
   )
   await page.goto('/settings')
-  await page.getByLabel('Адрес Backend API', { exact: true }).fill('javascript:alert(1)')
-  await page.getByRole('button', { name: 'Сохранить', exact: true }).click()
-  await expect(page.getByRole('alert')).toContainText('HTTP(S)')
-  await page.getByLabel('Адрес Backend API', { exact: true }).fill('')
-  await page.getByRole('radio', { name: /Backend API/ }).check()
-  await page.getByRole('button', { name: 'Проверить API' }).click()
+  await expect(page.locator('.brand-intro')).not.toBeAttached()
+  await expect(page.getByRole('textbox')).toHaveCount(0)
+  await page.getByRole('radio', { name: /Рабочие данные/ }).check()
+  await page.getByRole('button', { name: 'Проверить подключение' }).click()
   await expect(page.getByRole('status')).toContainText('Подключение работает')
   await page.getByRole('button', { name: 'Сохранить', exact: true }).click()
   await page.goto('/')
+  await expect(page.locator('.brand-intro')).not.toBeAttached()
   await expect(
     page.locator('.alerts-table').getByText('API Test Group', { exact: true }),
   ).toBeVisible()
-  await expect(page.locator('.source-pill')).toHaveText('Backend API')
+  await expect(page.locator('.source-pill')).toHaveText('Рабочие данные')
 })

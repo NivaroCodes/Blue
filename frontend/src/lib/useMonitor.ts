@@ -27,6 +27,7 @@ export function useMonitor() {
   const [newCount, setNewCount] = useState(0)
   const [revision, setRevision] = useState(0)
   const previousIds = useRef<Set<string> | null>(null)
+  const reviewRevision = useRef(0)
   const refresh = useCallback(() => setRevision((v) => v + 1), [])
   useEffect(() => {
     previousIds.current = null
@@ -42,6 +43,7 @@ export function useMonitor() {
     const controller = new AbortController()
     setLoading(true)
     async function load() {
+      const revisionAtStart = reviewRevision.current
       const cycleController = new AbortController()
       try {
         const signal = AbortSignal.any([
@@ -53,7 +55,9 @@ export function useMonitor() {
           getAlerts(settings, signal),
           getStats(settings, signal),
         ])
-        if (!active) return
+        // A snapshot requested before a saved review may contain the old decision.
+        // Discard that whole snapshot; the next cycle can read the committed review.
+        if (!active || revisionAtStart !== reviewRevision.current) return
         const incoming = previousIds.current
           ? data.filter((a) => !previousIds.current!.has(a.id)).length
           : 0
@@ -84,8 +88,10 @@ export function useMonitor() {
     writeStorage('blue.settings.v1', next)
     setSettings(next)
   }
-  const updateAlert = (alert: Alert) =>
+  const updateAlert = (alert: Alert) => {
+    reviewRevision.current++
     setAlerts((items) => items.map((a) => (a.id === alert.id ? alert : a)))
+  }
   return {
     settings,
     updateSettings,

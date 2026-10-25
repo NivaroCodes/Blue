@@ -1,0 +1,145 @@
+/* A finite typographic entrance. No gradients, ornaments or simulated loading. */
+.brand-intro {
+  position: fixed;
+  inset: 0;
+  margin: 0;
+  width: 100%;
+  max-width: none;
+  height: 100dvh;
+  max-height: none;
+  padding: 30px 40px;
+  overflow: hidden;
+  border: 0;
+  background: var(--page);
+  color: var(--ink);
+  animation: intro-exit 250ms 1850ms ease-out both;
+}
+.brand-intro::backdrop {
+  background: var(--page);
+}
+.intro-corner {
+  position: absolute;
+  top: max(30px, env(safe-area-inset-top));
+  left: max(40px, env(safe-area-inset-left));
+  font-size: 0.75rem;
+  color: var(--muted);
+}
+.intro-center {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  padding-bottom: 20px;
+}
+.intro-symbol {
+  overflow: hidden;
+  margin-bottom: 28px;
+}
+.intro-symbol .blue-mark {
+  display: block;
+  width: 58px;
+  height: 58px;
+  animation: symbol-enter 700ms ease-out both;
+}
+.intro-wordmark {
+  display: flex;
+  font-size: clamp(3.2rem, 10vw, 8rem);
+  line-height: 1.1;
+  font-weight: 700;
+}
+.intro-letter-mask {
+  overflow: hidden;
+  display: inline-flex;
+}
+.intro-letter-mask > span {
+  display: inline-block;
+  animation: letter-enter 750ms ease-out both;
+}
+.intro-center > p {
+  font-size: 0.8125rem;
+  color: var(--muted);
+  margin-top: 24px;
+  animation: caption-enter 600ms 650ms ease-out both;
+}
+.intro-skip {
+  position: absolute;
+  bottom: max(30px, env(safe-area-inset-bottom));
+  right: max(40px, env(safe-area-inset-right));
+  display: inline-flex;
+  align-items: center;
+  gap: 16px;
+  padding: 10px 12px;
+  min-height: 42px;
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  color: var(--muted);
+  font-size: 0.75rem;
+}
+.intro-skip:hover {
+  background: var(--surface-raised);
+  color: var(--ink);
+}
+@keyframes symbol-enter {
+  from {
+    transform: translateY(100%);
+    opacity: 0;
+  }
+  to {
+    transform: none;
+    opacity: 1;
+  }
+}
+@keyframes letter-enter {
+  from {
+    transform: translateY(105%);
+  }
+  to {
+    transform: none;
+  }
+}
+@keyframes caption-enter {
+  from {
+    opacity: 0;
+    transform: translateY(5px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes intro-exit {
+  to {
+    opacity: 0;
+  }
+}
+@media (max-width: 700px) {
+  .brand-intro {
+    padding: 20px;
+  }
+  .intro-corner {
+    left: 22px;
+    top: 22px;
+  }
+  .intro-skip {
+    right: 22px;
+    bottom: 22px;
+  }
+  .intro-symbol {
+    margin-bottom: 22px;
+  }
+  .intro-symbol .blue-mark {
+    width: 48px;
+    height: 48px;
+  }
+  .intro-center > p {
+    font-size: 0.75rem;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .brand-intro,
+  .brand-intro * {
+    animation: none !important;
+    transform: none !important;
+  }
+}
