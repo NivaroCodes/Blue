@@ -6,7 +6,7 @@
 
 - API и worker: Fly app `blue-omnis-demo`, [health](https://blue-omnis-demo.fly.dev/health).
 - PostgreSQL и Auth: отдельный проект Supabase `Blue Omnis Synthetic Demo` на Free.
-- Frontend: [blue-omnis-demo.pages.dev](https://blue-omnis-demo.pages.dev), Cloudflare Pages **Direct Upload**. Проект хранит production branch `pre-main`; опубликованные assets вручную собраны из `codex/live-ingestion-safe`. Это не Git-integrated Pages, поэтому push сам по себе frontend не пересобирает.
+- Frontend: [blue-omnis-demo.pages.dev](https://blue-omnis-demo.pages.dev), Cloudflare Pages **Direct Upload**. Проект хранит production branch `pre-main`; текущие опубликованные assets вручную собраны из `6ba6a2d`. После слияния исправлений в `frontend` новые сборки следует делать из этой ветки. Push сам по себе frontend не пересобирает.
 
 ## Секреты и сборка
 
@@ -15,8 +15,8 @@ Fly получает через `flyctl secrets import -a blue-omnis-demo` ил�
 Для сборки frontend из корня репозитория:
 
 ```powershell
-git switch codex/live-ingestion-safe
-git pull --ff-only origin codex/live-ingestion-safe
+git switch frontend
+git pull --ff-only origin frontend
 Set-Location frontend
 $env:VITE_DATA_MODE = 'api'
 $env:VITE_API_BASE_URL = 'https://blue-omnis-demo.fly.dev'
