@@ -53,6 +53,12 @@ app.add_middleware(
 )
 
 
+@app.get("/health")
+def health_check():
+    """Lightweight liveness endpoint used by Fly.io's HTTP service check."""
+    return {"status": "ok"}
+
+
 def _message_hash_secret() -> str:
     """Prefer the dedicated shared key; support the Telegram-specific key already used on Fly."""
     return os.getenv("SENDER_HASH_SECRET", "").strip() or os.getenv("TELEGRAM_HASH_SECRET", "").strip()
