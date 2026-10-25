@@ -62,12 +62,13 @@ def normalize_green_message(payload: dict[str, Any], hash_secret: str) -> Option
     sender_data = payload.get("senderData") or {}
     message_data = payload.get("messageData") or {}
     type_message = message_data.get("typeMessage")
-    if type_message not in {"textMessage", "imageMessage"}:
+    if type_message not in {"textMessage", "extendedTextMessage", "imageMessage"}:
         return None
 
     file_data = message_data.get("fileMessageData") or {}
     text_data = message_data.get("textMessageData") or {}
-    text = text_data.get("textMessage") or file_data.get("caption") or ""
+    extended_data = message_data.get("extendedTextMessageData") or {}
+    text = text_data.get("textMessage") or extended_data.get("text") or file_data.get("caption") or ""
     is_image = type_message == "imageMessage"
     if not text.strip() and not (is_image and payload.get("idMessage")):
         return None

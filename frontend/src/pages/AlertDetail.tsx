@@ -16,6 +16,7 @@ import { getAlert, saveReview } from '../lib/api'
 import { dateTime, reasonLabels, reviewLabels } from '../lib/model'
 import type { Alert, Review } from '../lib/model'
 import type { Monitor } from '../lib/useMonitor'
+import { PrivateImage } from '../components/PrivateImage'
 import {
   Empty,
   ErrorBox,
@@ -102,6 +103,7 @@ export function AlertDetail({
               <blockquote className="original-message">
                 <EvidenceText text={alert.text} evidence={alert.reasons.map((r) => r.evidence)} />
               </blockquote>
+              {alert.image_url && <PrivateImage imageUrl={alert.image_url} settings={m.settings} />}
               <div className="message-foot">
                 <Fingerprint size={14} />
                 <span>{alert.sender_hash}</span>

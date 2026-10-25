@@ -30,6 +30,7 @@ export const AlertSchema = z
     message_id: z.string(),
     sender_hash: z.string(),
     text: z.string(),
+    image_url: z.string().nullable().optional(),
     timestamp: z.iso.datetime({ offset: true }),
     status: z.enum(['PENDING', 'PROCESSING', 'PROCESSED', 'ERROR']),
     risk_score: z.number().min(0).max(100).nullable().default(null),

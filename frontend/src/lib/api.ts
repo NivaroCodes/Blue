@@ -69,6 +69,30 @@ export async function getAlert(settings: Settings, id: string, signal?: AbortSig
     throw new Error('Сервис вернул неполные данные сообщения. Попробуйте открыть его позже.')
   return result.data
 }
+
+export async function getMedia(settings: Settings, imageUrl: string, signal?: AbortSignal) {
+  // Media stays private in R2 and is served only through the authenticated API.
+  if (!/^\/api\/media\/[A-Za-z0-9_-]+\.(?:png|jpg|webp|gif)$/.test(imageUrl))
+    throw new Error('Ссылка на изображение не поддерживается.')
+  const url = `${settings.baseUrl.replace(/\/$/, '')}${imageUrl}`
+  async function send(token: string | null) {
+    return fetch(url, {
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+      signal: signal || AbortSignal.timeout(20_000),
+    })
+  }
+  let response = await send(await getAccessToken())
+  if (response.status === 401) {
+    const refreshed = await getAccessToken(true)
+    if (refreshed) response = await send(refreshed)
+  }
+  if (!response.ok) throw new Error(`Не удалось загрузить изображение (HTTP ${response.status}).`)
+  if (!response.headers.get('content-type')?.startsWith('image/'))
+    throw new Error('Сервис вернул файл неизвестного формата.')
+  const blob = await response.blob()
+  if (blob.size > 8 * 1024 * 1024) throw new Error('Изображение слишком большое.')
+  return blob
+}
 export async function getStats(settings: Settings, signal?: AbortSignal) {
   if (settings.mode === 'demo') return calculateStats(demoAlerts())
   const result = StatsSchema.safeParse(await request(settings, '/stats', { signal }))
