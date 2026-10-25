@@ -4,7 +4,7 @@ import { calculateStats, readStorage, writeStorage } from './model'
 import type { Alert, Settings, Stats } from './model'
 
 const defaultSettings: Settings = {
-  mode: import.meta.env.VITE_DATA_MODE === 'api' ? 'api' : 'demo',
+  mode: import.meta.env.VITE_DATA_MODE === 'api' || import.meta.env.VITE_API_BASE_URL ? 'api' : 'demo',
   baseUrl: import.meta.env.VITE_API_BASE_URL || '',
   polling: true,
 }

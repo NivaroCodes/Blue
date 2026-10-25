@@ -40,7 +40,8 @@ def run_e2e_verification():
     print("=" * 60)
 
     # 0. Connect and clean test DB via unified protective cleanup
-    print(f"Connecting to Database: {POSTGRES_URL}")
+    from sqlalchemy.engine import make_url
+    print(f"Connecting to Database: {make_url(POSTGRES_URL).render_as_string(hide_password=True)}")
     Session = init_db(POSTGRES_URL)
     session = Session()
     clean_test_database(session, POSTGRES_URL)

@@ -1,5 +1,7 @@
 # Blue
 
+Railway synthetic demo setup and release gates: [docs/DEPLOY_RAILWAY.md](docs/DEPLOY_RAILWAY.md). Use `python run.py seed-demo` for the idempotent API seed; the legacy `seed` command clears records.
+
 **SafeNet KZ · трек «Стоп-пирамида»**
 
 Blue помогает аналитику проверять признаки финансовых пирамид в сообщениях Telegram и WhatsApp: найти предупреждение, прочитать исходный текст и доказательства, затем сохранить решение и комментарий.

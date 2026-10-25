@@ -371,5 +371,96 @@ def seed_database(database_url: Optional[str] = None, clear_existing: bool = Tru
     print(f"Database successfully seeded with {inserted} realistic scenario message(s) in status 'PENDING'.")
 
 
+
+
+DEMO_CHAT_ID = "blue_demo_synthetic_v1"
+DEMO_CHAT_NAME = "Blue Demo — Synthetic Chat"
+# Fictional senders; stable source IDs ensure API-level idempotency.
+DEMO_TEXTS = [
+    "Всем доброе утро! Как настроение?",
+    "Сегодня солнечно, можно прогуляться после занятий.",
+    "Кто понял задание по математике? Обсудим вечером.",
+    "Я сварил кофе и наконец дочитал главу учебника.",
+    "После учёбы сыграем в футбол во дворе?",
+    "Мой вымышленный кот опять спит возле ноутбука.",
+    "Покажите фотографии осеннего парка.",
+    "Спасибо за помощь с домашним заданием!",
+    "На выходных хочу попробовать бег на короткую дистанцию.",
+    "Завтра обещают дождь, берите зонтик.",
+    "Кто любит чай больше кофе?",
+    "Собираемся на бесплатную встречу книжного клуба.",
+    "На фотографии красивый свет, какой режим камеры?",
+    "Сегодня тренировка в шесть, встречаемся у стадиона.",
+    "Кот уронил карандаши, зато фото получилось смешное.",
+    "Поделитесь рецептом печенья к кофе.",
+    "Урок перенесли на завтра, проверьте расписание.",
+    "В парке уже жёлтые листья, хочу их сфотографировать.",
+    "Поздравляю нашу команду с победой!",
+    "Учимся составлять бюджет без обещаний доходности.",
+    "Не переводите деньги незнакомцам, проверяйте условия.",
+    "Я ещё не понял, что это за клуб и за что там платят.",
+    "Набирают партнёров, но условия пока не опубликовали.",
+    "За приглашение друзей обещают бонус, надо уточнить правила.",
+    "Платная встреча о проектах: неясно, что входит в цену.",
+    "Кто-нибудь проверял документы этого вымышленного проекта?",
+    "Вымышленный Лунный Капитал гарантирует 40% дохода в день, рисков нет!",
+    "Вступительный взнос 5000 условных единиц; выплаты из взносов новых участников.",
+    "Приведи троих друзей и получай долю с каждого их взноса в матрицу.",
+    "Срочно! Только сегодня три места: внеси взнос и завтра получи втрое больше.",
+    "Переводите взнос на личный счёт куратора. Реквизиты намеренно отсутствуют.",
+    "Гарантированное удвоение взноса за сутки! Приглашай друзей и получи бонус.",
+    "Закрытый клуб обещает 100% без риска; выход возможен только после новых взносов.",
+    "Синтетическое фото: кот и чашка кофе на учебном столе.",
+    "Синтетическое фото: прогулка и осенняя погода.",
+    "Вымышленный рекламный макет для проверки признаков пирамиды. Это не предложение.",
+]
+
+
+def demo_messages():
+    """Build validated MessageInput payloads; contains no fabricated AI results."""
+    import base64
+    from pathlib import Path
+    from ..models import MessageInput
+    assets = Path(__file__).resolve().parents[1] / "demo_assets"
+    images = {34: "cat-coffee.png", 35: "autumn-park.png", 36: "fictional-pyramid.png"}
+    now = datetime.now(timezone.utc)
+    for number, text in enumerate(DEMO_TEXTS, 1):
+        image = base64.b64encode((assets / images[number]).read_bytes()).decode("ascii") if number in images else None
+        msg = MessageInput(
+            platform="telegram", chat_id=DEMO_CHAT_ID, chat_name=DEMO_CHAT_NAME,
+            message_id=f"synthetic-v1-{number:03d}", sender_hash=f"synthetic-person-{(number - 1) % 8 + 1:02d}",
+            text="[SYNTHETIC / ВЫМЫШЛЕННЫЕ ДАННЫЕ] " + text,
+            image_base64=image, timestamp=now - timedelta(minutes=40-number),
+        )
+        yield msg.model_dump(mode="json", exclude_none=True)
+
+
+def seed_demo(client=None):
+    """Submit through ingestion; reruns do not clear or duplicate existing records.
+
+    DEMO_API_URL and INGEST_API_TOKEN belong to the operator environment only.
+    A supplied client supports integration tests against the same FastAPI routes.
+    """
+    import os
+    import httpx
+    headers = {}
+    token = os.getenv("INGEST_API_TOKEN", "").strip()
+    if token:
+        headers["Authorization"] = f"Bearer {token}"
+    def submit(api):
+        ids = []
+        for payload in demo_messages():
+            response = api.post("/api/messages", json=payload, headers=headers)
+            if response.status_code != 200:
+                raise RuntimeError(f"Synthetic ingestion failed: HTTP {response.status_code}")
+            ids.append(response.json()["id"])
+        print(f"Submitted {len(ids)} synthetic messages through ingestion; stable IDs, no database cleanup.")
+        return ids
+    if client is not None:
+        return submit(client)
+    with httpx.Client(base_url=os.getenv("DEMO_API_URL", "http://127.0.0.1:8000").rstrip("/"), timeout=30) as api:
+        return submit(api)
+
+
 if __name__ == "__main__":
     seed_database()

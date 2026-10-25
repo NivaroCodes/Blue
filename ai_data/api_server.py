@@ -2,14 +2,16 @@ import os
 import csv
 import io
 import uuid
+import hmac
 from datetime import timedelta
 from typing import Optional, List, Dict, Any, Union
 from .models import Alert, StatsResponse, MessageIngestResponse
 
-from fastapi import FastAPI, HTTPException, Depends
+from fastapi import FastAPI, HTTPException, Depends, Request
 from fastapi.responses import Response
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field, model_validator
+from sqlalchemy import text as sqlalchemy_text
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
@@ -19,7 +21,7 @@ from .db.models import (
 )
 from .worker import process_pending_messages
 from .graph_analysis import analyze_network_graph
-from .media import save_image, resolve_local_media_path, sniff_mime, MediaError
+from .media import save_image, read_stored_image, MediaError
 
 DATABASE_URL = os.getenv("DATABASE_URL")
 # 1 = analyse right inside POST /api/messages (demo mode); 0 = leave it to the background worker.
@@ -56,6 +58,36 @@ app.add_middleware(
 )
 
 
+@app.get("/health", tags=["health"])
+def health_check():
+    """Readiness check: verifies API and PostgreSQL connectivity."""
+    try:
+        with SessionLocal() as db:
+            db.execute(sqlalchemy_text("SELECT 1"))
+    except Exception:
+        raise HTTPException(status_code=503, detail="Database unavailable.") from None
+    return {"status": "ok"}
+
+
+def _require_ingest_authorization(request: Request) -> None:
+    """
+    Guards message ingestion endpoints with Bearer token authentication.
+    Fails closed in deployed production environments (e.g. Railway) if not configured.
+    """
+    expected = os.getenv("INGEST_API_TOKEN", "").strip()
+    if not expected:
+        # If deployed on Railway or production flag is set, fail closed
+        is_deployed = bool(os.getenv("RAILWAY_ENVIRONMENT") or os.getenv("PRODUCTION", "").lower() in ("true", "1"))
+        if is_deployed:
+            raise HTTPException(status_code=503, detail="Ingestion authentication is not configured.")
+        return
+
+    auth_header = request.headers.get("Authorization", "").strip()
+    scheme, separator, provided = auth_header.partition(" ")
+    if scheme.lower() != "bearer" or not separator or not provided or not hmac.compare_digest(expected, provided):
+        raise HTTPException(status_code=401, detail="A valid Bearer token is required.")
+
+
 def get_db():
     db = SessionLocal()
     try:
@@ -79,7 +111,7 @@ class MessageCreateRequest(BaseModel):
     sender_hash: str = Field(..., min_length=1, max_length=64)
     text: str = ""
     image_url: Optional[str] = Field(default=None, description="http(s) URL, /api/media/<file> or data: URL")
-    image_base64: Optional[str] = Field(default=None, description="Attached image as base64 (saved to MEDIA_DIR)")
+    image_base64: Optional[str] = Field(default=None, description="Attached image as base64 (saved to configured media storage)")
     timestamp: Optional[str] = Field(default=None, description="ISO-8601; without an offset it is treated as UTC")
 
     @model_validator(mode="after")
@@ -252,7 +284,7 @@ def update_review(alert_id: str, req: ReviewRequest, db: Session = Depends(get_d
             analysis_id=rec.analysis.id,
             review_status=req.review_status,
             reviewer_note=req.reviewer_note,
-            reviewed_by=req.reviewed_by
+            reviewed_by=req.reviewed_by,
         )
         db.add(review)
     else:
@@ -271,13 +303,14 @@ def update_review(alert_id: str, req: ReviewRequest, db: Session = Depends(get_d
 
 
 @app.post("/api/messages", response_model=MessageIngestResponse)
-def ingest_message(req: MessageCreateRequest, db: Session = Depends(get_db)):
+def ingest_message(req: MessageCreateRequest, request: Request, db: Session = Depends(get_db)):
     """
     Ingests raw message (text and/or image), saves to DB with status PENDING.
     Deduplication key: (platform, chat_id, message_id).
     With INLINE_ANALYSIS=1 the message is analysed immediately (atomic claim — never double-processed
     even if the background worker runs at the same time).
     """
+    _require_ingest_authorization(request)
     rec = _ingest(db, req)
     if INLINE_ANALYSIS and rec.status == "PENDING":
         process_pending_messages(db, limit=1, only_ids=[rec.id], throttle_seconds=0)
@@ -299,11 +332,12 @@ class ImageAnalyzeRequest(BaseModel):
 
 
 @app.post("/api/analyze-image", response_model=Alert)
-def analyze_image_endpoint(req: ImageAnalyzeRequest, db: Session = Depends(get_db)):
+def analyze_image_endpoint(req: ImageAnalyzeRequest, request: Request, db: Session = Depends(get_db)):
     """
     Multimodal AI endpoint: analyses payment screenshots, fake bank receipts or promo graphics.
     The upload is stored as a regular message + alert (visible in /api/alerts, stats, graph, export).
     """
+    _require_ingest_authorization(request)
     msg_req = MessageCreateRequest(
         platform=req.platform,
         chat_id=req.chat_id,
@@ -324,11 +358,9 @@ def analyze_image_endpoint(req: ImageAnalyzeRequest, db: Session = Depends(get_d
 
 @app.get("/api/media/{filename}")
 def get_media_file(filename: str):
-    """Serves persisted screenshot images from MEDIA_DIR."""
+    """Serves persisted images through the local or private R2 storage adapter."""
     try:
-        path = resolve_local_media_path(filename)
-        data = path.read_bytes()
-        mime = sniff_mime(data)
+        data, mime = read_stored_image(filename)
     except MediaError as e:
         raise HTTPException(status_code=404, detail=str(e))
     return Response(content=data, media_type=mime)

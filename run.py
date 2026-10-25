@@ -6,11 +6,15 @@ Usage:
     python run.py api       Start the FastAPI backend server (http://127.0.0.1:8000)
     python run.py worker    Start the AI Background Worker (processes PENDING messages from DB)
     python run.py seed      Seed the database with 20 realistic test messages
+    python run.py seed-demo Send 36 synthetic messages through the ingestion API (never clears DB)
     python run.py test      Run all unit tests
     python run.py eval      Run evaluation benchmark on the 50-sample dataset
 """
 import sys
 import os
+from dotenv import load_dotenv
+
+load_dotenv()
 
 def main():
     if len(sys.argv) < 2:
@@ -21,8 +25,11 @@ def main():
 
     if command == "api":
         import uvicorn
-        print("Starting SafeNet KZ Backend API server on http://127.0.0.1:8000 ...")
-        uvicorn.run("ai_data.api_server:app", host="127.0.0.1", port=8000, reload=True)
+        port = int(os.getenv("PORT", "8000"))
+        host = os.getenv("HOST", "0.0.0.0")
+        reload_flag = os.getenv("RELOAD", "false").lower() in ("true", "1")
+        print(f"Starting SafeNet KZ Backend API server on http://{host}:{port} ...")
+        uvicorn.run("ai_data.api_server:app", host=host, port=port, reload=reload_flag)
 
     elif command == "worker":
         from ai_data.worker import run_worker_loop
@@ -33,6 +40,10 @@ def main():
         from ai_data.db.seed import seed_database
         print("Seeding database with realistic scenarios ...")
         seed_database()
+
+    elif command == "seed-demo":
+        from ai_data.db.seed import seed_demo
+        seed_demo()
 
     elif command == "test":
         import unittest

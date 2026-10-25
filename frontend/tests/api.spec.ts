@@ -28,6 +28,39 @@ const stats = {
   errors: 0,
   by_level: { HIGH: 1, MEDIUM: 0, LOW: 0 },
 }
+
+for (const analyzed of [false, true]) {
+  test(`image details preserve original media and honest analysis status (${analyzed})`, async ({ page }) => {
+    await apiMode(page)
+    const imageAlert = {
+      ...fixture,
+      image_url: '/api/media/synthetic.png',
+      image_analyzed: analyzed,
+      image_text: analyzed ? 'СИНТЕТИЧЕСКИЙ МАКЕТ' : null,
+      reasons: [{ code: 'MONEY_REQUEST', evidence: '5000 условных единиц', source: 'image' }],
+    }
+    await page.route('**/api/**', (route) => {
+      const path = new URL(route.request().url()).pathname
+      if (path === '/api/media/synthetic.png') return route.fulfill({
+        contentType: 'image/png',
+        body: Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/l9sAAAAASUVORK5CYII=', 'base64'),
+      })
+      return route.fulfill({ json: path === '/api/stats' ? stats : path === '/api/alerts' ? [imageAlert] : imageAlert })
+    })
+    await page.goto('/alerts/api-1')
+    const image = page.getByRole('img', { name: 'Изображение из исходного сообщения' })
+    await expect(image).toBeVisible()
+    await expect.poll(() => image.evaluate((img) => (img as HTMLImageElement).naturalWidth)).toBeGreaterThan(0)
+    await expect(page.locator('.message-image figcaption')).toHaveText(
+      analyzed ? 'Изображение проанализировано' : 'Анализ изображения не подтверждён',
+    )
+    await expect(page.locator('.evidence-item')).toContainText('Источник: изображение')
+    if (analyzed) {
+      await page.getByText('Распознанный текст изображения').click()
+      await expect(page.locator('.message-image details p')).toHaveText('СИНТЕТИЧЕСКИЙ МАКЕТ')
+    }
+  })
+}
 async function apiMode(page: Page, polling = false) {
   await page.addInitScript(
     ({ polling }) =>

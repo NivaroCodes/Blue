@@ -1,4 +1,9 @@
-from ai_data.telegram_connector import parse_telegram_update, sender_hash, valid_webhook_secret
+from ai_data.telegram_connector import (
+    is_user_allowed,
+    parse_telegram_update,
+    sender_hash,
+    valid_webhook_secret,
+)
 
 
 def update(message, update_id=1):
@@ -95,6 +100,25 @@ def test_sender_hash_requires_secret():
         assert False, "Expected missing secret to be rejected"
     except ValueError:
         pass
+
+
+def test_telegram_allowlist_allows_only_configured_numeric_ids():
+    assert is_user_allowed(123, "123, 456")
+    assert is_user_allowed(456, "123, 456")
+    assert not is_user_allowed(789, "123, 456")
+    assert not is_user_allowed(123, "")
+    assert not is_user_allowed(123, None)
+    assert not is_user_allowed("abc", "abc, 123")
+
+
+def test_telegram_allowlist_fails_closed_when_env_empty():
+    import os
+    from unittest.mock import patch
+    with patch.dict(os.environ, {"TELEGRAM_ALLOWED_USER_IDS": ""}):
+        assert not is_user_allowed(123)
+        assert not is_user_allowed(456)
+    with patch.dict(os.environ, {}, clear=True):
+        assert not is_user_allowed(123)
 
 
 def test_webhook_secret_validation():

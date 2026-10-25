@@ -379,6 +379,60 @@ class TestAPIReturnTypesValidation(unittest.TestCase):
         self.assertIsNone(alert_model.risk_score)
         self.assertIsNone(alert_model.risk_level)
 
+    def test_health_endpoint_returns_ok_when_database_connected(self):
+        resp = self.client.get("/health")
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(resp.json(), {"status": "ok"})
+
+    def test_health_endpoint_returns_503_when_database_fails(self):
+        with patch("ai_data.api_server.SessionLocal", side_effect=Exception("DB connection error")):
+            resp = self.client.get("/health")
+            self.assertEqual(resp.status_code, 503)
+            self.assertEqual(resp.json(), {"detail": "Database unavailable."})
+
+    def test_ingest_authentication_bearer_token(self):
+        payload = {
+            "platform": "telegram",
+            "chat_id": "test_auth_chat",
+            "message_id": "auth_msg_1",
+            "sender_hash": "sender_auth_123",
+            "text": "Тестовое сообщение с авторизацией",
+        }
+        with patch.dict(os.environ, {"INGEST_API_TOKEN": "test_secret_bearer_token"}):
+            # Missing token
+            resp_missing = self.client.post("/api/messages", json=payload)
+            self.assertEqual(resp_missing.status_code, 401)
+            self.assertEqual(resp_missing.json(), {"detail": "A valid Bearer token is required."})
+
+            # Wrong token
+            resp_wrong = self.client.post(
+                "/api/messages",
+                json=payload,
+                headers={"Authorization": "Bearer wrong_token"}
+            )
+            self.assertEqual(resp_wrong.status_code, 401)
+
+            # Valid token
+            resp_valid = self.client.post(
+                "/api/messages",
+                json=payload,
+                headers={"Authorization": "Bearer test_secret_bearer_token"}
+            )
+            self.assertEqual(resp_valid.status_code, 200)
+
+    def test_ingest_authentication_fails_closed_in_deployed_environment_without_token(self):
+        payload = {
+            "platform": "telegram",
+            "chat_id": "test_auth_chat_2",
+            "message_id": "auth_msg_2",
+            "sender_hash": "sender_auth_123",
+            "text": "Тестовое сообщение в production",
+        }
+        with patch.dict(os.environ, {"RAILWAY_ENVIRONMENT": "production", "INGEST_API_TOKEN": ""}):
+            resp = self.client.post("/api/messages", json=payload)
+            self.assertEqual(resp.status_code, 503)
+            self.assertEqual(resp.json(), {"detail": "Ingestion authentication is not configured."})
+
 
 if __name__ == "__main__":
     unittest.main()

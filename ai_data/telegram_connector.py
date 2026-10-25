@@ -39,6 +39,13 @@ def sender_hash(user_id: int | str, secret: str) -> str:
     return hmac.new(secret.encode("utf-8"), payload, hashlib.sha256).hexdigest()
 
 
+def is_user_allowed(user_id: int | str, configured_ids: str | None = None) -> bool:
+    """Fail closed unless the user ID is explicitly listed for the MVP test bot."""
+    raw = os.getenv("TELEGRAM_ALLOWED_USER_IDS", "") if configured_ids is None else configured_ids
+    allowed = {item.strip() for item in raw.split(",") if item.strip().isdigit()}
+    return str(user_id).isdigit() and str(user_id) in allowed
+
+
 def valid_webhook_secret(expected: str, received: str | None) -> bool:
     return bool(expected and received and hmac.compare_digest(expected, received))
 
@@ -183,6 +190,15 @@ async def telegram_webhook(request: Request) -> dict[str, Any]:
         return {"ok": True, "action": "ignored"}
 
     telegram_chat_id = parsed["telegram_chat_id"]
+    if not is_user_allowed(parsed.get("user_id", "")):
+        # Only echo the user's own ID for onboarding. Never persist or log it.
+        await _send_message(
+            telegram_chat_id,
+            f"Blue сейчас доступен только тестовой команде. Ваш Telegram ID: {parsed.get('user_id', '')}. "
+            "Передайте этот ID администратору проекта для добавления в список тестировщиков.",
+        )
+        return {"ok": True, "action": "not_allowlisted"}
+
     if action in {"start", "help"}:
         await _send_message(
             telegram_chat_id,

@@ -20,6 +20,7 @@ from ai_data.db.models import (
     make_message_pk,
     parse_timestamp,
     serialize_to_alert_dict,
+    utc_now,
 )
 from ai_data.tests.test_db_helper import get_clean_test_session, get_test_session_factory, clean_test_database
 from ai_data.entity_extractor import extract_entities
@@ -403,6 +404,69 @@ class TestMultimodalUnifiedPipeline(unittest.TestCase):
         self.assertEqual(res.risk_level, RiskLevelEnum.HIGH)
         self.assertEqual(len(res.reasons), 1)
         self.assertEqual(res.reasons[0].source, "image")
+
+    @patch("ai_data.analyzer.call_gemini_api")
+    def test_worker_handles_missing_image_file_with_text_fallback(self, mock_gemini):
+        mock_gemini.return_value = AnalysisResult(
+            risk_score=75,
+            risk_level=RiskLevelEnum.MEDIUM,
+            reasons=[ReasonItem(code="MONEY_REQUEST", evidence="вложите деньги", source="text")],
+            explanation="Анализ только текста (изображение недоступно)",
+            confidence=0.80,
+            model_version="gemini-test",
+        )
+        db = get_clean_test_session()
+        pk = "msg_missing_img_fallback"
+        msg = MessageRecord(
+            id=pk,
+            platform="telegram",
+            chat_id="chat_img",
+            message_id="101",
+            sender_hash="sender_img",
+            text="Пожалуйста вложите деньги прямо сейчас",
+            image_url="/api/media/non_existent_file.png",
+            timestamp=utc_now(),
+            status="PENDING",
+        )
+        db.add(msg)
+        db.commit()
+
+        processed = process_pending_messages(db, limit=1, api_key="fake_key", throttle_seconds=0)
+        self.assertEqual(processed, 1)
+
+        db.refresh(msg)
+        alert = serialize_to_alert_dict(msg)
+        self.assertEqual(alert["status"], "PROCESSED")
+        # Critical security & honesty check: image_analyzed MUST be False, NOT True
+        self.assertFalse(alert["image_analyzed"])
+        self.assertIsNone(alert["image_text"])
+        self.assertEqual(alert["risk_score"], 75)
+        db.close()
+
+    def test_worker_fails_when_image_missing_and_no_text(self):
+        db = get_clean_test_session()
+        pk = "msg_missing_img_no_text"
+        msg = MessageRecord(
+            id=pk,
+            platform="telegram",
+            chat_id="chat_img_2",
+            message_id="102",
+            sender_hash="sender_img_2",
+            text="",
+            image_url="/api/media/completely_missing.png",
+            timestamp=utc_now(),
+            status="PENDING",
+        )
+        db.add(msg)
+        db.commit()
+
+        processed = process_pending_messages(db, limit=1, api_key="fake_key", throttle_seconds=0)
+        self.assertEqual(processed, 0)
+
+        db.refresh(msg)
+        self.assertEqual(msg.status, "ERROR")
+        self.assertIn("Сообщение без текста, а изображение недоступно", msg.last_error)
+        db.close()
 
 
 class TestAtomicWorkerConcurrency(unittest.TestCase):

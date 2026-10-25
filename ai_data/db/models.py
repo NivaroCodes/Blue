@@ -240,13 +240,17 @@ def validate_postgres_url(database_url: Optional[str]) -> str:
             "DATABASE_URL is not set. SafeNet KZ requires PostgreSQL. "
             "Set DATABASE_URL=postgresql+psycopg2://user:password@host:5432/dbname in environment or .env."
         )
-    url_lower = database_url.strip().lower()
+    url = database_url.strip()
+    url_lower = url.lower()
     if not (url_lower.startswith("postgresql://") or url_lower.startswith("postgresql+") or url_lower.startswith("postgres://")):
         raise ValueError(
             f"Invalid DATABASE_URL scheme '{database_url}'. SafeNet KZ requires PostgreSQL. "
             "Expected format: postgresql+psycopg2://user:password@host:5432/dbname. SQLite is not allowed."
         )
-    return database_url.strip()
+    # SQLAlchemy 2.0 requires postgresql:// instead of the legacy postgres:// scheme
+    if url_lower.startswith("postgres://"):
+        url = "postgresql://" + url[len("postgres://"):]
+    return url
 
 
 def init_db(database_url: Optional[str] = None):

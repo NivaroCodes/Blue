@@ -3,6 +3,7 @@ import { execSync } from 'child_process';
 import path from 'path';
 
 test.describe.configure({ mode: 'serial' });
+test.skip(process.env.BLUE_LIVE_E2E !== '1', 'Requires BLUE_LIVE_E2E=1 and isolated PostgreSQL/API/Gemini.');
 
 const projectRoot = path.resolve(process.cwd(), '..');
 

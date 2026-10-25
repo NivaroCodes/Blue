@@ -1782,3 +1782,8 @@ mark {
     scroll-behavior: auto !important;
   }
 }
+
+.message-image { margin: 20px 0; }
+.message-image img { display: block; width: 100%; height: auto; max-height: 600px; object-fit: contain; border-radius: 12px; }
+.message-image figcaption { margin-top: 8px; color: var(--text-muted); font-size: 0.85rem; }
+.message-image details { margin-top: 12px; overflow-wrap: anywhere; }

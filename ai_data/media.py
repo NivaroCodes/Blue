@@ -5,12 +5,13 @@ and persists uploaded images so the worker can analyse them like any other messa
 Supported image_url forms:
 - data:image/png;base64,....                      (inline)
 - http(s)://...                                   (downloaded with size/time limits)
-- /api/media/<file>, media/<file> or <file>       (files saved in MEDIA_DIR)
+- /api/media/<file>                             (local MEDIA_DIR or private R2)
 """
 import base64
 import binascii
 import logging
 import os
+import re
 from pathlib import Path
 from typing import Optional, Tuple
 
@@ -54,14 +55,76 @@ def decode_base64_image(image_base64: str) -> Tuple[bytes, str]:
 
 
 def save_image(message_pk: str, image_base64: str) -> str:
-    """Saves an uploaded image to MEDIA_DIR and returns an API-servable reference '/api/media/<file>'."""
+    """Persists an upload in configured storage and returns '/api/media/<file>'."""
     data, mime = decode_base64_image(image_base64)
     ext = {"image/png": "png", "image/jpeg": "jpg", "image/webp": "webp", "image/gif": "gif"}[mime]
     safe_stem = "".join(ch for ch in message_pk if ch.isalnum() or ch in ("_", "-"))[:64] or "img"
+    filename = f"{safe_stem}.{ext}"
+    if storage_backend() == "r2":
+        try:
+            _r2_client().put_object(Bucket=_r2_bucket(), Key=f"blue-media/{filename}", Body=data, ContentType=mime)
+        except Exception:
+            raise MediaError("Shared media upload failed.") from None
+        return f"/api/media/{filename}"
     MEDIA_DIR.mkdir(parents=True, exist_ok=True)
     path = MEDIA_DIR / f"{safe_stem}.{ext}"
     path.write_bytes(data)
     return f"/api/media/{path.name}"
+
+
+def storage_backend() -> str:
+    backend = os.getenv("MEDIA_STORAGE", "local").lower()
+    if backend not in {"local", "r2"}:
+        raise MediaError("MEDIA_STORAGE must be local or r2.")
+    if backend == "local" and os.getenv("RAILWAY_ENVIRONMENT"):
+        raise MediaError("Railway API and worker require shared MEDIA_STORAGE=r2.")
+    return backend
+
+
+def _r2_bucket() -> str:
+    bucket = os.getenv("R2_BUCKET_NAME", "").strip()
+    if not bucket:
+        raise MediaError("R2_BUCKET_NAME is required.")
+    return bucket
+
+
+def _r2_client():
+    import boto3
+    from botocore.config import Config
+    names = ("R2_ENDPOINT_URL", "R2_ACCESS_KEY_ID", "R2_SECRET_ACCESS_KEY")
+    if any(not os.getenv(name, "").strip() for name in names):
+        raise MediaError("R2 endpoint and credentials are required.")
+    endpoint = os.environ["R2_ENDPOINT_URL"]
+    if not endpoint.startswith("https://"):
+        raise MediaError("R2 endpoint must use HTTPS.")
+    return boto3.client(
+        "s3", endpoint_url=endpoint, region_name="auto",
+        aws_access_key_id=os.environ["R2_ACCESS_KEY_ID"],
+        aws_secret_access_key=os.environ["R2_SECRET_ACCESS_KEY"],
+        config=Config(signature_version="s3v4", connect_timeout=5, read_timeout=15,
+                      retries={"max_attempts": 2}, s3={"addressing_style": "path"}),
+    )
+
+
+def read_stored_image(ref: str) -> Tuple[bytes, str]:
+    """Both API and worker read private objects through the same storage adapter."""
+    if storage_backend() == "r2":
+        filename = ref.removeprefix("/api/media/")
+        if not re.fullmatch(r"[\w-]{1,64}\.(png|jpg|webp|gif)", filename):
+            raise MediaError("Invalid media reference.")
+        try:
+            body = _r2_client().get_object(Bucket=_r2_bucket(), Key=f"blue-media/{filename}")["Body"]
+            try:
+                data = body.read(MAX_IMAGE_BYTES + 1)
+            finally:
+                body.close()
+        except Exception:
+            raise MediaError("Shared media read failed.") from None
+    else:
+        data = resolve_local_media_path(ref).read_bytes()
+    if len(data) > MAX_IMAGE_BYTES:
+        raise MediaError("Image exceeds maximum size.")
+    return data, sniff_mime(data)
 
 
 def resolve_local_media_path(ref: str) -> Path:
@@ -108,10 +171,6 @@ def load_image(image_url: Optional[str]) -> Optional[Tuple[str, str]]:
         mime = sniff_mime(data)
 
     else:
-        path = resolve_local_media_path(image_url)
-        data = path.read_bytes()
-        if len(data) > MAX_IMAGE_BYTES:
-            raise MediaError("Изображение превышает допустимый размер.")
-        mime = sniff_mime(data)
+        data, mime = read_stored_image(image_url)
 
     return base64.b64encode(data).decode("ascii"), mime

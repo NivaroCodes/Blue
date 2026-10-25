@@ -17,6 +17,7 @@ import json
 import logging
 import os
 import re
+import signal
 import socket
 import time
 import uuid
@@ -367,8 +368,21 @@ def run_worker_loop(database_url: Optional[str] = None, poll_interval: float = 3
     worker_id = make_worker_id()
     logger.info(f"Starting AI Background Worker {worker_id} connected to {_sanitize_db_url(db_url)}...")
 
+    shutdown_requested = False
+
+    def _handle_shutdown(signum, frame):
+        nonlocal shutdown_requested
+        logger.info(f"Worker received signal {signum}. Requesting graceful shutdown...")
+        shutdown_requested = True
+
+    try:
+        signal.signal(signal.SIGTERM, _handle_shutdown)
+        signal.signal(signal.SIGINT, _handle_shutdown)
+    except (ValueError, AttributeError):
+        pass  # Running in a thread or environment without signal support
+
     last_retention_sweep = 0.0
-    while True:
+    while not shutdown_requested:
         session = SessionLocal()
         try:
             recover_stale_claims(session)
@@ -382,14 +396,20 @@ def run_worker_loop(database_url: Optional[str] = None, poll_interval: float = 3
                     session.rollback()
                     logger.error("Telegram retention sweep failed (%s).", type(retention_error).__name__)
                 last_retention_sweep = now_monotonic
-            count = process_pending_messages(session, limit=5, api_key=api_key, worker_id=worker_id)
-            if count == 0:
+            count = process_pending_messages(
+                session, limit=5, api_key=api_key, worker_id=worker_id,
+                throttle_seconds=max(0.0, float(os.getenv("WORKER_THROTTLE_SECONDS", "4.5"))),
+            )
+            if count == 0 and not shutdown_requested:
                 time.sleep(poll_interval)
         except Exception as e:
             logger.error(f"Worker loop error: {e}")
-            time.sleep(poll_interval)
+            if not shutdown_requested:
+                time.sleep(poll_interval)
         finally:
             session.close()
+
+    logger.info(f"AI Background Worker {worker_id} terminated gracefully.")
 
 
 if __name__ == "__main__":
