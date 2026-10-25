@@ -110,6 +110,20 @@ def test_dashboard_routes_require_auth_in_production_and_accept_server_token(web
     assert response.status_code == 200
 
 
+def test_manual_ingestion_requires_server_bearer(webhook_client, monkeypatch):
+    client, _factory = webhook_client
+    monkeypatch.setenv("INGEST_API_TOKEN", "test-ingest-token")
+    payload = {
+        "platform": "telegram", "chat_id": "demo", "chat_name": "Synthetic demo",
+        "message_id": "synthetic-1", "sender_hash": "demo-sender", "text": "[SYNTHETIC] test",
+    }
+    assert client.post("/api/messages", json=payload).status_code == 401
+    assert client.post("/api/messages", json=payload, headers={"Authorization": "Bearer wrong"}).status_code == 401
+    response = client.post("/api/messages", json=payload, headers={"Authorization": "Bearer test-ingest-token"})
+    assert response.status_code == 200
+    assert client.post("/api/analyze-image", json={"image_base64": "invalid"}).status_code == 401
+
+
 @pytest.mark.asyncio
 async def test_provider_media_download_rejects_untrusted_urls_before_network_io():
     class NoNetworkClient:

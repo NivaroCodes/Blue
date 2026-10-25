@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test'
+import { expect, test } from './fixtures'
 import { readFile } from 'node:fs/promises'
 
 test('risk, text, chat and platform filters work together; pagination and empty state', async ({
