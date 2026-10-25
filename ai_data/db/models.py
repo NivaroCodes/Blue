@@ -264,8 +264,10 @@ def init_db(database_url: Optional[str] = None):
     engine = create_engine(
         url,
         pool_pre_ping=True,
-        pool_size=10,
-        max_overflow=20,
+        pool_size=int(os.getenv("DB_POOL_SIZE", "10")),
+        max_overflow=int(os.getenv("DB_MAX_OVERFLOW", "20")),
+        pool_timeout=int(os.getenv("DB_POOL_TIMEOUT", "30")),
+        pool_recycle=int(os.getenv("DB_POOL_RECYCLE", "300")),
     )
 
     Base.metadata.create_all(engine)

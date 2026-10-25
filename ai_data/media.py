@@ -76,8 +76,8 @@ def storage_backend() -> str:
     backend = os.getenv("MEDIA_STORAGE", "local").lower()
     if backend not in {"local", "r2"}:
         raise MediaError("MEDIA_STORAGE must be local or r2.")
-    if backend == "local" and os.getenv("RAILWAY_ENVIRONMENT"):
-        raise MediaError("Railway API and worker require shared MEDIA_STORAGE=r2.")
+    if backend == "local" and (os.getenv("FLY_APP_NAME") or os.getenv("RAILWAY_ENVIRONMENT")):
+        raise MediaError("Separate cloud API and worker require shared MEDIA_STORAGE=r2.")
     return backend
 
 

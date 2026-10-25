@@ -72,12 +72,12 @@ def health_check():
 def _require_ingest_authorization(request: Request) -> None:
     """
     Guards message ingestion endpoints with Bearer token authentication.
-    Fails closed in deployed production environments (e.g. Railway) if not configured.
+    Fails closed in deployed production environments if not configured.
     """
     expected = os.getenv("INGEST_API_TOKEN", "").strip()
     if not expected:
-        # If deployed on Railway or production flag is set, fail closed
-        is_deployed = bool(os.getenv("RAILWAY_ENVIRONMENT") or os.getenv("PRODUCTION", "").lower() in ("true", "1"))
+        # Recognize Fly automatically, even if PRODUCTION was accidentally omitted.
+        is_deployed = bool(os.getenv("FLY_APP_NAME") or os.getenv("RAILWAY_ENVIRONMENT") or os.getenv("PRODUCTION", "").lower() in ("true", "1"))
         if is_deployed:
             raise HTTPException(status_code=503, detail="Ingestion authentication is not configured.")
         return

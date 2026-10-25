@@ -5,6 +5,7 @@ SafeNet KZ — Unified Control CLI for Data / AI Module
 Usage:
     python run.py api       Start the FastAPI backend server (http://127.0.0.1:8000)
     python run.py worker    Start the AI Background Worker (processes PENDING messages from DB)
+    python run.py init-db   Initialize schema before starting API and worker (no seed or cleanup)
     python run.py seed      Seed the database with 20 realistic test messages
     python run.py seed-demo Send 36 synthetic messages through the ingestion API (never clears DB)
     python run.py test      Run all unit tests
@@ -27,7 +28,8 @@ def main():
         import uvicorn
         port = int(os.getenv("PORT", "8000"))
         host = os.getenv("HOST", "0.0.0.0")
-        reload_flag = os.getenv("RELOAD", "false").lower() in ("true", "1")
+        production = bool(os.getenv("FLY_APP_NAME") or os.getenv("RAILWAY_ENVIRONMENT") or os.getenv("PRODUCTION", "").lower() in ("true", "1"))
+        reload_flag = not production and os.getenv("RELOAD", "false").lower() in ("true", "1")
         print(f"Starting SafeNet KZ Backend API server on http://{host}:{port} ...")
         uvicorn.run("ai_data.api_server:app", host=host, port=port, reload=reload_flag)
 
@@ -35,6 +37,12 @@ def main():
         from ai_data.worker import run_worker_loop
         print("Starting SafeNet KZ AI Background Worker ...")
         run_worker_loop()
+
+    elif command == "init-db":
+        from ai_data.db.models import init_db
+        session_factory = init_db()
+        session_factory.kw["bind"].dispose()
+        print("PostgreSQL schema initialized; no seed data inserted or deleted.")
 
     elif command == "seed":
         from ai_data.db.seed import seed_database

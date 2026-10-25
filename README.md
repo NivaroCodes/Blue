@@ -1,6 +1,6 @@
 # Blue
 
-Railway synthetic demo setup and release gates: [docs/DEPLOY_RAILWAY.md](docs/DEPLOY_RAILWAY.md). Use `python run.py seed-demo` for the idempotent API seed; the legacy `seed` command clears records.
+Fly.io + Supabase synthetic demo setup and release gates: [docs/DEPLOY_FLY.md](docs/DEPLOY_FLY.md). Use `python run.py seed-demo` for the idempotent API seed; the legacy `seed` command clears records.
 
 **SafeNet KZ · трек «Стоп-пирамида»**
 
