@@ -64,7 +64,9 @@ export function useMonitor() {
         if (incoming) setNewCount((v) => v + incoming)
         previousIds.current = new Set(data.map((a) => a.id))
         setAlerts(data)
-        setStats(summary)
+        // API returns the full snapshot, but its aggregate may include server demo seeds.
+        // Count the same working records used by the inbox, sources, graph and export.
+        setStats(settings.mode === 'api' ? calculateStats(data) : summary)
         setError('')
         setLastUpdate(new Date().toISOString())
       } catch (e) {

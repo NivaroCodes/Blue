@@ -2,6 +2,7 @@ import { z } from 'zod'
 import { demoAlerts, reviewDemo } from '../data/demo'
 import { AlertSchema, calculateStats, StatsSchema } from './model'
 import type { Review, Settings } from './model'
+import { isSyntheticAlert } from './dataOrigin'
 
 async function request(settings: Settings, path: string, options: RequestInit = {}) {
   if (settings.baseUrl) {
@@ -43,7 +44,8 @@ export async function getAlerts(settings: Settings, signal?: AbortSignal) {
     .safeParse(await request(settings, '/alerts', { signal }))
   if (!result.success)
     throw new Error('Сервис вернул неполные данные сообщений. Попробуйте обновить выборку.')
-  return Array.isArray(result.data) ? result.data : result.data.items
+  const alerts = Array.isArray(result.data) ? result.data : result.data.items
+  return alerts.filter((alert) => !isSyntheticAlert(alert))
 }
 export async function getAlert(settings: Settings, id: string, signal?: AbortSignal) {
   if (settings.mode === 'demo') {
@@ -56,6 +58,8 @@ export async function getAlert(settings: Settings, id: string, signal?: AbortSig
   )
   if (!result.success)
     throw new Error('Сервис вернул неполные данные сообщения. Попробуйте открыть его позже.')
+  if (isSyntheticAlert(result.data))
+    throw new Error('Синтетическое сообщение недоступно в режиме рабочих данных.')
   return result.data
 }
 export async function getStats(settings: Settings, signal?: AbortSignal) {

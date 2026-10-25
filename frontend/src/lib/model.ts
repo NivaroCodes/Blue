@@ -30,6 +30,7 @@ export const AlertSchema = z
     message_id: z.string(),
     sender_hash: z.string(),
     text: z.string(),
+    is_synthetic: z.boolean().optional(),
     image_url: z.string().nullable().optional(),
     image_analyzed: z.boolean().optional(),
     image_text: z.string().nullable().optional(),
