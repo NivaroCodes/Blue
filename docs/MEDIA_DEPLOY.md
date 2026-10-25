@@ -6,7 +6,7 @@ The media fix is in branch `codex/r2-media-ingestion`. It uses the existing priv
 
 1. Merge `codex/r2-media-ingestion` into the repository's `frontend` branch. Deploy from that resulting `frontend` commit (not an older Fly image).
 2. Confirm Fly has these **names** in Secrets: `R2_ENDPOINT_URL`, `R2_BUCKET_NAME`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `GREEN_API_WEBHOOK_TOKEN`, `GREEN_API_ALLOWED_CHAT_ID`. Keep their values private. `MEDIA_STORAGE=r2` is also set in `fly.toml`.
-3. The correct `GREEN_API_WEBHOOK_TOKEN` value has been staged in Fly without a rollout. The next `flyctl deploy` applies it. If it has been restaged since then, compare it with the GREEN-API instance's `webhookUrlToken` without sharing either value.
+3. `GREEN_API_WEBHOOK_TOKEN` on the running Fly machine was verified to match the GREEN-API instance's `webhookUrlToken` **after removing its `Bearer ` prefix**. The same raw token was restaged in Fly, so no token change is needed. Do not copy the `Bearer ` prefix into the Fly secret.
 4. From the repository root, run `flyctl deploy -a blue-omnis-demo --config fly.toml --strategy rolling`. Check `flyctl status -a blue-omnis-demo`: the API and worker should be started and the API health check passing. `https://blue-omnis-demo.fly.dev/health` should return `{"status":"ok"}`.
 5. In the allowed Telegram group, send a **new** photo with a caption. Confirm a new alert appears. Open it and check the image displays and the risk score appears. Telegram updates that were previously failing may be retried, but send a new photo even if they arrive.
 6. In the allowed WhatsApp group, have **another group member** send a new text and then a photo with a caption. Check both appear as WhatsApp alerts. A message sent from the connected GREEN-API account itself is outgoing and is not covered by the `incomingMessageReceived` handler. If either fails, inspect Fly API logs and GREEN-API webhook delivery; do not paste tokens into an issue.
@@ -21,4 +21,4 @@ This Pages project uses Direct Upload. A GitHub merge or Fly deploy does not upd
 - The configured R2 credentials and bucket completed a write/read/delete round trip from the Fly API machine.
 - Telegram photos currently fail with `/app/media` permission denied; Telegram reports queued updates and webhook HTTP 500.
 - GREEN-API instance is authorized; incoming webhooks are on, the URL points to Fly, and the allowed group exists on the account.
-- GREEN-API's webhook token did not match the running Fly secret. The matching token is staged in Fly for the next deployment. The existing WhatsApp database row is from a different chat, so live WhatsApp delivery is not yet proven.
+- GREEN-API's webhook token matches the running Fly secret when its `Bearer ` prefix is removed. The existing WhatsApp database row is from a different chat, so live WhatsApp delivery is not yet proven.
