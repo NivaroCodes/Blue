@@ -13,6 +13,7 @@ from fastapi import FastAPI, HTTPException, Depends, Request, Header, Background
 from fastapi.responses import Response
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field, model_validator
+from sqlalchemy import text as sqlalchemy_text
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
@@ -23,7 +24,7 @@ from .db.models import (
 from .worker import process_pending_messages
 from .graph_analysis import analyze_network_graph
 from .media import save_image, resolve_local_media_path, sniff_mime, MediaError
-from .auth import require_dashboard_auth
+from .auth import require_dashboard_auth, require_ingest_auth
 from .webhooks import (
     WebhookPayloadError,
     constant_time_token_match,
@@ -41,21 +42,27 @@ SessionLocal = init_db(DATABASE_URL)
 app = FastAPI(
     title="SafeNet KZ — Backend API & AI Surveillance Pipeline",
     version="1.1.0",
-    description="API server implementing docs/API.md connected to SQLite database and AI worker."
+    description="API server implementing docs/API.md with PostgreSQL or SQLite and an AI worker."
 )
 
+_cors_origins = [origin.strip() for origin in os.getenv("CORS_ORIGINS", "").split(",") if origin.strip()]
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=_cors_origins or ([] if os.getenv("PRODUCTION") == "1" else ["*"]),
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
 
-@app.get("/health")
+@app.get("/health", tags=["health"])
 def health_check():
-    """Lightweight liveness endpoint used by Fly.io's HTTP service check."""
+    """Readiness check: verifies API and database connectivity."""
+    try:
+        with SessionLocal() as db:
+            db.execute(sqlalchemy_text("SELECT 1"))
+    except Exception:
+        raise HTTPException(status_code=503, detail="Database unavailable.") from None
     return {"status": "ok"}
 
 
@@ -445,7 +452,7 @@ def update_review(alert_id: str, req: ReviewRequest, db: Session = Depends(get_d
 
 
 @app.post("/api/messages")
-def ingest_message(req: MessageCreateRequest, db: Session = Depends(get_db)):
+def ingest_message(req: MessageCreateRequest, db: Session = Depends(get_db), _auth: None = Depends(require_ingest_auth)):
     """
     Ingests raw message (text and/or image), saves to DB with status PENDING.
     Deduplication key: (platform, chat_id, message_id).
@@ -473,7 +480,7 @@ class ImageAnalyzeRequest(BaseModel):
 
 
 @app.post("/api/analyze-image")
-def analyze_image_endpoint(req: ImageAnalyzeRequest, db: Session = Depends(get_db)):
+def analyze_image_endpoint(req: ImageAnalyzeRequest, db: Session = Depends(get_db), _auth: None = Depends(require_ingest_auth)):
     """
     Multimodal AI endpoint: analyses payment screenshots, fake bank receipts or promo graphics.
     The upload is stored as a regular message + alert (visible in /api/alerts, stats, graph, export).

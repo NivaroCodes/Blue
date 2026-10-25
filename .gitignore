@@ -14,3 +14,4 @@ media/
 __pycache__/
 *.pyc
 .taste-skill/
+.idea/
