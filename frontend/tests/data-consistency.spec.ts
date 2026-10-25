@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test'
+import { expect, test } from './fixtures'
 import type { Page, Route } from '@playwright/test'
 import { sourceSummaries } from '../src/lib/analytics'
 import { AlertSchema } from '../src/lib/model'
@@ -130,7 +130,7 @@ test('message detail reports polling failure while preserving the loaded message
   await expect(page.locator('.original-message')).toContainText(fixture.text)
   broken = true
   await page.clock.fastForward(11_000)
-  await expect(page.getByRole('alert')).toContainText('Сервис данных временно недоступен')
+  await expect(page.getByRole('alert')).toContainText('API вернул 503')
   await expect(page.locator('.original-message')).toContainText(fixture.text)
   broken = false
   await page.getByRole('button', { name: 'Повторить', exact: true }).click()

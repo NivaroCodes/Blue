@@ -21,6 +21,16 @@ def get_bearer_token(request: Request) -> Optional[str]:
     return token.strip()
 
 
+def require_ingest_auth(request: Request) -> None:
+    """Only the server-side ingestion credential may write through manual API routes."""
+    expected = os.getenv("INGEST_API_TOKEN", "").strip()
+    if not expected:
+        raise HTTPException(status_code=503, detail="Ingestion is not configured.")
+    token = get_bearer_token(request)
+    if not token or not hmac.compare_digest(expected, token):
+        raise HTTPException(status_code=401, detail="Invalid ingestion credentials.")
+
+
 def verify_dashboard_token(token: str) -> Dict[str, Any]:
     if not token:
         raise HTTPException(status_code=401, detail="Authentication token required.")

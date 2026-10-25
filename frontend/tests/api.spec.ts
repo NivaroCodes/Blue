@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test'
+import { expect, test } from './fixtures'
 
 import type { Page } from '@playwright/test'
 
@@ -80,7 +80,7 @@ test('API failures show error, retry works, synthetic records never replace the 
   )
   await page.goto('/')
   await expect(page.locator('.brand-intro')).not.toBeAttached()
-  await expect(page.getByRole('alert')).toContainText('Сервис данных временно недоступен')
+  await expect(page.getByRole('alert')).toContainText('API вернул 503')
   await expect(page.locator('.alerts-table tbody tr')).toHaveCount(0)
   await expect(page.getByRole('button', { name: 'Демо-сообщение' })).toHaveCount(0)
   broken = false
@@ -120,7 +120,7 @@ test('failed review preserves note and never announces success', async ({ page }
   await expect(page.locator('.brand-intro')).not.toBeAttached()
   await page.getByLabel('Комментарий').fill('Не терять комментарий')
   await page.getByRole('button', { name: 'Сохранить решение' }).click()
-  await expect(page.getByRole('alert')).toContainText('Сервис данных временно недоступен')
+  await expect(page.getByRole('alert')).toContainText('API вернул 500')
   await expect(page.getByLabel('Комментарий')).toHaveValue('Не терять комментарий')
   await expect(page.getByRole('status')).toHaveCount(0)
 })
