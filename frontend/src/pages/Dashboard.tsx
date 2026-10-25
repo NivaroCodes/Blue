@@ -403,6 +403,7 @@ export function Dashboard({
         <EvidencePreview
           alert={rows.find((alert) => alert.id === selectedId) || rows[0]}
           demo={m.settings.mode === 'demo'}
+          settings={m.settings}
         />
       </div>
       <div className="connection-line">

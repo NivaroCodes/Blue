@@ -23,7 +23,7 @@ from .db.models import (
 )
 from .worker import process_pending_messages
 from .graph_analysis import analyze_network_graph
-from .media import save_image, resolve_local_media_path, sniff_mime, MediaError
+from .media import save_image, read_media, MediaError, MediaStorageError
 from .auth import require_dashboard_auth, require_ingest_auth
 from .webhooks import (
     WebhookPayloadError,
@@ -94,7 +94,7 @@ class MessageCreateRequest(BaseModel):
     sender_hash: str = Field(..., min_length=1, max_length=64)
     text: str = ""
     image_url: Optional[str] = Field(default=None, description="http(s) URL, /api/media/<file> or data: URL")
-    image_base64: Optional[str] = Field(default=None, description="Attached image as base64 (saved to MEDIA_DIR)")
+    image_base64: Optional[str] = Field(default=None, description="Attached image as base64 (saved to configured media storage)")
     timestamp: Optional[str] = Field(default=None, description="ISO-8601; without an offset it is treated as UTC")
 
     @model_validator(mode="after")
@@ -156,8 +156,10 @@ def _ingest(db: Session, req: MessageCreateRequest) -> MessageRecord:
     if req.image_base64:
         try:
             image_url = save_image(pk, req.image_base64)
+        except MediaStorageError as e:
+            raise HTTPException(status_code=503, detail=str(e)) from e
         except MediaError as e:
-            raise HTTPException(status_code=422, detail=str(e))
+            raise HTTPException(status_code=422, detail=str(e)) from e
 
     rec = MessageRecord(
         id=pk,
@@ -505,14 +507,14 @@ def analyze_image_endpoint(req: ImageAnalyzeRequest, db: Session = Depends(get_d
 
 @app.get("/api/media/{filename}")
 def get_media_file(filename: str, _auth: Dict[str, Any] = Depends(require_dashboard_auth)):
-    """Serves persisted screenshot images from MEDIA_DIR."""
+    """Serve a private screenshot from the configured shared media store."""
     try:
-        path = resolve_local_media_path(filename)
-        data = path.read_bytes()
-        mime = sniff_mime(data)
+        data, mime = read_media(filename)
+    except MediaStorageError as e:
+        raise HTTPException(status_code=503, detail=str(e)) from e
     except MediaError as e:
-        raise HTTPException(status_code=404, detail=str(e))
-    return Response(content=data, media_type=mime)
+        raise HTTPException(status_code=404, detail=str(e)) from e
+    return Response(content=data, media_type=mime, headers={"Cache-Control": "private, no-store"})
 
 
 @app.get("/api/export")

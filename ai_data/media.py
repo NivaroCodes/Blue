@@ -11,10 +11,15 @@ import base64
 import binascii
 import logging
 import os
+import re
 from pathlib import Path
 from typing import Optional, Tuple
+from urllib.parse import urlparse
 
+import boto3
 import httpx
+from botocore.config import Config
+from botocore.exceptions import BotoCoreError, ClientError
 
 logger = logging.getLogger(__name__)
 
@@ -25,6 +30,71 @@ ALLOWED_MIME = {"image/jpeg", "image/png", "image/webp", "image/gif"}
 
 class MediaError(Exception):
     pass
+
+
+class MediaStorageError(MediaError):
+    """The configured media store is unavailable; callers should retry."""
+
+
+def _storage_mode() -> str:
+    mode = os.getenv("MEDIA_STORAGE", "local").strip().lower()
+    if mode not in {"local", "r2"}:
+        raise MediaStorageError("MEDIA_STORAGE must be 'local' or 'r2'.")
+    return mode
+
+
+def _r2_client():
+    endpoint = os.getenv("R2_ENDPOINT_URL", "").strip().rstrip("/")
+    parsed = urlparse(endpoint)
+    key_id = os.getenv("R2_ACCESS_KEY_ID", "").strip()
+    secret = os.getenv("R2_SECRET_ACCESS_KEY", "").strip()
+    bucket = os.getenv("R2_BUCKET_NAME", "").strip()
+    if parsed.scheme != "https" or not parsed.hostname or parsed.username or parsed.password or parsed.query or parsed.fragment or not all((key_id, secret, bucket)):
+        raise MediaStorageError("R2 media storage is not fully configured.")
+    return boto3.client(
+        "s3",
+        endpoint_url=endpoint,
+        aws_access_key_id=key_id,
+        aws_secret_access_key=secret,
+        region_name="auto",
+        config=Config(signature_version="s3v4", connect_timeout=5, read_timeout=15, retries={"max_attempts": 2}),
+    ), bucket
+
+
+def _media_filename(ref: str) -> str:
+    name = ref.strip()
+    for prefix in ("/api/media/", "api/media/", "media/"):
+        if name.startswith(prefix):
+            name = name[len(prefix):]
+            break
+    if len(name) > 100 or not re.fullmatch(r"[A-Za-z0-9_-]+\.(?:png|jpg|webp|gif)", name):
+        raise MediaError("Некорректное имя файла изображения.")
+    return name
+
+
+def read_media(ref: str) -> Tuple[bytes, str]:
+    """Read private media from the configured store, with a hard size limit."""
+    if _storage_mode() == "r2":
+        name = _media_filename(ref)
+        client, bucket = _r2_client()
+        try:
+            response = client.get_object(Bucket=bucket, Key=f"media/{name}")
+            body = response["Body"]
+            try:
+                data = body.read(MAX_IMAGE_BYTES + 1)
+            finally:
+                body.close()
+        except (BotoCoreError, ClientError, OSError) as exc:
+            logger.warning("R2 media read failed (%s)", type(exc).__name__)
+            raise MediaStorageError("R2 media is temporarily unavailable.") from exc
+    else:
+        try:
+            data = resolve_local_media_path(ref).read_bytes()
+        except OSError as exc:
+            raise MediaStorageError("Local media is temporarily unavailable.") from exc
+    if len(data) > MAX_IMAGE_BYTES:
+        raise MediaError("Изображение превышает допустимый размер.")
+    return data, sniff_mime(data)
 
 
 def sniff_mime(data: bytes) -> str:
@@ -54,14 +124,25 @@ def decode_base64_image(image_base64: str) -> Tuple[bytes, str]:
 
 
 def save_image(message_pk: str, image_base64: str) -> str:
-    """Saves an uploaded image to MEDIA_DIR and returns an API-servable reference '/api/media/<file>'."""
+    """Save image in shared R2 storage or the local development directory."""
     data, mime = decode_base64_image(image_base64)
     ext = {"image/png": "png", "image/jpeg": "jpg", "image/webp": "webp", "image/gif": "gif"}[mime]
     safe_stem = "".join(ch for ch in message_pk if ch.isalnum() or ch in ("_", "-"))[:64] or "img"
-    MEDIA_DIR.mkdir(parents=True, exist_ok=True)
-    path = MEDIA_DIR / f"{safe_stem}.{ext}"
-    path.write_bytes(data)
-    return f"/api/media/{path.name}"
+    filename = f"{safe_stem}.{ext}"
+    if _storage_mode() == "r2":
+        client, bucket = _r2_client()
+        try:
+            client.put_object(Bucket=bucket, Key=f"media/{filename}", Body=data, ContentType=mime)
+        except (BotoCoreError, ClientError, OSError) as exc:
+            logger.warning("R2 media write failed (%s)", type(exc).__name__)
+            raise MediaStorageError("R2 media is temporarily unavailable.") from exc
+    else:
+        try:
+            MEDIA_DIR.mkdir(parents=True, exist_ok=True)
+            (MEDIA_DIR / filename).write_bytes(data)
+        except OSError as exc:
+            raise MediaStorageError("Local media is temporarily unavailable.") from exc
+    return f"/api/media/{filename}"
 
 
 def resolve_local_media_path(ref: str) -> Path:
@@ -108,10 +189,6 @@ def load_image(image_url: Optional[str]) -> Optional[Tuple[str, str]]:
         mime = sniff_mime(data)
 
     else:
-        path = resolve_local_media_path(image_url)
-        data = path.read_bytes()
-        if len(data) > MAX_IMAGE_BYTES:
-            raise MediaError("Изображение превышает допустимый размер.")
-        mime = sniff_mime(data)
+        data, mime = read_media(image_url)
 
     return base64.b64encode(data).decode("ascii"), mime
