@@ -179,6 +179,18 @@ class EntityRecord(Base):
     message = relationship("MessageRecord", back_populates="entities")
 
 
+class TelegramConsentRecord(Base):
+    """Current Telegram processing consent keyed by a pseudonymous HMAC."""
+    __tablename__ = "telegram_consents"
+
+    user_hash = Column(String(64), primary_key=True)
+    consent_version = Column(String(32), nullable=False, default="2026-10-25-v1")
+    notice_shown_at = Column(UTCDateTime, nullable=True)
+    consented_at = Column(UTCDateTime, nullable=True)
+    revoked_at = Column(UTCDateTime, nullable=True)
+    updated_at = Column(UTCDateTime, default=utc_now, onupdate=utc_now)
+
+
 # ---------------------------------------------------------------------------
 # Engine / lightweight migration
 # ---------------------------------------------------------------------------

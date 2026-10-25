@@ -171,3 +171,19 @@ npm test
 Оценки демосообщений заданы вручную для демонстрации интерфейса. Frontend сам не обучает модель, не подключается напрямую к чатам Telegram и не импортирует WhatsApp. Анализ AI, сбор сообщений и серверное хранение относятся к отдельному backend команды.
 
 Карточки и графики описывают полученную выборку; они не являются измерением precision, recall или false-positive rate модели. Предупреждение — повод для проверки, окончательное решение принимает аналитик.
+
+
+## Telegram voluntary-submission connector
+
+The Telegram connector accepts private-chat submissions only. Ordinary messages are not stored or analyzed. Users must first send `/consent`, read the processing notice, explicitly grant consent with `/agree`, then submit each item with `/analyze text` or reply `/analyze` to a forwarded text message. Use `/revoke` to stop future analysis and `/delete_my_data` to delete records submitted under that pseudonymous Telegram identity.
+
+Configure `TELEGRAM_BOT_TOKEN`, `TELEGRAM_WEBHOOK_SECRET`, `TELEGRAM_HASH_SECRET`, and `TELEGRAM_WEBHOOK_URL` in the API runtime environment. The endpoint is `POST /webhooks/telegram`; after deploying to a public HTTPS URL, run:
+
+```bash
+python -m ai_data.telegram_connector set-webhook
+python -m ai_data.telegram_connector webhook-info
+```
+
+The MVP supports text and captions. The webhook records consent in PostgreSQL and passes explicitly submitted messages into the existing ingestion/worker pipeline. Telegram connector submissions are retained for at most 30 days; the worker periodically removes expired connector records and inactive consent records. Users can revoke consent or delete their submitted Blue records earlier. A PostgreSQL-backed API and an always-on background worker are required.
+
+Before accepting real external users, configure an accessible privacy policy in @BotFather and verify encryption at rest for the database and backups. Until those hosting controls and the jurisdiction-specific privacy requirements are reviewed, use synthetic test data only.

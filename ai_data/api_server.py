@@ -371,6 +371,11 @@ def export_alerts(format: str = "json", db: Session = Depends(get_db)):
     return alerts
 
 
+# Isolated Telegram adapter reuses the existing ingestion pipeline.
+from .telegram_connector import router as telegram_router
+app.include_router(telegram_router)
+
+
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run("ai_data.api_server:app", host="127.0.0.1", port=8000, reload=True)

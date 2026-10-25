@@ -27,7 +27,7 @@ from sqlalchemy import update
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
-from .db.models import init_db, MessageRecord, AnalysisRecord, ReviewRecord, EntityRecord, utc_now
+from .db.models import init_db, MessageRecord, AnalysisRecord, ReviewRecord, EntityRecord, TelegramConsentRecord, utc_now
 from .analyzer import analyze_message
 from .context import build_context_block
 from .entity_extractor import extract_entities
@@ -317,6 +317,39 @@ def process_pending_messages(
     return processed_count
 
 
+TELEGRAM_RETENTION_DAYS = max(1, int(os.getenv("TELEGRAM_RETENTION_DAYS", "30")))
+TELEGRAM_RETENTION_SWEEP_SECONDS = max(60, int(os.getenv("TELEGRAM_RETENTION_SWEEP_SECONDS", "3600")))
+
+
+def purge_expired_telegram_records(session: Session, retention_days: Optional[int] = None) -> int:
+    """Delete expired records from this connector only; preserve other Telegram sources."""
+    days = max(1, retention_days or TELEGRAM_RETENTION_DAYS)
+    cutoff = utc_now() - timedelta(days=days)
+    expired_messages = (
+        session.query(MessageRecord)
+        .filter(
+            MessageRecord.platform == "telegram",
+            MessageRecord.chat_id.like("tg\\_%", escape="\\"),
+            MessageRecord.created_at.isnot(None),
+            MessageRecord.created_at < cutoff,
+        )
+        .all()
+    )
+    count = len(expired_messages)
+    for message in expired_messages:
+        session.delete(message)
+    # After inactivity, consent expires too; later use requires the notice and explicit agreement again.
+    expired_consents = (
+        session.query(TelegramConsentRecord)
+        .filter(TelegramConsentRecord.updated_at < cutoff)
+        .all()
+    )
+    for consent in expired_consents:
+        session.delete(consent)
+    session.commit()
+    return count
+
+
 def _sanitize_db_url(url: Optional[str]) -> str:
     """Masks database password in connection string for logging."""
     if not url:
@@ -334,10 +367,21 @@ def run_worker_loop(database_url: Optional[str] = None, poll_interval: float = 3
     worker_id = make_worker_id()
     logger.info(f"Starting AI Background Worker {worker_id} connected to {_sanitize_db_url(db_url)}...")
 
+    last_retention_sweep = 0.0
     while True:
         session = SessionLocal()
         try:
             recover_stale_claims(session)
+            now_monotonic = time.monotonic()
+            if now_monotonic - last_retention_sweep >= TELEGRAM_RETENTION_SWEEP_SECONDS:
+                try:
+                    deleted = purge_expired_telegram_records(session)
+                    if deleted:
+                        logger.info("Telegram retention sweep deleted %s expired records.", deleted)
+                except Exception as retention_error:
+                    session.rollback()
+                    logger.error("Telegram retention sweep failed (%s).", type(retention_error).__name__)
+                last_retention_sweep = now_monotonic
             count = process_pending_messages(session, limit=5, api_key=api_key, worker_id=worker_id)
             if count == 0:
                 time.sleep(poll_interval)
