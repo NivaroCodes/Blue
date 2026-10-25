@@ -9,6 +9,7 @@ import {
   CircleHelp,
   Database,
   LayoutDashboard,
+  LogOut,
   Menu,
   MessageSquare,
   Radio,
@@ -26,6 +27,8 @@ import { Analytics } from './pages/Analytics'
 import { SettingsPage } from './pages/Settings'
 import { Empty } from './components/ui'
 import { addDemoAlert } from './data/demo'
+import { Login } from './components/Login'
+import { restoreSession, signOut as endSession } from './lib/auth'
 
 const navigation = [
   { to: '/', label: 'Мониторинг', icon: LayoutDashboard, end: true },
@@ -34,11 +37,24 @@ const navigation = [
 ]
 export default function App() {
   const monitor = useMonitor()
+  const [authReady, setAuthReady] = useState(false)
+  const [signedIn, setSignedIn] = useState(false)
   const [menu, setMenu] = useState(false)
   const [notifications, setNotifications] = useState(false)
   const [toast, setToast] = useState('')
   const help = useRef<HTMLDialogElement>(null)
   const location = useLocation()
+  useEffect(() => {
+    let active = true
+    void restoreSession().then((session) => {
+      if (!active) return
+      setSignedIn(Boolean(session))
+      setAuthReady(true)
+    }).catch(() => {
+      if (active) setAuthReady(true)
+    })
+    return () => { active = false }
+  }, [])
   useEffect(() => {
     setMenu(false)
     setNotifications(false)
@@ -70,6 +86,10 @@ export default function App() {
     monitor.refresh()
     setToast('Демосообщение добавлено в ленту. Все оценки заранее заданы для показа интерфейса.')
   }
+  if (!authReady) {
+    return <main className="login-screen"><div className="login-loading"><span className="spinner" /> Проверяем сессию…</div></main>
+  }
+  if (!signedIn) return <Login onSignedIn={() => { setSignedIn(true); monitor.refresh() }} />
   return (
     <div className="app-shell">
       <a className="skip-link" href="#main">
@@ -207,7 +227,14 @@ export default function App() {
                 </div>
               )}
             </div>
-            <div className="avatar top-avatar">BL</div>
+            <button
+              className="icon-button signout-button"
+              aria-label="Выйти из аккаунта"
+              title="Выйти"
+              onClick={() => { void endSession().finally(() => setSignedIn(false)) }}
+            >
+              <LogOut size={18} />
+            </button>
           </div>
         </header>
         <main id="main" tabIndex={-1}>
