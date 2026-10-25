@@ -1,6 +1,7 @@
 import { z } from 'zod'
 import { demoAlerts, reviewDemo } from '../data/demo'
 import { AlertSchema, calculateStats, StatsSchema } from './model'
+import { getAccessToken } from './auth'
 import type { Review, Settings } from './model'
 
 async function request(settings: Settings, path: string, options: RequestInit = {}) {
@@ -19,17 +20,27 @@ async function request(settings: Settings, path: string, options: RequestInit = 
       throw new Error('Подключение к сервису данных не настроено. Обратитесь к команде проекта.')
     }
   }
-  const response = await fetch(`${settings.baseUrl.replace(/\/$/, '')}/api${path}`, {
-    ...options,
-    headers: {
-      Accept: 'application/json',
-      ...(options.body ? { 'Content-Type': 'application/json' } : {}),
-      ...options.headers,
-    },
-    signal: options.signal || AbortSignal.timeout(12_000),
-  })
+  async function send(token: string | null) {
+    return fetch(`${settings.baseUrl.replace(/\/$/, '')}/api${path}`, {
+      ...options,
+      headers: {
+        Accept: 'application/json',
+        ...(options.body ? { 'Content-Type': 'application/json' } : {}),
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        ...options.headers,
+      },
+      signal: options.signal || AbortSignal.timeout(12_000),
+    })
+  }
+  let response = await send(await getAccessToken())
+  if (response.status === 401) {
+    const refreshedToken = await getAccessToken(true)
+    if (refreshedToken) response = await send(refreshedToken)
+  }
   if (!response.ok)
-    throw new Error('Сервис данных временно недоступен. Попробуйте обновить сообщения позже.')
+    throw new Error(response.status === 401
+      ? 'Сессия завершилась. Войдите снова, чтобы продолжить.'
+      : `API вернул ${response.status}. Проверьте адрес сервера и доступ к нему.`)
   try {
     return await response.json()
   } catch {
