@@ -2,10 +2,14 @@ import os
 import csv
 import io
 import uuid
+import base64
+import logging
+from urllib.parse import urlparse
 from datetime import timedelta
 from typing import Optional
 
-from fastapi import FastAPI, HTTPException, Depends
+import httpx
+from fastapi import FastAPI, HTTPException, Depends, Request, Header, BackgroundTasks
 from fastapi.responses import Response
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field, model_validator
@@ -19,6 +23,14 @@ from .db.models import (
 from .worker import process_pending_messages
 from .graph_analysis import analyze_network_graph
 from .media import save_image, resolve_local_media_path, sniff_mime, MediaError
+from .webhooks import (
+    WebhookPayloadError,
+    constant_time_token_match,
+    normalize_green_message,
+    normalize_telegram_message,
+)
+
+logger = logging.getLogger("safenet_api")
 
 DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///safenet.db")
 # 1 = analyse right inside POST /api/messages (demo mode); 0 = leave it to the background worker.
@@ -38,6 +50,11 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+def _message_hash_secret() -> str:
+    """Prefer the dedicated shared key; support the Telegram-specific key already used on Fly."""
+    return os.getenv("SENDER_HASH_SECRET", "").strip() or os.getenv("TELEGRAM_HASH_SECRET", "").strip()
 
 
 def get_db():
@@ -149,6 +166,179 @@ def _ingest(db: Session, req: MessageCreateRequest) -> MessageRecord:
         db.rollback()
         return db.get(MessageRecord, pk) or _find_by_source(db, req.platform, req.chat_id, req.message_id)
     return rec
+
+
+def _process_webhook_message(message_id: str) -> None:
+    """Process webhook ingests after acknowledging the provider's delivery."""
+    db = SessionLocal()
+    try:
+        process_pending_messages(db, limit=1, only_ids=[message_id], throttle_seconds=0)
+    finally:
+        db.close()
+
+
+async def _download_bounded(
+    client: httpx.AsyncClient,
+    url: str,
+    max_bytes: int = 8 * 1024 * 1024,
+    allowed_hosts: tuple[str, ...] = (),
+) -> bytes:
+    parsed = urlparse(url)
+    hostname = (parsed.hostname or "").lower()
+    if (
+        parsed.scheme != "https"
+        or not hostname
+        or not any(hostname == host or hostname.endswith("." + host) for host in allowed_hosts)
+    ):
+        raise HTTPException(status_code=502, detail="Provider returned an unsupported media URL.")
+    chunks = []
+    size = 0
+    async with client.stream("GET", url, follow_redirects=False) as response:
+        response.raise_for_status()
+        async for chunk in response.aiter_bytes():
+            size += len(chunk)
+            if size > max_bytes:
+                raise HTTPException(status_code=413, detail="Image exceeds the configured size limit.")
+            chunks.append(chunk)
+    return b"".join(chunks)
+
+
+async def _telegram_image_base64(file_id: str) -> str:
+    token = os.getenv("TELEGRAM_BOT_TOKEN", "")
+    if not token:
+        raise HTTPException(status_code=503, detail="Telegram bot is not configured.")
+    async with httpx.AsyncClient(timeout=20.0) as client:
+        result = await client.get(f"https://api.telegram.org/bot{token}/getFile", params={"file_id": file_id})
+        result.raise_for_status()
+        data = result.json()
+        file_path = (data.get("result") or {}).get("file_path")
+        if not data.get("ok") or not file_path:
+            raise HTTPException(status_code=502, detail="Telegram did not provide a photo file.")
+        if not isinstance(file_path, str) or not file_path or file_path.startswith("/") or ".." in file_path.split("/"):
+            raise HTTPException(status_code=502, detail="Telegram returned an invalid photo path.")
+        raw = await _download_bounded(
+            client,
+            f"https://api.telegram.org/file/bot{token}/{file_path}",
+            allowed_hosts=("api.telegram.org",),
+        )
+    return base64.b64encode(raw).decode("ascii")
+
+
+async def _green_image_base64(chat_id: str, message_id: str) -> str:
+    api_url = os.getenv("GREEN_API_API_URL", "").rstrip("/")
+    parsed_api_url = urlparse(api_url)
+    api_host = (parsed_api_url.hostname or "").lower()
+    instance_id = os.getenv("GREEN_API_ID_INSTANCE", "")
+    token = os.getenv("GREEN_API_TOKEN_INSTANCE", "")
+    allowed_api_hosts = ("green-api.com", "greenapi.com")
+    if not (
+        parsed_api_url.scheme == "https"
+        and any(api_host == host or api_host.endswith("." + host) for host in allowed_api_hosts)
+        and instance_id.isdigit()
+        and token
+    ):
+        raise HTTPException(status_code=503, detail="GREEN-API media download is not configured.")
+    endpoint = f"{api_url}/waInstance{instance_id}/downloadFile/{token}"
+    async with httpx.AsyncClient(timeout=25.0) as client:
+        response = await client.post(endpoint, json={"chatId": chat_id, "idMessage": message_id})
+        response.raise_for_status()
+        download_url = response.json().get("downloadUrl")
+        if not isinstance(download_url, str):
+            raise HTTPException(status_code=502, detail="GREEN-API returned an invalid media URL.")
+        raw = await _download_bounded(
+            client,
+            download_url,
+            allowed_hosts=("greenapi.net", "green-api.com", "yandexcloud.net"),
+        )
+    return base64.b64encode(raw).decode("ascii")
+
+
+def _store_webhook_message(data: dict, db: Session, background_tasks: BackgroundTasks) -> dict:
+    image_base64 = data.pop("image_base64", None)
+    req = MessageCreateRequest(**data, image_base64=image_base64)
+    rec = _ingest(db, req)
+    if rec.status == "PENDING":
+        background_tasks.add_task(_process_webhook_message, rec.id)
+    return {"id": f"alert_{rec.id}", "message_id": rec.message_id, "status": rec.status}
+
+
+@app.post("/webhooks/telegram")
+async def telegram_webhook(
+    request: Request,
+    background_tasks: BackgroundTasks,
+    db: Session = Depends(get_db),
+    secret_header: Optional[str] = Header(default=None, alias="X-Telegram-Bot-Api-Secret-Token"),
+):
+    expected_secret = os.getenv("TELEGRAM_WEBHOOK_SECRET", "")
+    if not expected_secret:
+        raise HTTPException(status_code=503, detail="Telegram webhook secret is not configured.")
+    if not constant_time_token_match(secret_header, expected_secret):
+        raise HTTPException(status_code=401, detail="Unauthorized webhook.")
+
+    allowed_chat_id = os.getenv("TELEGRAM_CHAT_ID", "").strip()
+    if not allowed_chat_id:
+        raise HTTPException(status_code=503, detail="Telegram chat allowlist is not configured.")
+    try:
+        update = await request.json()
+        message = update.get("message") or update.get("channel_post")
+        if not isinstance(message, dict):
+            return Response(status_code=204)
+        chat = message.get("chat")
+        if not isinstance(chat, dict) or chat.get("type") not in {"group", "supergroup"}:
+            return Response(status_code=204)
+        if str(chat.get("id")) != allowed_chat_id:
+            return Response(status_code=204)
+        normalized = normalize_telegram_message(message, _message_hash_secret())
+        if normalized is None:
+            return Response(status_code=204)
+        photo_id = normalized.pop("telegram_photo_file_id", None)
+        if photo_id:
+            normalized["image_base64"] = await _telegram_image_base64(photo_id)
+        return _store_webhook_message(normalized, db, background_tasks)
+    except WebhookPayloadError as exc:
+        logger.warning("Rejected malformed Telegram update: %s", exc)
+        return Response(status_code=204)
+    except (httpx.HTTPError, ValueError) as exc:
+        logger.warning("Telegram webhook processing failed (%s)", type(exc).__name__)
+        raise HTTPException(status_code=503, detail="Telegram update could not be processed.") from exc
+
+
+@app.post("/webhooks/green-api")
+async def green_api_webhook(
+    request: Request,
+    background_tasks: BackgroundTasks,
+    db: Session = Depends(get_db),
+    authorization: Optional[str] = Header(default=None),
+):
+    expected_token = os.getenv("GREEN_API_WEBHOOK_TOKEN", "")
+    if not expected_token:
+        raise HTTPException(status_code=503, detail="GREEN-API webhook token is not configured.")
+    if not constant_time_token_match(authorization, expected_token):
+        raise HTTPException(status_code=401, detail="Unauthorized webhook.")
+    try:
+        payload = await request.json()
+        if not isinstance(payload, dict):
+            return Response(status_code=204)
+        normalized = normalize_green_message(payload, _message_hash_secret())
+        if normalized is None:
+            return Response(status_code=204)
+        allowed_chat_id = os.getenv("GREEN_API_ALLOWED_CHAT_ID", "")
+        if not allowed_chat_id:
+            raise HTTPException(status_code=503, detail="WhatsApp chat allowlist is not configured.")
+        if normalized["chat_id"] != allowed_chat_id:
+            return Response(status_code=204)
+        image_message_id = normalized.pop("green_image_message_id", None)
+        if image_message_id:
+            normalized["image_base64"] = await _green_image_base64(
+                normalized["chat_id"], image_message_id
+            )
+        return _store_webhook_message(normalized, db, background_tasks)
+    except WebhookPayloadError as exc:
+        logger.warning("Rejected malformed GREEN-API event: %s", exc)
+        return Response(status_code=204)
+    except (httpx.HTTPError, ValueError) as exc:
+        logger.warning("GREEN-API webhook processing failed (%s)", type(exc).__name__)
+        raise HTTPException(status_code=503, detail="GREEN-API event could not be processed.") from exc
 
 
 @app.get("/api/alerts")
@@ -350,4 +540,9 @@ def export_alerts(format: str = "json", db: Session = Depends(get_db)):
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run("ai_data.api_server:app", host="127.0.0.1", port=8000, reload=True)
+    uvicorn.run(
+        "ai_data.api_server:app",
+        host=os.getenv("HOST", "0.0.0.0"),
+        port=int(os.getenv("PORT", "8000")),
+        reload=os.getenv("UVICORN_RELOAD", "0") == "1",
+    )

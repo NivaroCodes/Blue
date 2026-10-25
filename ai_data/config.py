@@ -2,7 +2,10 @@ import os
 from typing import Optional
 from dotenv import load_dotenv
 
-load_dotenv()
+# Per-machine credentials belong in the ignored .env.local file. Keep the existing
+# .env values (database URL, model settings, etc.) as fallbacks.
+load_dotenv(".env.local", override=True)
+load_dotenv(".env", override=False)
 
 # Model and API Configuration
 AI_PROVIDER: str = os.getenv("AI_PROVIDER", "gemini").lower()

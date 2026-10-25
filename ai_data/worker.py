@@ -275,4 +275,8 @@ def run_worker_loop(database_url: str = "sqlite:///safenet.db", poll_interval: f
 
 
 if __name__ == "__main__":
-    run_worker_loop()
+    run_worker_loop(
+        database_url=os.getenv("DATABASE_URL", "sqlite:///safenet.db"),
+        poll_interval=float(os.getenv("WORKER_POLL_INTERVAL", "3")),
+        api_key=os.getenv("GEMINI_API_KEY") or os.getenv("OPENAI_API_KEY"),
+    )

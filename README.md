@@ -38,6 +38,12 @@ npm run dev
 
 Сервер production должен отдавать `index.html` для клиентских маршрутов (`/alerts/*`, `/chats`, `/analytics`, `/settings`) и проксировать `/api`, либо использовать отдельный API-домен. `VITE_*` читаются при сборке; секреты в них помещать нельзя.
 
+## Telegram и WhatsApp ingestion
+
+FastAPI backend принимает события непосредственно на `/webhooks/telegram` и
+`/webhooks/green-api`, сохраняет разрешённые сообщения через общий pipeline Blue и передаёт
+их на AI-анализ. Подробности настройки и секретов описаны в `BACKEND_HANDOFF.md`.
+
 ## Проверки
 
 ```powershell

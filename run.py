@@ -21,13 +21,20 @@ def main():
 
     if command == "api":
         import uvicorn
-        print("Starting SafeNet KZ Backend API server on http://127.0.0.1:8000 ...")
-        uvicorn.run("ai_data.api_server:app", host="127.0.0.1", port=8000, reload=True)
+        host = os.getenv("HOST", "0.0.0.0")
+        port = int(os.getenv("PORT", "8000"))
+        reload = os.getenv("UVICORN_RELOAD", "0") == "1"
+        print(f"Starting SafeNet KZ Backend API server on http://{host}:{port} ...")
+        uvicorn.run("ai_data.api_server:app", host=host, port=port, reload=reload)
 
     elif command == "worker":
         from ai_data.worker import run_worker_loop
         print("Starting SafeNet KZ AI Background Worker ...")
-        run_worker_loop()
+        run_worker_loop(
+            database_url=os.getenv("DATABASE_URL", "sqlite:///safenet.db"),
+            poll_interval=float(os.getenv("WORKER_POLL_INTERVAL", "3")),
+            api_key=os.getenv("GEMINI_API_KEY") or os.getenv("OPENAI_API_KEY"),
+        )
 
     elif command == "seed":
         from ai_data.db.seed import seed_database

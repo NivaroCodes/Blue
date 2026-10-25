@@ -98,6 +98,57 @@ INLINE_ANALYSIS=1
 ENTITY_HASH_SECRET=change-me-in-production
 ```
 
+## 4. Входящие сообщения через вебхуки
+
+Вебхук — это HTTP-адрес backend, на который Telegram или GREEN-API отправляет POST-запрос при
+новом сообщении. Blue принимает события непосредственно, затем использует общий `_ingest` и
+таблицы сообщений/анализа. База данных не открывается в интернет.
+
+Endpoints:
+
+- `POST /webhooks/telegram` — Telegram Bot API; защищается заголовком
+  `X-Telegram-Bot-Api-Secret-Token` и принимает только group/supergroup с ID из `TELEGRAM_CHAT_ID`.
+- `POST /webhooks/green-api` — GREEN-API; защищается `Authorization` и принимает только
+  `GREEN_API_ALLOWED_CHAT_ID`.
+
+Дополнительные secrets backend:
+
+```env
+SENDER_HASH_SECRET=длинный_случайный_секрет
+TELEGRAM_HASH_SECRET=если SENDER_HASH_SECRET не задан, используется этот ключ
+TELEGRAM_BOT_TOKEN=токен_бота
+TELEGRAM_CHAT_ID=-100...
+TELEGRAM_WEBHOOK_SECRET=случайный_секрет_для_заголовка_Telegram
+TELEGRAM_WEBHOOK_URL=https://your-app.fly.dev/webhooks/telegram
+GREEN_API_API_URL=https://your-instance.api.green-api.com
+GREEN_API_ID_INSTANCE=...
+GREEN_API_TOKEN_INSTANCE=...
+GREEN_API_WEBHOOK_TOKEN=отдельный_секрет_для_GREEN_API
+GREEN_API_ALLOWED_CHAT_ID=...
+DATABASE_URL=postgresql+psycopg://user:password@host:5432/postgres
+```
+
+Перед настройкой провайдеров сначала выложи backend с обоими маршрутами и добавь их переменные
+окружения в Fly Secrets. Telegram Bot API настраивается командой
+`python -m ai_data.configure_telegram_webhook`; она использует `TELEGRAM_PUBLIC_BASE_URL`, задаёт
+endpoint `/webhooks/telegram`, передаёт `TELEGRAM_WEBHOOK_SECRET` и разрешает update `message` и
+`channel_post`. Чтобы бот видел обычные сообщения в группе, отключи Group Privacy в BotFather или
+выдай боту права администратора. Добавляй бота только в выделенную тестовую группу с
+синтетическими сообщениями и уведомлёнными участниками: текущий dashboard/export не имеет
+пользовательской авторизации и может раскрыть сохранённое содержимое.
+
+GREEN-API настраивается после выкладки командой `python -m ai_data.configure_green_api_webhook`.
+Она задаёт endpoint `/webhooks/green-api`, `incomingWebhook=yes` и токен авторизации в формате
+`Bearer <GREEN_API_WEBHOOK_TOKEN>`. GREEN-API перезапускает instance после `setSettings`; настройки
+могут примениться в течение пяти минут. Не запускай эту команду до появления маршрута в Fly.
+
+Поддерживаются текст Telegram/WhatsApp и изображения; изображения скачиваются через Bot API или
+GREEN-API и передаются существующему мультимодальному pipeline. На Fly локальная папка `media/`
+эфемерна: для сохранения изображений после перезапуска надо подключить постоянный volume или
+внешнее объектное хранилище. Секреты добавляются в Fly Secrets, не в Git.
+Загрузка картинок разрешает HTTPS только с доменов Telegram/GREEN-API, запрещает redirects и
+ограничивает размер; все остальные URL отклоняются.
+
 Команды:
 ```bash
 python run.py api      # Запуск FastAPI сервера (http://127.0.0.1:8000)
