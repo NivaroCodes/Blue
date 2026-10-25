@@ -41,11 +41,14 @@ def main() -> None:
         "webhookUrlToken": f"Bearer {webhook_token}",
         "incomingWebhook": "yes",
     }
-    response = httpx.post(endpoint, json=payload, timeout=20.0)
-    response.raise_for_status()
-    result = response.json()
-    if not result.get("saveSettings"):
-        raise SystemExit("GREEN-API did not confirm the webhook settings.")
+    try:
+        response = httpx.post(endpoint, json=payload, timeout=20.0)
+        response.raise_for_status()
+        result = response.json()
+        if not result.get("saveSettings"):
+            raise SystemExit("GREEN-API did not confirm the webhook settings.")
+    except httpx.HTTPError as exc:
+        raise SystemExit(f"GREEN-API webhook setup failed ({type(exc).__name__}); request details hidden.") from None
     print("GREEN-API webhook configured. Instance restart/settings propagation may take up to 5 minutes.")
 
 

@@ -27,19 +27,22 @@ def main() -> None:
     ):
         raise SystemExit("Set TELEGRAM_BOT_TOKEN, TELEGRAM_WEBHOOK_SECRET and a public HTTPS TELEGRAM_WEBHOOK_URL.")
 
-    response = httpx.post(
-        f"https://api.telegram.org/bot{token}/setWebhook",
-        json={
-            "url": webhook_url,
-            "secret_token": secret,
-            "allowed_updates": ["message"],
-        },
-        timeout=20.0,
-    )
-    response.raise_for_status()
-    result = response.json()
-    if not result.get("ok"):
-        raise SystemExit("Telegram rejected webhook configuration.")
+    try:
+        response = httpx.post(
+            f"https://api.telegram.org/bot{token}/setWebhook",
+            json={
+                "url": webhook_url,
+                "secret_token": secret,
+                "allowed_updates": ["message"],
+            },
+            timeout=20.0,
+        )
+        response.raise_for_status()
+        result = response.json()
+        if not result.get("ok"):
+            raise SystemExit("Telegram rejected webhook configuration.")
+    except httpx.HTTPError as exc:
+        raise SystemExit(f"Telegram webhook setup failed ({type(exc).__name__}); request details hidden.") from None
     print("Telegram webhook configured.")
 
 
