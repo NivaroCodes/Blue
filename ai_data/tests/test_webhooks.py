@@ -100,6 +100,16 @@ def test_green_api_ignores_nonincoming_events(webhook_client):
     assert response.status_code == 204
 
 
+def test_dashboard_routes_require_auth_in_production_and_accept_server_token(webhook_client, monkeypatch):
+    client, _factory = webhook_client
+    monkeypatch.setenv("PRODUCTION", "1")
+    monkeypatch.setenv("INGEST_API_TOKEN", "test-dashboard-token")
+
+    assert client.get("/api/stats").status_code == 401
+    response = client.get("/api/stats", headers={"Authorization": "Bearer test-dashboard-token"})
+    assert response.status_code == 200
+
+
 @pytest.mark.asyncio
 async def test_provider_media_download_rejects_untrusted_urls_before_network_io():
     class NoNetworkClient:

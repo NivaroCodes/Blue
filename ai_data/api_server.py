@@ -6,7 +6,7 @@ import base64
 import logging
 from urllib.parse import urlparse
 from datetime import timedelta
-from typing import Optional
+from typing import Optional, Dict, Any
 
 import httpx
 from fastapi import FastAPI, HTTPException, Depends, Request, Header, BackgroundTasks
@@ -23,6 +23,7 @@ from .db.models import (
 from .worker import process_pending_messages
 from .graph_analysis import analyze_network_graph
 from .media import save_image, resolve_local_media_path, sniff_mime, MediaError
+from .auth import require_dashboard_auth
 from .webhooks import (
     WebhookPayloadError,
     constant_time_token_match,
@@ -342,7 +343,7 @@ async def green_api_webhook(
 
 
 @app.get("/api/alerts")
-def get_alerts(level: Optional[str] = None, db: Session = Depends(get_db)):
+def get_alerts(level: Optional[str] = None, db: Session = Depends(get_db), _auth: Dict[str, Any] = Depends(require_dashboard_auth)):
     """
     Returns full snapshot of alerts from the database.
     """
@@ -356,7 +357,7 @@ def get_alerts(level: Optional[str] = None, db: Session = Depends(get_db)):
 
 
 @app.get("/api/alerts/{alert_id}")
-def get_alert_detail(alert_id: str, db: Session = Depends(get_db)):
+def get_alert_detail(alert_id: str, db: Session = Depends(get_db), _auth: Dict[str, Any] = Depends(require_dashboard_auth)):
     """
     Returns single alert details by alert_id.
     """
@@ -364,7 +365,7 @@ def get_alert_detail(alert_id: str, db: Session = Depends(get_db)):
 
 
 @app.get("/api/stats")
-def get_stats(db: Session = Depends(get_db)):
+def get_stats(db: Session = Depends(get_db), _auth: Dict[str, Any] = Depends(require_dashboard_auth)):
     """
     Computes real-time message and alert statistics from the database.
     """
@@ -397,7 +398,7 @@ def get_stats(db: Session = Depends(get_db)):
 
 
 @app.get("/api/network-graph")
-def get_network_graph(db: Session = Depends(get_db)):
+def get_network_graph(db: Session = Depends(get_db), _auth: Dict[str, Any] = Depends(require_dashboard_auth)):
     """
     Returns graph and link analysis: bot clusters, cross-chat syndicates,
     and high-risk community clusters.
@@ -406,7 +407,7 @@ def get_network_graph(db: Session = Depends(get_db)):
 
 
 @app.post("/api/alerts/{alert_id}/review")
-def update_review(alert_id: str, req: ReviewRequest, db: Session = Depends(get_db)):
+def update_review(alert_id: str, req: ReviewRequest, db: Session = Depends(get_db), _auth: Dict[str, Any] = Depends(require_dashboard_auth)):
     """
     Saves reviewer decision (NEW / REVIEWED / FALSE_POSITIVE) and reviewer_note in database.
     REVIEWED = analyst confirms the verdict (only confirmed verdicts escalate future risk scores);
@@ -490,7 +491,7 @@ def analyze_image_endpoint(req: ImageAnalyzeRequest, db: Session = Depends(get_d
 
 
 @app.get("/api/media/{filename}")
-def get_media_file(filename: str):
+def get_media_file(filename: str, _auth: Dict[str, Any] = Depends(require_dashboard_auth)):
     """Serves persisted screenshot images from MEDIA_DIR."""
     try:
         path = resolve_local_media_path(filename)
@@ -502,7 +503,7 @@ def get_media_file(filename: str):
 
 
 @app.get("/api/export")
-def export_alerts(format: str = "json", db: Session = Depends(get_db)):
+def export_alerts(format: str = "json", db: Session = Depends(get_db), _auth: Dict[str, Any] = Depends(require_dashboard_auth)):
     """
     Exports surveillance dataset as JSON or CSV for regulatory / forensic reporting (АФМ / АРРФР).
     """

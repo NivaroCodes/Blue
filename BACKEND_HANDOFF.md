@@ -111,6 +111,13 @@ Endpoints:
 - `POST /webhooks/green-api` — GREEN-API; защищается `Authorization` и принимает только
   `GREEN_API_ALLOWED_CHAT_ID`.
 
+Все dashboard endpoints (`/api/alerts`, `/api/stats`, `/api/network-graph`, `/api/export`,
+review и изображения) в production требуют `Authorization: Bearer <token>`. Backend принимает
+Supabase Auth access token либо серверный `INGEST_API_TOKEN`/`DASHBOARD_API_KEY`. Не встраивай
+эти серверные ключи в `VITE_*` и JavaScript браузера. Если сайт показывает HTTP 401, frontend
+должен отправлять Supabase session access token; публичный demo endpoint для реальных сообщений
+не включай.
+
 Дополнительные secrets backend:
 
 ```env
@@ -126,6 +133,8 @@ GREEN_API_TOKEN_INSTANCE=...
 GREEN_API_WEBHOOK_TOKEN=отдельный_секрет_для_GREEN_API
 GREEN_API_ALLOWED_CHAT_ID=...
 DATABASE_URL=postgresql+psycopg://user:password@host:5432/postgres
+SUPABASE_URL=https://your-project.supabase.co
+SUPABASE_PUBLISHABLE_KEY=sb_publishable_...
 ```
 
 Перед настройкой провайдеров сначала выложи backend с обоими маршрутами и добавь их переменные

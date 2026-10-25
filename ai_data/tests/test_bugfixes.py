@@ -223,6 +223,8 @@ class TestCrossChatDeduplication(unittest.TestCase):
     """Issue 4: Identical chat-local message_id across different chats/platforms must never collide."""
 
     def setUp(self):
+        self._auth_env = patch.dict("os.environ", {"INGEST_API_TOKEN": "test-dashboard-token"})
+        self._auth_env.start()
         self.Session = init_db("sqlite:///:memory:")
         self._orig_inline = api_server.INLINE_ANALYSIS
         api_server.INLINE_ANALYSIS = False
@@ -235,11 +237,12 @@ class TestCrossChatDeduplication(unittest.TestCase):
                 db.close()
 
         api_server.app.dependency_overrides[api_server.get_db] = override_get_db
-        self.client = TestClient(api_server.app)
+        self.client = TestClient(api_server.app, headers={"Authorization": "Bearer test-dashboard-token"})
 
     def tearDown(self):
         api_server.app.dependency_overrides.clear()
         api_server.INLINE_ANALYSIS = self._orig_inline
+        self._auth_env.stop()
 
     def test_same_local_message_id_in_two_chats_and_platforms_preserved(self):
         r1 = self.client.post("/api/messages", json={
@@ -284,6 +287,8 @@ class TestMultimodalUnifiedPipeline(unittest.TestCase):
     """Issue 5: Worker processes image_url; /api/analyze-image persists regular alerts."""
 
     def setUp(self):
+        self._auth_env = patch.dict("os.environ", {"INGEST_API_TOKEN": "test-dashboard-token"})
+        self._auth_env.start()
         self.tmp_dir = tempfile.TemporaryDirectory()
         self._orig_media_dir = media_mod.MEDIA_DIR
         media_mod.MEDIA_DIR = Path(self.tmp_dir.name).resolve()
@@ -298,12 +303,13 @@ class TestMultimodalUnifiedPipeline(unittest.TestCase):
                 db.close()
 
         api_server.app.dependency_overrides[api_server.get_db] = override_get_db
-        self.client = TestClient(api_server.app)
+        self.client = TestClient(api_server.app, headers={"Authorization": "Bearer test-dashboard-token"})
 
     def tearDown(self):
         api_server.app.dependency_overrides.clear()
         media_mod.MEDIA_DIR = self._orig_media_dir
         self.tmp_dir.cleanup()
+        self._auth_env.stop()
 
     @patch("ai_data.analyzer.call_gemini_api")
     def test_worker_loads_image_url_and_extracts_ocr_entities(self, mock_gemini):
