@@ -188,29 +188,20 @@ class TestStageCGeminiIntegrationAndSecurity(unittest.TestCase):
         self.assertEqual(kwargs["headers"]["x-goog-api-key"], "secret-api-key")
 
     @patch("httpx.Client.post")
-    def test_gemini_retries_on_429_same_model_only(self, mock_post):
-        # First call 429, second call 200
+    def test_gemini_stops_on_429_without_switching_models(self, mock_post):
         resp_429 = MagicMock()
         resp_429.status_code = 429
         resp_429.text = "Rate limit exceeded"
+        resp_429.headers = {"Retry-After": "120"}
+        resp_429.json.return_value = {"error": {"message": "RequestsPerDay exhausted"}}
+        mock_post.side_effect = [resp_429]
 
-        resp_200 = MagicMock()
-        resp_200.status_code = 200
-        resp_200.json.return_value = {
-            "candidates": [{
-                "content": {
-                    "parts": [{
-                        "text": '{"risk_score": 70, "risk_level": "HIGH", "reasons": [{"code": "URGENCY", "evidence": "только сегодня"}], "explanation": "Срочность", "confidence": 0.9}'
-                    }]
-                }
-            }]
-        }
-        mock_post.side_effect = [resp_429, resp_200]
-
-        res = call_gemini_api(text="только сегодня акция", api_key="secret-key", model="gemini-3.8-flash")
-        self.assertEqual(res.risk_level, RiskLevelEnum.HIGH)
-        self.assertEqual(mock_post.call_count, 2)
-        # Verify both calls hit the same model URL
+        from ai_data.llm_client import AIQuotaError
+        with self.assertRaises(AIQuotaError) as ctx:
+            call_gemini_api(text="только сегодня акция", api_key="secret-key", model="gemini-3.8-flash")
+        self.assertTrue(ctx.exception.daily)
+        self.assertEqual(ctx.exception.retry_after_seconds, 120)
+        self.assertEqual(mock_post.call_count, 1)
         for call_item in mock_post.call_args_list:
             self.assertIn("gemini-3.8-flash", call_item[0][0])
 

@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test'
+import { expect, test } from './fixtures'
 
 test('entrance appears on reload even with an old saved flag, but not on SPA navigation', async ({
   page,

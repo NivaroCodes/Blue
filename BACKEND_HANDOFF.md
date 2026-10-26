@@ -100,6 +100,12 @@ ENTITY_HASH_SECRET=change-me-in-production
 
 > **Важно:** Единственная поддерживаемая СУБД в runtime — **PostgreSQL**. При отсутствии `DATABASE_URL` или попытке указать `sqlite://` сервис завершает работу с понятной ошибкой конфигурации.
 
+## Webhook ingestion и доступ аналитика
+
+`POST /webhooks/telegram` проверяет `TELEGRAM_WEBHOOK_SECRET`. Личный чат направляется в добровольный сценарий `/consent` → `/agree` → `/analyze`; группа обрабатывается только при совпадении с `TELEGRAM_CHAT_ID`. `POST /webhooks/green-api` проверяет `GREEN_API_WEBHOOK_TOKEN` и `GREEN_API_ALLOWED_CHAT_ID`. Фото сохраняются в приватном R2 (`MEDIA_STORAGE=r2`) и выдаются через авторизованный `/api/media/{filename}`.
+
+`POST /api/messages` и `/api/analyze-image` требуют `INGEST_API_TOKEN` при развёртывании. Dashboard API проверяет Supabase Auth; настройте `SUPABASE_URL` и `SUPABASE_PUBLISHABLE_KEY` только на backend и допустимые публичные значения во frontend. Серверные ключи и ingestion token не помещайте в `VITE_*`. Для Fly установите `AI_MODEL_NAME=gemini-3.5-flash-lite`; HTTP 429 останавливает запросы к модели до паузы worker.
+
 Команды:
 ```bash
 python run.py api      # Запуск FastAPI сервера (http://127.0.0.1:8000)

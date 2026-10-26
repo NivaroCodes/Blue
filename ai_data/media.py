@@ -5,7 +5,7 @@ and persists uploaded images so the worker can analyse them like any other messa
 Supported image_url forms:
 - data:image/png;base64,....                      (inline)
 - http(s)://...                                   (downloaded with size/time limits)
-- /api/media/<file>                             (local MEDIA_DIR or private R2)
+- /api/media/<file>, media/<file> or <file>       (files saved in MEDIA_DIR)
 """
 import base64
 import binascii
@@ -14,8 +14,12 @@ import os
 import re
 from pathlib import Path
 from typing import Optional, Tuple
+from urllib.parse import urlparse
 
+import boto3
 import httpx
+from botocore.config import Config
+from botocore.exceptions import BotoCoreError, ClientError
 
 logger = logging.getLogger(__name__)
 
@@ -26,6 +30,88 @@ ALLOWED_MIME = {"image/jpeg", "image/png", "image/webp", "image/gif"}
 
 class MediaError(Exception):
     pass
+
+
+class MediaStorageError(MediaError):
+    """The configured media store is unavailable; callers should retry."""
+
+
+def _storage_mode() -> str:
+    mode = os.getenv("MEDIA_STORAGE", "local").strip().lower()
+    if mode not in {"local", "r2"}:
+        raise MediaStorageError("MEDIA_STORAGE must be 'local' or 'r2'.")
+    if mode == "local" and (os.getenv("FLY_APP_NAME") or os.getenv("RAILWAY_ENVIRONMENT")):
+        raise MediaStorageError("Separate cloud API and worker require shared MEDIA_STORAGE=r2.")
+    return mode
+
+
+def storage_backend() -> str:
+    """Compatibility name used by the Fly configuration and safety tests."""
+    return _storage_mode()
+
+
+def _r2_client():
+    endpoint = os.getenv("R2_ENDPOINT_URL", "").strip().rstrip("/")
+    parsed = urlparse(endpoint)
+    key_id = os.getenv("R2_ACCESS_KEY_ID", "").strip()
+    secret = os.getenv("R2_SECRET_ACCESS_KEY", "").strip()
+    bucket = os.getenv("R2_BUCKET_NAME", "").strip()
+    if parsed.scheme != "https" or not parsed.hostname or parsed.username or parsed.password or parsed.query or parsed.fragment or not all((key_id, secret, bucket)):
+        raise MediaStorageError("R2 media storage is not fully configured.")
+    return boto3.client(
+        "s3",
+        endpoint_url=endpoint,
+        aws_access_key_id=key_id,
+        aws_secret_access_key=secret,
+        region_name="auto",
+        config=Config(signature_version="s3v4", connect_timeout=5, read_timeout=15, retries={"max_attempts": 2}),
+    ), bucket
+
+
+def _media_filename(ref: str) -> str:
+    name = ref.strip()
+    for prefix in ("/api/media/", "api/media/", "media/"):
+        if name.startswith(prefix):
+            name = name[len(prefix):]
+            break
+    if len(name) > 100 or not re.fullmatch(r"[A-Za-z0-9_-]+\.(?:png|jpg|webp|gif)", name):
+        raise MediaError("Некорректное имя файла изображения.")
+    return name
+
+
+def read_media(ref: str) -> Tuple[bytes, str]:
+    """Read private media from the configured store, with a hard size limit."""
+    if _storage_mode() == "r2":
+        name = _media_filename(ref)
+        client, bucket = _r2_client()
+        try:
+            try:
+                response = client.get_object(Bucket=bucket, Key=f"media/{name}")
+            except ClientError as exc:
+                if exc.response.get("Error", {}).get("Code") not in {"NoSuchKey", "404"}:
+                    raise
+                response = client.get_object(Bucket=bucket, Key=f"blue-media/{name}")
+            body = response["Body"]
+            try:
+                data = body.read(MAX_IMAGE_BYTES + 1)
+            finally:
+                body.close()
+        except (BotoCoreError, ClientError, OSError) as exc:
+            logger.warning("R2 media read failed (%s)", type(exc).__name__)
+            raise MediaStorageError("R2 media is temporarily unavailable.") from exc
+    else:
+        try:
+            data = resolve_local_media_path(ref).read_bytes()
+        except OSError as exc:
+            raise MediaStorageError("Local media is temporarily unavailable.") from exc
+    if len(data) > MAX_IMAGE_BYTES:
+        raise MediaError("Изображение превышает допустимый размер.")
+    return data, sniff_mime(data)
+
+
+def read_stored_image(ref: str) -> Tuple[bytes, str]:
+    """Compatibility name for records written before the media adapter update."""
+    return read_media(ref)
 
 
 def sniff_mime(data: bytes) -> str:
@@ -55,76 +141,25 @@ def decode_base64_image(image_base64: str) -> Tuple[bytes, str]:
 
 
 def save_image(message_pk: str, image_base64: str) -> str:
-    """Persists an upload in configured storage and returns '/api/media/<file>'."""
+    """Save image in shared R2 storage or the local development directory."""
     data, mime = decode_base64_image(image_base64)
     ext = {"image/png": "png", "image/jpeg": "jpg", "image/webp": "webp", "image/gif": "gif"}[mime]
     safe_stem = "".join(ch for ch in message_pk if ch.isalnum() or ch in ("_", "-"))[:64] or "img"
     filename = f"{safe_stem}.{ext}"
-    if storage_backend() == "r2":
+    if _storage_mode() == "r2":
+        client, bucket = _r2_client()
         try:
-            _r2_client().put_object(Bucket=_r2_bucket(), Key=f"blue-media/{filename}", Body=data, ContentType=mime)
-        except Exception:
-            raise MediaError("Shared media upload failed.") from None
-        return f"/api/media/{filename}"
-    MEDIA_DIR.mkdir(parents=True, exist_ok=True)
-    path = MEDIA_DIR / f"{safe_stem}.{ext}"
-    path.write_bytes(data)
-    return f"/api/media/{path.name}"
-
-
-def storage_backend() -> str:
-    backend = os.getenv("MEDIA_STORAGE", "local").lower()
-    if backend not in {"local", "r2"}:
-        raise MediaError("MEDIA_STORAGE must be local or r2.")
-    if backend == "local" and (os.getenv("FLY_APP_NAME") or os.getenv("RAILWAY_ENVIRONMENT")):
-        raise MediaError("Separate cloud API and worker require shared MEDIA_STORAGE=r2.")
-    return backend
-
-
-def _r2_bucket() -> str:
-    bucket = os.getenv("R2_BUCKET_NAME", "").strip()
-    if not bucket:
-        raise MediaError("R2_BUCKET_NAME is required.")
-    return bucket
-
-
-def _r2_client():
-    import boto3
-    from botocore.config import Config
-    names = ("R2_ENDPOINT_URL", "R2_ACCESS_KEY_ID", "R2_SECRET_ACCESS_KEY")
-    if any(not os.getenv(name, "").strip() for name in names):
-        raise MediaError("R2 endpoint and credentials are required.")
-    endpoint = os.environ["R2_ENDPOINT_URL"]
-    if not endpoint.startswith("https://"):
-        raise MediaError("R2 endpoint must use HTTPS.")
-    return boto3.client(
-        "s3", endpoint_url=endpoint, region_name="auto",
-        aws_access_key_id=os.environ["R2_ACCESS_KEY_ID"],
-        aws_secret_access_key=os.environ["R2_SECRET_ACCESS_KEY"],
-        config=Config(signature_version="s3v4", connect_timeout=5, read_timeout=15,
-                      retries={"max_attempts": 2}, s3={"addressing_style": "path"}),
-    )
-
-
-def read_stored_image(ref: str) -> Tuple[bytes, str]:
-    """Both API and worker read private objects through the same storage adapter."""
-    if storage_backend() == "r2":
-        filename = ref.removeprefix("/api/media/")
-        if not re.fullmatch(r"[\w-]{1,64}\.(png|jpg|webp|gif)", filename):
-            raise MediaError("Invalid media reference.")
-        try:
-            body = _r2_client().get_object(Bucket=_r2_bucket(), Key=f"blue-media/{filename}")["Body"]
-            try:
-                data = body.read(MAX_IMAGE_BYTES + 1)
-            finally:
-                body.close()
-        except Exception:
-            raise MediaError("Shared media read failed.") from None
+            client.put_object(Bucket=bucket, Key=f"media/{filename}", Body=data, ContentType=mime)
+        except (BotoCoreError, ClientError, OSError) as exc:
+            logger.warning("R2 media write failed (%s)", type(exc).__name__)
+            raise MediaStorageError("R2 media is temporarily unavailable.") from exc
     else:
-        data = resolve_local_media_path(ref).read_bytes()
-    if len(data) > MAX_IMAGE_BYTES:
-        raise MediaError("Image exceeds maximum size.")
-    return data, sniff_mime(data)
+        try:
+            MEDIA_DIR.mkdir(parents=True, exist_ok=True)
+            (MEDIA_DIR / filename).write_bytes(data)
+        except OSError as exc:
+            raise MediaStorageError("Local media is temporarily unavailable.") from exc
+    return f"/api/media/{filename}"
 
 
 def resolve_local_media_path(ref: str) -> Path:
@@ -171,6 +206,6 @@ def load_image(image_url: Optional[str]) -> Optional[Tuple[str, str]]:
         mime = sniff_mime(data)
 
     else:
-        data, mime = read_stored_image(image_url)
+        data, mime = read_media(image_url)
 
     return base64.b64encode(data).decode("ascii"), mime

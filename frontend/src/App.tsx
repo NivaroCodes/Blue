@@ -4,6 +4,7 @@ import {
   ChartNoAxesCombined,
   CircleHelp,
   Database,
+  LogOut,
   Inbox,
   Network,
   Settings2,
@@ -19,6 +20,8 @@ import { Chats } from './pages/Chats'
 import { SettingsPage } from './pages/Settings'
 import { useMonitor } from './lib/useMonitor'
 import { addDemoAlert } from './data/demo'
+import { Login } from './components/Login'
+import { restoreSession, signOut as endSession } from './lib/auth'
 const Analytics = lazy(() =>
   import('./pages/Analytics').then((module) => ({ default: module.Analytics })),
 )
@@ -29,11 +32,24 @@ const Scene3D = lazy(() =>
 
 export default function App() {
   const monitor = useMonitor()
+  const [authReady, setAuthReady] = useState(false)
+  const [signedIn, setSignedIn] = useState(false)
   const [intro, setIntro] = useState(shouldShowIntro)
   const [wide, setWide] = useState(() => window.matchMedia('(min-width: 801px)').matches)
   const [toast, setToast] = useState('')
   const help = useRef<HTMLDialogElement>(null)
   const location = useLocation()
+  useEffect(() => {
+    let active = true
+    void restoreSession().then((session) => {
+      if (!active) return
+      setSignedIn(Boolean(session))
+      setAuthReady(true)
+    }).catch(() => {
+      if (active) setAuthReady(true)
+    })
+    return () => { active = false }
+  }, [])
   useEffect(() => {
     const query = window.matchMedia('(min-width: 801px)')
     const update = () => setWide(query.matches)
@@ -53,6 +69,14 @@ export default function App() {
     monitor.refresh()
     setToast('Демо-сообщение добавлено.')
   }
+  if (!authReady) {
+    return (
+      <main className="login-screen">
+        <div className="login-loading"><span className="spinner" /> Проверяем сессию…</div>
+      </main>
+    )
+  }
+  if (!signedIn) return <Login onSignedIn={() => { setSignedIn(true); monitor.refresh() }} />
   return (
     <MotionConfig reducedMotion="user">
       <BrandIntro active={intro} onComplete={() => setIntro(false)} />
@@ -109,6 +133,14 @@ export default function App() {
                 <Settings2 size={18} />
               </NavLink>
             </div>
+            <button
+              className="icon-button signout-button"
+              aria-label="Выйти из аккаунта"
+              title="Выйти"
+              onClick={() => { void endSession().finally(() => setSignedIn(false)) }}
+            >
+              <LogOut size={18} />
+            </button>
           </div>
         </header>
         <div className="workspace-bar">

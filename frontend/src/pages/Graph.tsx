@@ -196,7 +196,7 @@ export function Graph({ monitor: m }: { monitor: Monitor }) {
         </section>
         <aside className="relationship-details">
           {focused ? (
-            <EvidencePreview alert={focused} demo={m.settings.mode === 'demo'} />
+            <EvidencePreview alert={focused} demo={m.settings.mode === 'demo'} settings={m.settings} />
           ) : (
             <div className="relationship-list">
               <div>

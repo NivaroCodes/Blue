@@ -3,8 +3,10 @@ import { Link } from 'react-router-dom'
 import { EvidenceText, Platform, RiskBadge } from './ui'
 import { reasonLabels, time } from '../lib/model'
 import type { Alert } from '../lib/model'
+import type { Settings } from '../lib/model'
+import { PrivateImage } from './PrivateImage'
 
-export function EvidencePreview({ alert, demo }: { alert?: Alert; demo: boolean }) {
+export function EvidencePreview({ alert, demo, settings }: { alert?: Alert; demo: boolean; settings: Settings }) {
   return (
     <aside className="focus-panel" aria-label="Предпросмотр сообщения" data-alert-id={alert?.id}>
       <div className="focus-heading">
@@ -45,6 +47,7 @@ export function EvidencePreview({ alert, demo }: { alert?: Alert; demo: boolean 
               />
             </blockquote>
           </div>
+          {alert.image_url && <PrivateImage imageUrl={alert.image_url} settings={settings} />}
           <div className="focus-reasons">
             <h3>Почему это риск</h3>
             {alert.reasons.length ? (

@@ -15,6 +15,10 @@ export default defineConfig({
   webServer: {
     command: 'npm run dev',
     url: 'http://127.0.0.1:5173',
+    env: {
+      VITE_SUPABASE_URL: 'https://blue-test.supabase.co',
+      VITE_SUPABASE_PUBLISHABLE_KEY: 'sb_publishable_test-only',
+    },
     reuseExistingServer: !process.env.CI,
     timeout: 30_000,
   },

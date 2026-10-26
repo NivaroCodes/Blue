@@ -29,6 +29,28 @@ class AIAnalysisError(Exception):
     pass
 
 
+class AIQuotaError(AIAnalysisError):
+    """Selected model is temporarily unavailable because of a usage limit."""
+
+    def __init__(self, model: str, retry_after_seconds: Optional[float], daily: bool):
+        self.retry_after_seconds = retry_after_seconds
+        self.daily = daily
+        limit = "daily quota" if daily else "rate limit"
+        super().__init__(f"Gemini {limit} reached for {model} (HTTP 429).")
+
+
+def _daily_quota_exhausted(response: httpx.Response) -> bool:
+    try:
+        details = response.json().get("error", {})
+    except (ValueError, AttributeError, TypeError):
+        return False
+    try:
+        description = json.dumps(details, ensure_ascii=False).lower()
+    except TypeError:
+        return False
+    return any(marker in description for marker in ("daily", "per day", "per_day", "requestsperday", " rpd "))
+
+
 def _sanitize_error_msg(error_msg: Any) -> str:
     """Strips API keys, tokens, and credentials from error messages."""
     if not error_msg:
@@ -277,8 +299,8 @@ def call_gemini_api(
     Passes API key securely via the 'x-goog-api-key' header (never in query parameters).
     Enforces a strict wall-clock deadline across all network requests and backoff pauses.
     Constrains connect/read/write/pool timeouts on each attempt to the remaining operation budget.
-    Retries temporary 429/503 errors on the SAME model with exponential backoff and random jitter.
-    Respects 'Retry-After' header if returned by the server.
+    Stops on HTTP 429 and reports Retry-After to the worker quota circuit.
+    Retries temporary server failures on the same model with bounded backoff.
     Does not start any attempt or backoff pause if the overall budget is exhausted.
     No multi-model fallback or cross-provider switching.
     Raises AIAnalysisError if the call fails or API key is invalid.
@@ -357,31 +379,13 @@ def call_gemini_api(
                         return _parse_and_validate_llm_json(
                             raw_text, text, model_id, has_image=bool(image_base64)
                         )
-                    raise AIAnalysisError(f"Gemini API returned 200 but candidate list is empty: {data}")
+                    raise AIAnalysisError("Gemini API returned no response candidate.")
 
                 retry_after_hdr = resp.headers.get("Retry-After") or resp.headers.get("retry-after")
                 retry_after_sec = _parse_retry_after(retry_after_hdr)
 
                 if resp.status_code == 429:
-                    err_body = _sanitize_error_msg(resp.text)
-                    error_obj = {}
-                    try:
-                        parsed = resp.json()
-                        if isinstance(parsed, dict):
-                            cand_err = parsed.get("error")
-                            if isinstance(cand_err, dict):
-                                error_obj = cand_err
-                    except Exception:
-                        pass
-                    status_str = str(error_obj.get("status") or "RESOURCE_EXHAUSTED")
-                    raw_msg = error_obj.get("message")
-                    err_msg = str(raw_msg) if (raw_msg is not None and isinstance(raw_msg, str)) else err_body
-                    cat_desc = "Quota exceeded" if "quota" in err_msg.lower() else "Rate limit exceeded"
-                    last_error = f"Gemini 429 ({cat_desc} / {status_str}) on {target_model}: {_sanitize_error_msg(err_msg)}"
-                    logger.warning(
-                        f"Gemini API 429 on {target_model} (attempt {attempt + 1}/{max_attempts}): "
-                        f"Category={cat_desc}, Status={status_str}, Details={_sanitize_error_msg(err_msg)}"
-                    )
+                    raise AIQuotaError(target_model, retry_after_sec, _daily_quota_exhausted(resp))
                 elif resp.status_code == 503:
                     err_body = _sanitize_error_msg(resp.text)
                     error_obj = {}
@@ -412,7 +416,7 @@ def call_gemini_api(
                     last_error = f"Gemini HTTP {resp.status_code}: {err_body}"
                     logger.warning(f"Gemini API HTTP {resp.status_code} on {target_model}: {last_error}")
 
-                if resp.status_code in (429, 503, 500, 502, 504):
+                if resp.status_code in (503, 500, 502, 504):
                     if retry_after_sec is not None and retry_after_sec > MAX_ALLOWED_RETRY_AFTER:
                         raise AIAnalysisError(
                             f"Gemini API requested Retry-After {retry_after_sec:.1f}s, exceeding maximum allowed retry window of {MAX_ALLOWED_RETRY_AFTER}s. Last error: {last_error}"
@@ -495,8 +499,8 @@ def _parse_and_validate_llm_json(
 
     try:
         data = json.loads(clean_json)
-    except Exception as e:
-        raise AIAnalysisError(f"AI returned invalid JSON: {e}, payload: {raw_json}")
+    except (ValueError, TypeError) as e:
+        raise AIAnalysisError("AI returned invalid JSON.") from e
 
     image_text = data.get("image_text") or None
     if image_text is not None and not isinstance(image_text, str):
@@ -532,7 +536,7 @@ def _parse_and_validate_llm_json(
         elif has_image and isinstance(raw_evidence, str) and raw_evidence.strip():
             validated_reasons.append(ReasonItem(code=code, evidence=raw_evidence.strip(), source="image"))
         else:
-            logger.warning(f"AI hallucinated evidence '{raw_evidence}' — not found in text, dropping")
+            logger.warning("AI evidence was not found in the source text; dropping it.")
 
     # If AI gave valid reasons but score is LOW, bump to at least MEDIUM
     if validated_reasons and score < 30:

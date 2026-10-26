@@ -10,7 +10,8 @@ DATABASE_URL: Optional[str] = os.getenv("DATABASE_URL")
 # Google Gemini API Configuration (via Google AI Studio)
 # Single model configuration: default gemini-3.5-flash-lite
 GEMINI_API_KEY: Optional[str] = os.getenv("GEMINI_API_KEY") or os.getenv("AI_API_KEY")
-GEMINI_MODEL: str = os.getenv("GEMINI_MODEL", "gemini-3.5-flash-lite")
+MODEL_NAME: str = os.getenv("AI_MODEL_NAME") or os.getenv("GEMINI_MODEL", "gemini-3.5-flash-lite")
+GEMINI_MODEL: str = MODEL_NAME
 
 # Risk Thresholds conforming to SafeNet KZ MVP Contract
 LOW_RISK_THRESHOLD: int = 30       # 0 - 29: LOW

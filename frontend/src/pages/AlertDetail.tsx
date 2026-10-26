@@ -16,6 +16,7 @@ import { getAlert, saveReview } from '../lib/api'
 import { dateTime, reasonLabels, reviewLabels } from '../lib/model'
 import type { Alert, Review } from '../lib/model'
 import type { Monitor } from '../lib/useMonitor'
+import { PrivateImage } from '../components/PrivateImage'
 import {
   Empty,
   ErrorBox,
@@ -39,13 +40,6 @@ export function AlertDetail({
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(true)
   const [attempt, setAttempt] = useState(0)
-  let imageUrl = ''
-  if (alert?.image_url) {
-    try {
-      const url = new URL(alert.image_url, m.settings.baseUrl || window.location.origin)
-      if (url.protocol === 'http:' || url.protocol === 'https:') imageUrl = url.href
-    } catch { /* An invalid media reference must not become an executable URL. */ }
-  }
   useEffect(() => {
     const controller = new AbortController()
     let active = true
@@ -109,9 +103,9 @@ export function AlertDetail({
               <blockquote className="original-message">
                 <EvidenceText text={alert.text} evidence={alert.reasons.filter((r) => r.source !== 'image').map((r) => r.evidence)} />
               </blockquote>
-              {imageUrl && (
+              {alert.image_url && (
                 <figure className="message-image">
-                  <img src={imageUrl} alt="Изображение из исходного сообщения" loading="lazy" />
+                  <PrivateImage imageUrl={alert.image_url} settings={m.settings} />
                   <figcaption>
                     {alert.image_analyzed ? 'Изображение проанализировано' : 'Анализ изображения не подтверждён'}
                   </figcaption>

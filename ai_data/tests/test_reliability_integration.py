@@ -491,7 +491,7 @@ class TestReliabilityIntegration(unittest.TestCase):
         db.add_all([m, an, rev])
         db.commit()
 
-        # Re-queue message for re-analysis
+        # Re-queue a delivered message; the existing valid result must be reused.
         m.status = "PENDING"
         db.commit()
 
@@ -502,8 +502,8 @@ class TestReliabilityIntegration(unittest.TestCase):
         db.expire_all()
         reloaded = db.get(MessageRecord, pk)
         self.assertEqual(reloaded.status, "PROCESSED")
-        self.assertEqual(reloaded.analysis.risk_score, 90)
-        self.assertEqual(reloaded.analysis.model_version, "gemini-re-eval")
+        self.assertEqual(reloaded.analysis.risk_score, 80)
+        mock_gemini.assert_not_called()
 
         # Crucial: the analyst's previous REVIEWED verdict is preserved!
         self.assertEqual(reloaded.analysis.review.review_status, "REVIEWED")

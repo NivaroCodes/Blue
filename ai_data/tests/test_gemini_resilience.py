@@ -6,6 +6,7 @@ import time
 from ai_data.llm_client import (
     call_gemini_api,
     AIAnalysisError,
+    AIQuotaError,
     _compute_backoff_delay,
     _parse_retry_after,
     _sanitize_error_msg,
@@ -136,15 +137,12 @@ class TestGeminiResilience(unittest.TestCase):
     @patch("httpx.Client.post")
     def test_429_quota_and_rate_limit_diagnostics(self, mock_post, mock_sleep):
         """
-        429 response provides distinct diagnostics for Quota vs Rate limits.
+        429 stops immediately, distinguishing a daily quota from a short rate limit.
         """
         # Case 1: Quota exhausted
-        mock_post.side_effect = [
-            self._make_429_response("Quota exceeded for quota metric 'Queries'"),
-            self._make_429_response("Quota exceeded for quota metric 'Queries'"),
-        ]
+        mock_post.side_effect = [self._make_429_response("RequestsPerDay quota exceeded")]
 
-        with self.assertRaises(AIAnalysisError) as ctx:
+        with self.assertRaises(AIQuotaError) as ctx:
             call_gemini_api(
                 text="тест",
                 api_key="test-key-safe",
@@ -152,16 +150,15 @@ class TestGeminiResilience(unittest.TestCase):
                 max_attempts=2,
                 base_delay=0.1,
             )
-        self.assertIn("Quota exceeded", str(ctx.exception))
-        self.assertIn("RESOURCE_EXHAUSTED", str(ctx.exception))
+        self.assertTrue(ctx.exception.daily)
+        self.assertEqual(mock_post.call_count, 1)
+        mock_sleep.assert_not_called()
 
         # Case 2: Pure rate limit
-        mock_post.side_effect = [
-            self._make_429_response("Too many requests per minute"),
-            self._make_429_response("Too many requests per minute"),
-        ]
+        mock_post.reset_mock()
+        mock_post.side_effect = [self._make_429_response("Too many requests per minute")]
 
-        with self.assertRaises(AIAnalysisError) as ctx:
+        with self.assertRaises(AIQuotaError) as ctx:
             call_gemini_api(
                 text="тест",
                 api_key="test-key-safe",
@@ -169,8 +166,9 @@ class TestGeminiResilience(unittest.TestCase):
                 max_attempts=2,
                 base_delay=0.1,
             )
-        self.assertIn("Rate limit exceeded", str(ctx.exception))
+        self.assertFalse(ctx.exception.daily)
         self.assertIn("429", str(ctx.exception))
+        self.assertEqual(mock_post.call_count, 1)
 
     @patch("time.sleep")
     @patch("httpx.Client.post")

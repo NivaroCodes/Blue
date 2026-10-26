@@ -50,6 +50,16 @@ class TestDemoPipeline(unittest.TestCase):
         self.assertTrue(all(row.text.startswith("[SYNTHETIC") for row in rows))
 
     @mock_aws
+    def test_legacy_r2_object_reference_remains_readable(self):
+        s3 = boto3.client("s3", region_name="us-east-1")
+        s3.create_bucket(Bucket="blue-test-private")
+        image = b"\x89PNG\r\n\x1a\nlegacy-synthetic-image"
+        s3.put_object(Bucket="blue-test-private", Key="blue-media/legacy.png", Body=image)
+        with patch.dict(os.environ, {"MEDIA_STORAGE": "r2"}), \
+                patch.object(media, "_r2_client", return_value=(s3, "blue-test-private")):
+            self.assertEqual(media.read_stored_image("/api/media/legacy.png"), (image, "image/png"))
+
+    @mock_aws
     def test_private_object_crosses_api_worker_and_dashboard_with_separate_disks(self):
         s3 = boto3.client("s3", region_name="us-east-1")
         s3.create_bucket(Bucket="blue-test-private")
@@ -59,7 +69,7 @@ class TestDemoPipeline(unittest.TestCase):
                                 explanation="Synthetic transport test", confidence=0.8,
                                 model_version="test-double", image_text="SYNTHETIC")
         with patch.dict(os.environ, {"MEDIA_STORAGE": "r2", "R2_BUCKET_NAME": "blue-test-private"}), \
-                patch.object(media, "_r2_client", return_value=s3):
+                patch.object(media, "_r2_client", return_value=(s3, "blue-test-private")):
             response = self.client.post("/api/messages", json=payload)
             self.assertEqual(response.status_code, 200)
             alert_id = response.json()["id"]
