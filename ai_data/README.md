@@ -42,7 +42,7 @@ Backend API Server (FastAPI) → Live Frontend Dashboard
 ```ini
 AI_PROVIDER=gemini
 GEMINI_API_KEY=ваш_api_ключ_gemini
-AI_MODEL_NAME=gemini-2.0-flash
+AI_MODEL_NAME=gemini-3.5-flash-lite
 DATABASE_URL=sqlite:///safenet.db
 ```
 *(Поддерживаются также `OPENAI_API_KEY`, `GROQ_API_KEY`, `OPENROUTER_API_KEY` при `AI_PROVIDER=openai`).*

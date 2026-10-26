@@ -12,7 +12,7 @@ AI_PROVIDER: str = os.getenv("AI_PROVIDER", "gemini").lower()
 GEMINI_API_KEY: Optional[str] = os.getenv("GEMINI_API_KEY") or os.getenv("AI_API_KEY")
 OPENAI_API_KEY: Optional[str] = os.getenv("OPENAI_API_KEY")
 OPENAI_BASE_URL: str = os.getenv("OPENAI_BASE_URL", "https://api.openai.com/v1")
-MODEL_NAME: str = os.getenv("AI_MODEL_NAME", "gemini-3-flash-preview")
+MODEL_NAME: str = os.getenv("AI_MODEL_NAME", "gemini-3.5-flash-lite")
 
 # Risk Thresholds conforming to SafeNet KZ MVP Contract
 LOW_RISK_THRESHOLD: int = 30       # 0 - 29: LOW

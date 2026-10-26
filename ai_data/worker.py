@@ -30,7 +30,7 @@ from .db.models import init_db, MessageRecord, AnalysisRecord, ReviewRecord, Ent
 from .analyzer import analyze_message
 from .context import build_context_block
 from .entity_extractor import extract_entities
-from .llm_client import AIAnalysisError
+from .llm_client import AIAnalysisError, AIQuotaError
 from .media import load_image, MediaError
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(name)s: %(message)s")
@@ -38,6 +38,7 @@ logger = logging.getLogger("ai_worker")
 
 CLAIM_TIMEOUT = timedelta(minutes=int(os.getenv("CLAIM_TIMEOUT_MINUTES", "10")))
 MAX_ATTEMPTS = int(os.getenv("MAX_ATTEMPTS", "3"))
+_quota_block_until = 0.0
 
 
 def make_worker_id() -> str:
@@ -208,6 +209,9 @@ def process_pending_messages(
     Safe to call concurrently from several processes.
     """
     worker_id = worker_id or make_worker_id()
+    global _quota_block_until
+    if time.monotonic() < _quota_block_until:
+        return 0
 
     query = session.query(MessageRecord.id).filter(MessageRecord.status == "PENDING")
     if only_ids is not None:
@@ -234,6 +238,16 @@ def process_pending_messages(
             time.sleep(throttle_seconds)  # rate-limit between LLM calls, not after the last one
 
         msg = session.get(MessageRecord, msg_id)
+        cached = session.query(AnalysisRecord.id).filter(
+            AnalysisRecord.message_id == msg_id,
+            AnalysisRecord.risk_score.is_not(None),
+            AnalysisRecord.risk_level.is_not(None),
+        ).first()
+        if cached:
+            if _set_status_if_owner(session, msg_id, worker_id, "PROCESSED"):
+                session.commit()
+                processed_count += 1
+            continue
         logger.info(f"Processing message {msg.id} (sender={msg.sender_hash}, chat={msg.chat_id})...")
         try:
             if _analyse_and_store(session, msg, worker_id, api_key):
@@ -247,6 +261,11 @@ def process_pending_messages(
             logger.error(f"{kind} for message {msg_id}: {e}")
             _set_status_if_owner(session, msg_id, worker_id, "ERROR", error=str(e)[:2000])
             session.commit()
+            if isinstance(e, AIQuotaError):
+                pause = max(e.retry_after_seconds or 0, 86400 if e.daily else 60)
+                _quota_block_until = time.monotonic() + pause
+                logger.warning("Gemini quota pause activated for %.0f seconds.", pause)
+                break
 
     return processed_count
 
@@ -258,7 +277,7 @@ def run_worker_loop(database_url: str = "sqlite:///safenet.db", poll_interval: f
     """
     SessionLocal = init_db(database_url)
     worker_id = make_worker_id()
-    logger.info(f"Starting AI Background Worker {worker_id} connected to {database_url}...")
+    logger.info("Starting AI Background Worker %s.", worker_id)
 
     while True:
         session = SessionLocal()

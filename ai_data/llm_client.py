@@ -1,6 +1,8 @@
 import json
 import logging
 import time
+from datetime import datetime, timezone
+from email.utils import parsedate_to_datetime
 import httpx
 from typing import Optional, Dict, Any, List
 
@@ -14,6 +16,40 @@ logger = logging.getLogger(__name__)
 class AIAnalysisError(Exception):
     """Raised when the AI model call or response validation fails."""
     pass
+
+
+class AIQuotaError(AIAnalysisError):
+    """The selected Gemini model rejected a request because of a usage limit."""
+
+    def __init__(self, model: str, retry_after_seconds: Optional[float], daily: bool):
+        self.retry_after_seconds = retry_after_seconds
+        self.daily = daily
+        limit = "daily quota" if daily else "rate limit"
+        super().__init__(f"Gemini {limit} reached for {model} (HTTP 429).")
+
+
+def _retry_after_seconds(value: Optional[str]) -> Optional[float]:
+    if not value:
+        return None
+    try:
+        return max(0.0, float(value))
+    except ValueError:
+        try:
+            when = parsedate_to_datetime(value)
+            if when.tzinfo is None:
+                when = when.replace(tzinfo=timezone.utc)
+            return max(0.0, (when - datetime.now(timezone.utc)).total_seconds())
+        except (TypeError, ValueError, OverflowError):
+            return None
+
+
+def _daily_quota_exhausted(response: httpx.Response) -> bool:
+    try:
+        details = response.json().get("error", {})
+    except (ValueError, AttributeError):
+        return False
+    description = json.dumps(details, ensure_ascii=False).lower()
+    return any(marker in description for marker in ("daily", "per day", "per_day", "requestsperday", " rpd "))
 
 
 SYSTEM_PROMPT = """Ты — ведущий AI-аналитик финансовой безопасности в системе SafeNet KZ (Казахстан).
@@ -175,7 +211,7 @@ def _build_user_message(text: str, context_block: str = "", has_image: bool = Fa
 def call_gemini_api(
     text: str,
     api_key: str,
-    model: str = "gemini-3-flash-preview",
+    model: str = MODEL_NAME,
     context_block: str = "",
     image_base64: Optional[str] = None,
     image_mime: str = "image/jpeg"
@@ -183,16 +219,11 @@ def call_gemini_api(
     """
     Calls Google Gemini Generative Language REST API.
     Supports multimodal input (text + screenshots of fake payments/checks).
-    Automatically retries on temporary 503 spikes across model variants.
+    Retries transient failures once on the selected model only.
     Raises AIAnalysisError if the call fails or API key is invalid.
     """
     if not api_key:
         raise AIAnalysisError("GEMINI_API_KEY is not configured.")
-
-    fallback_models = [model, "gemini-3-flash-preview", "gemini-3.5-flash", "gemini-3.8-flash"]
-    # De-duplicate preserving order
-    seen = set()
-    candidate_models = [m for m in fallback_models if not (m in seen or seen.add(m))]
 
     user_msg = _build_user_message(text, context_block, has_image=bool(image_base64))
 
@@ -218,36 +249,31 @@ def call_gemini_api(
         }
     }
 
-    last_error = ""
+    last_error = "Gemini response was unavailable."
     with httpx.Client(timeout=35.0) as client:
-        for m in candidate_models:
-            url = f"https://generativelanguage.googleapis.com/v1beta/models/{m}:generateContent?key={api_key}"
-            for attempt in range(2):
-                try:
-                    resp = client.post(url, json=payload)
-                    if resp.status_code == 200:
+        url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent"
+        for attempt in range(2):
+            try:
+                resp = client.post(url, json=payload, headers={"x-goog-api-key": api_key})
+            except httpx.RequestError:
+                last_error = f"Gemini network request failed for {model}."
+            else:
+                if resp.status_code == 200:
+                    try:
                         data = resp.json()
-                        candidates = data.get("candidates", [])
-                        if candidates:
-                            raw_text = candidates[0]["content"]["parts"][0]["text"]
-                            return _parse_and_validate_llm_json(raw_text, text, f"gemini-{m}", has_image=bool(image_base64))
-                    elif resp.status_code == 429:
-                        last_error = f"Gemini status 429 (Rate limit) on {m}"
-                        time.sleep(3.0)
-                        continue
-                    elif resp.status_code == 503:
-                        last_error = f"Gemini status 503 on {m}"
-                        time.sleep(2.0)
-                        continue
-                    else:
-                        last_error = f"Gemini status {resp.status_code}: {resp.text}"
-                        break
-                except httpx.RequestError as e:
-                    last_error = f"Network error calling Gemini ({m}): {e}"
-                    time.sleep(1.5)
-                    continue
+                        raw_text = data["candidates"][0]["content"]["parts"][0]["text"]
+                    except (ValueError, KeyError, IndexError, TypeError) as exc:
+                        raise AIAnalysisError(f"Gemini returned an incomplete response for {model}.") from exc
+                    return _parse_and_validate_llm_json(raw_text, text, model, has_image=bool(image_base64))
+                if resp.status_code == 429:
+                    raise AIQuotaError(model, _retry_after_seconds(resp.headers.get("Retry-After")), _daily_quota_exhausted(resp))
+                if resp.status_code not in {500, 502, 503, 504}:
+                    raise AIAnalysisError(f"Gemini request for {model} failed with HTTP {resp.status_code}.")
+                last_error = f"Gemini request for {model} failed with HTTP {resp.status_code}."
+            if attempt == 0:
+                time.sleep(1.0)
 
-    raise AIAnalysisError(f"All Gemini model candidates failed. Last error: {last_error}")
+    raise AIAnalysisError(last_error)
 
 
 def call_openai_api(
@@ -324,8 +350,8 @@ def _parse_and_validate_llm_json(
 
     try:
         data = json.loads(clean_json)
-    except Exception as e:
-        raise AIAnalysisError(f"AI returned invalid JSON: {e}, payload: {raw_json}")
+    except (ValueError, TypeError) as e:
+        raise AIAnalysisError("AI returned invalid JSON.") from e
 
     image_text = data.get("image_text") or None
     if image_text is not None and not isinstance(image_text, str):
@@ -362,7 +388,7 @@ def _parse_and_validate_llm_json(
             # Vision model read text directly from image pixels even if image_text was omitted/abbreviated
             validated_reasons.append(ReasonItem(code=code, evidence=raw_evidence.strip(), source="image"))
         else:
-            logger.warning(f"AI hallucinated evidence '{raw_evidence}' — not found in text, dropping")
+            logger.warning("AI evidence was not found in the source text; dropping it.")
 
     # If AI gave reasons but score is LOW, bump to at least MEDIUM
     if validated_reasons and score < 30:
