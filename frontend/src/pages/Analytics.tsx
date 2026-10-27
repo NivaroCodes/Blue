@@ -69,7 +69,7 @@ export function Analytics({ monitor: m }: { monitor: Monitor }) {
         <div>
           <span>Сообщений в выборке</span>
           <strong>{alerts.length}</strong>
-          <span>{sources.length} источников</span>
+          <span>{sources.length} источников · {stats.off_topic} нерелевантных скрыто из основной очереди</span>
         </div>
         {levels.map((level) => (
           <Link className={level.toLowerCase()} key={level} to={`/?${query}&level=${level}`}>

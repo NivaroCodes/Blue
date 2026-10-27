@@ -52,7 +52,7 @@ export async function getAlerts(settings: Settings, signal?: AbortSignal) {
   if (settings.mode === 'demo') return demoAlerts()
   const result = z
     .union([z.array(AlertSchema), z.object({ items: z.array(AlertSchema) })])
-    .safeParse(await request(settings, '/alerts', { signal }))
+    .safeParse(await request(settings, '/alerts?visibility=all', { signal }))
   if (!result.success)
     throw new Error('Сервис вернул неполные данные сообщений. Попробуйте обновить выборку.')
   const alerts = Array.isArray(result.data) ? result.data : result.data.items
@@ -121,5 +121,18 @@ export async function saveReview(
     throw new Error(
       'Не удалось подтвердить сохранение решения. Обновите сообщение и проверьте его статус.',
     )
+  return result.data
+}
+
+export async function saveVisibility(settings: Settings, id: string, offTopic: boolean) {
+  if (settings.mode !== 'api') throw new Error('Скрытие доступно только для сообщений с сервера.')
+  const result = AlertSchema.safeParse(
+    await request(settings, `/alerts/${encodeURIComponent(id)}/visibility`, {
+      method: 'POST',
+      body: JSON.stringify({ off_topic: offTopic }),
+    }),
+  )
+  if (!result.success)
+    throw new Error('Не удалось подтвердить изменение видимости. Обновите данные и повторите попытку.')
   return result.data
 }

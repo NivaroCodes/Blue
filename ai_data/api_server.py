@@ -7,7 +7,7 @@ import base64
 import logging
 from urllib.parse import urlparse
 from datetime import timedelta
-from typing import Optional, List, Dict, Any, Union
+from typing import Optional, List, Dict, Any, Union, Literal
 from .models import Alert, StatsResponse, MessageIngestResponse
 
 import httpx
@@ -115,6 +115,10 @@ class ReviewRequest(BaseModel):
     review_status: str = Field(..., pattern="^(NEW|REVIEWED|FALSE_POSITIVE)$")
     reviewer_note: str = Field(default="", max_length=2000)
     reviewed_by: Optional[str] = Field(default=None, description="Analyst name or ID")
+
+
+class VisibilityRequest(BaseModel):
+    off_topic: bool
 
 
 class MessageCreateRequest(BaseModel):
@@ -396,11 +400,21 @@ async def green_api_webhook(
 
 
 @app.get("/api/alerts", response_model=List[Alert])
-def get_alerts(level: Optional[str] = None, db: Session = Depends(get_db), _auth: Dict[str, Any] = Depends(require_dashboard_auth)):
+def get_alerts(
+    level: Optional[str] = None,
+    visibility: Literal["main", "off_topic", "all"] = "main",
+    db: Session = Depends(get_db),
+    _auth: Dict[str, Any] = Depends(require_dashboard_auth),
+):
     """
     Returns full snapshot of alerts from the database.
     """
-    records = db.query(MessageRecord).order_by(MessageRecord.timestamp.desc()).all()
+    query = db.query(MessageRecord)
+    if visibility == "main":
+        query = query.filter(MessageRecord.status != "OFF_TOPIC")
+    elif visibility == "off_topic":
+        query = query.filter(MessageRecord.status == "OFF_TOPIC")
+    records = query.order_by(MessageRecord.timestamp.desc()).all()
     alerts = [serialize_to_alert_dict(rec) for rec in records]
 
     if level:
@@ -428,6 +442,7 @@ def get_stats(db: Session = Depends(get_db), _auth: Dict[str, Any] = Depends(req
     pending = 0
     processing = 0
     errors = 0
+    off_topic = 0
     by_level = {"HIGH": 0, "MEDIUM": 0, "LOW": 0}
 
     for m in all_messages:
@@ -437,6 +452,8 @@ def get_stats(db: Session = Depends(get_db), _auth: Dict[str, Any] = Depends(req
             processing += 1
         elif m.status == "PROCESSED" and m.analysis and m.analysis.risk_level in by_level and m.analysis.risk_score is not None:
             by_level[m.analysis.risk_level] += 1
+        elif m.status == "OFF_TOPIC":
+            off_topic += 1
         else:
             errors += 1
 
@@ -446,6 +463,7 @@ def get_stats(db: Session = Depends(get_db), _auth: Dict[str, Any] = Depends(req
         "pending": pending,
         "processing": processing,
         "errors": errors,
+        "off_topic": off_topic,
         "by_level": by_level,
     }
 
@@ -492,6 +510,25 @@ def update_review(alert_id: str, req: ReviewRequest, db: Session = Depends(get_d
     except Exception as e:
         db.rollback()
         raise HTTPException(status_code=500, detail=f"Database error saving review: {e}")
+    return serialize_to_alert_dict(rec)
+
+
+@app.post("/api/alerts/{alert_id}/visibility", response_model=Alert)
+def update_visibility(
+    alert_id: str,
+    req: VisibilityRequest,
+    db: Session = Depends(get_db),
+    _auth: Dict[str, Any] = Depends(require_dashboard_auth),
+):
+    """Hide or restore one analyzed message without changing its analysis or review."""
+    rec = _find_message(db, alert_id)
+    if not rec.analysis or rec.analysis.risk_score is None or rec.analysis.risk_level is None:
+        raise HTTPException(status_code=409, detail="Only analyzed messages can be hidden or restored.")
+    if rec.status not in {"PROCESSED", "OFF_TOPIC"}:
+        raise HTTPException(status_code=409, detail="The message is not ready for visibility changes.")
+    rec.status = "OFF_TOPIC" if req.off_topic else "PROCESSED"
+    db.commit()
+    db.refresh(rec)
     return serialize_to_alert_dict(rec)
 
 

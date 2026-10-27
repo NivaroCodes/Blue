@@ -20,6 +20,7 @@ class StatusEnum(str, Enum):
     PROCESSING = "PROCESSING"
     PROCESSED = "PROCESSED"
     ERROR = "ERROR"
+    OFF_TOPIC = "OFF_TOPIC"
 
 
 class ReviewStatusEnum(str, Enum):
@@ -163,7 +164,7 @@ class Alert(BaseModel):
     text: str = Field(default="", description="Original message text")
     image_url: Optional[str] = Field(default=None, description="URL of attached screenshot/media")
     timestamp: str = Field(..., description="ISO 8601 string with timezone offset (+05:00)")
-    status: StatusEnum = Field(default=StatusEnum.PROCESSED, description="Processing status: PENDING, PROCESSING, PROCESSED, ERROR")
+    status: StatusEnum = Field(default=StatusEnum.PROCESSED, description="Processing status or reversible OFF_TOPIC queue state")
     risk_score: Optional[int] = Field(default=None, ge=0, le=100, description="Risk score 0-100 (null if unanalyzed or error)")
     risk_level: Optional[RiskLevelEnum] = Field(default=None, description="Risk tier: LOW, MEDIUM, HIGH (null if unanalyzed or error)")
     reasons: List[ReasonItem] = Field(default_factory=list, description="Detected financial risk indicators with exact quotes")
@@ -201,6 +202,7 @@ class StatsResponse(BaseModel):
     pending: int = Field(..., ge=0, description="Messages currently waiting in the processing queue")
     processing: int = Field(..., ge=0, description="Messages currently being analyzed by AI workers")
     errors: int = Field(..., ge=0, description="Messages that failed analysis or have invalid structure")
+    off_topic: int = Field(default=0, ge=0, description="Processed messages hidden from the main analyst queue")
     by_level: StatsByLevel = Field(..., description="Breakdown of successfully processed messages by risk level")
 
 

@@ -92,7 +92,9 @@ export function useMonitor() {
   }
   const updateAlert = (alert: Alert) => {
     reviewRevision.current++
-    setAlerts((items) => items.map((a) => (a.id === alert.id ? alert : a)))
+    const next = alerts.map((a) => (a.id === alert.id ? alert : a))
+    setAlerts(next)
+    setStats(calculateStats(next))
   }
   return {
     settings,

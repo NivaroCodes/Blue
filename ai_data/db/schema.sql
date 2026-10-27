@@ -15,7 +15,7 @@ CREATE TABLE IF NOT EXISTS messages (
     text TEXT NOT NULL DEFAULT '',
     image_url TEXT,
     timestamp TIMESTAMP NOT NULL,
-    status TEXT NOT NULL DEFAULT 'PENDING' CHECK(status IN ('PENDING', 'PROCESSING', 'PROCESSED', 'ERROR')),
+    status TEXT NOT NULL DEFAULT 'PENDING' CHECK(status IN ('PENDING', 'PROCESSING', 'PROCESSED', 'ERROR', 'OFF_TOPIC')),
     claimed_at TIMESTAMP,
     claimed_by TEXT,
     attempts INTEGER NOT NULL DEFAULT 0,

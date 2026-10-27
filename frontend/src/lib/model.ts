@@ -12,6 +12,7 @@ export const statusLabels = {
   PROCESSING: 'Анализируется',
   PROCESSED: 'Обработано',
   ERROR: 'Ошибка анализа',
+  OFF_TOPIC: 'Не по теме',
 }
 export const reasonLabels: Record<string, string> = {
   UNREALISTIC_RETURN: 'Нереалистичная доходность',
@@ -35,7 +36,7 @@ export const AlertSchema = z
     image_analyzed: z.boolean().optional(),
     image_text: z.string().nullable().optional(),
     timestamp: z.iso.datetime({ offset: true }),
-    status: z.enum(['PENDING', 'PROCESSING', 'PROCESSED', 'ERROR']),
+    status: z.enum(['PENDING', 'PROCESSING', 'PROCESSED', 'ERROR', 'OFF_TOPIC']),
     risk_score: z.number().min(0).max(100).nullable().default(null),
     risk_level: z.enum(levels).nullable().default(null),
     reasons: z.array(z.object({ code: z.string(), evidence: z.string(), source: z.enum(['text', 'image']).optional() })).default([]),
@@ -46,7 +47,7 @@ export const AlertSchema = z
     model_version: z.string().default('Не указана'),
   })
   .superRefine((value, ctx) => {
-    if (value.status === 'PROCESSED' && (value.risk_score === null || value.risk_level === null))
+    if ((value.status === 'PROCESSED' || value.status === 'OFF_TOPIC') && (value.risk_score === null || value.risk_level === null))
       ctx.addIssue({ code: 'custom', message: 'Processed messages must include score and level' })
   })
 export type Alert = z.infer<typeof AlertSchema>
@@ -58,6 +59,7 @@ export const StatsSchema = z.object({
   pending: z.number().int().nonnegative(),
   processing: z.number().int().nonnegative(),
   errors: z.number().int().nonnegative(),
+  off_topic: z.number().int().nonnegative().default(0),
   by_level: z.object({
     HIGH: z.number().int().nonnegative(),
     MEDIUM: z.number().int().nonnegative(),
@@ -71,6 +73,7 @@ export function calculateStats(alerts: Alert[]): Stats {
     pending: alerts.filter((a) => a.status === 'PENDING').length,
     processing: alerts.filter((a) => a.status === 'PROCESSING').length,
     errors: alerts.filter((a) => a.status === 'ERROR').length,
+    off_topic: alerts.filter((a) => a.status === 'OFF_TOPIC').length,
     by_level: Object.fromEntries(
       levels.map((level) => [
         level,

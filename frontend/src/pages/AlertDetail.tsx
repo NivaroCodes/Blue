@@ -12,7 +12,7 @@ import {
   ShieldCheck,
 } from 'lucide-react'
 import { Link, useParams } from 'react-router-dom'
-import { getAlert, saveReview } from '../lib/api'
+import { getAlert, saveReview, saveVisibility } from '../lib/api'
 import { dateTime, reasonLabels, reviewLabels } from '../lib/model'
 import type { Alert, Review } from '../lib/model'
 import type { Monitor } from '../lib/useMonitor'
@@ -40,6 +40,24 @@ export function AlertDetail({
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(true)
   const [attempt, setAttempt] = useState(0)
+  const [changingVisibility, setChangingVisibility] = useState(false)
+  const [visibilityError, setVisibilityError] = useState('')
+  async function changeVisibility(current: Alert) {
+    const restore = current.status === 'OFF_TOPIC'
+    if (!restore && !window.confirm('Скрыть это сообщение из основной очереди? Его можно будет восстановить.')) return
+    setChangingVisibility(true)
+    setVisibilityError('')
+    try {
+      const updated = await saveVisibility(m.settings, current.id, !restore)
+      setAlert(updated)
+      m.updateAlert(updated)
+      notify(restore ? 'Сообщение восстановлено в основной очереди.' : 'Сообщение скрыто из основной очереди.')
+    } catch (e) {
+      setVisibilityError(e instanceof Error ? e.message : 'Не удалось изменить видимость сообщения.')
+    } finally {
+      setChangingVisibility(false)
+    }
+  }
   useEffect(() => {
     const controller = new AbortController()
     let active = true
@@ -148,7 +166,7 @@ export function AlertDetail({
                   <div className="no-evidence">
                     <ShieldCheck size={23} />
                     <p>
-                      {alert.status === 'PROCESSED'
+                      {alert.status === 'PROCESSED' || alert.status === 'OFF_TOPIC'
                         ? 'Выраженных признаков в этом сообщении не выделено.'
                         : 'Фрагменты появятся после успешного анализа.'}
                     </p>
@@ -197,12 +215,22 @@ export function AlertDetail({
                 <RiskBadge level={alert.risk_level} />
                 {alert.status !== 'PROCESSED' && <ProcessingBadge status={alert.status} />}
                 <p>
-                  {alert.status === 'PROCESSED'
-                    ? 'Требует оценки аналитика'
-                    : 'Оценка ещё не получена'}
+                  {alert.status === 'OFF_TOPIC'
+                    ? 'Скрыто из основной очереди; оценка сохранена'
+                    : alert.status === 'PROCESSED'
+                      ? 'Требует оценки аналитика'
+                      : 'Оценка ещё не получена'}
                 </p>
               </div>
             </Panel>
+            {m.settings.mode === 'api' && (alert.status === 'PROCESSED' || alert.status === 'OFF_TOPIC') && (
+              <Panel title="Основная очередь" description="Это действие не удаляет сообщение, анализ или решение аналитика.">
+                {visibilityError && <p className="form-error" role="alert">{visibilityError}</p>}
+                <button className="button" disabled={changingVisibility} onClick={() => void changeVisibility(alert)}>
+                  {alert.status === 'OFF_TOPIC' ? 'Восстановить в основной очереди' : 'Не по теме — скрыть из очереди'}
+                </button>
+              </Panel>
+            )}
             <ReviewForm
               key={`${alert.id}-${alert.review_status}`}
               alert={alert}
@@ -297,7 +325,7 @@ function ReviewForm({
         <p className="form-caption">
           <FileText size={13} />
           {alert.status !== 'PROCESSED'
-            ? 'Дождитесь успешного анализа сообщения.'
+            ? alert.status === 'OFF_TOPIC' ? 'Восстановите сообщение, чтобы изменить решение аналитика.' : 'Дождитесь успешного анализа сообщения.'
             : m.settings.mode === 'demo'
               ? 'Демо: решение сохранится в этом браузере.'
               : 'Решение будет сохранено на сервере.'}

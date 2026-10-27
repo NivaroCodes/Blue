@@ -21,6 +21,7 @@ import {
 } from '../components/ui'
 import { EvidencePreview } from '../components/EvidencePreview'
 import { RiskSummary } from '../components/RiskSummary'
+import { saveVisibility } from '../lib/api'
 import { dateTime, levelLabels, levels, time } from '../lib/model'
 import type { Alert } from '../lib/model'
 import type { Monitor } from '../lib/useMonitor'
@@ -46,11 +47,13 @@ export function Dashboard({
     platform = params.get('platform') || '',
     chat = params.get('chat') || '',
     review = params.get('review') || '',
-    period = params.get('period') || '24'
+    offTopicView = params.get('view') === 'off_topic',
+    period = params.get('period') || (offTopicView ? 'all' : '24')
   const [page, setPage] = useState(1)
   const [sort, setSort] = useState<'latest' | 'risk'>('latest')
   const [settingsError, setSettingsError] = useState('')
   const [selectedId, setSelectedId] = useState('')
+  const [changingId, setChangingId] = useState('')
   function applyParams(values: URLSearchParams | Record<string, string>) {
     const next = new URLSearchParams(values)
     paramsRef.current = next
@@ -65,15 +68,18 @@ export function Dashboard({
     if (value) next.set(name, value)
     else next.delete(name)
     if (name === 'platform') next.delete('chat')
+    if (name === 'view') next.delete('level')
     applyParams(next)
   }
-  const chats = sourceSummaries(m.alerts).filter((source) => !platform || source.platform === platform)
+  const hiddenCount = m.alerts.filter((a) => a.status === 'OFF_TOPIC').length
+  const viewAlerts = m.alerts.filter((a) => offTopicView ? a.status === 'OFF_TOPIC' : a.status !== 'OFF_TOPIC')
+  const chats = sourceSummaries(viewAlerts).filter((source) => !platform || source.platform === platform)
   const matchingChats = chats.filter((source) => source.id === chat)
   const selectedChat = matchingChats.length === 1 ? matchingChats[0].key : ''
   const snapshotTime = m.lastUpdate ? Date.parse(m.lastUpdate) : Date.now()
   const filtered = useMemo(
     () =>
-      selectAnalytics(m.alerts, period as Period, (platform || 'all') as PlatformFilter, snapshotTime)
+      selectAnalytics(viewAlerts, period as Period, (platform || 'all') as PlatformFilter, snapshotTime)
         .filter((a) => {
           const match = `${a.text} ${a.chat_name} ${a.id}`
             .toLocaleLowerCase()
@@ -90,7 +96,7 @@ export function Dashboard({
             ? (b.risk_score ?? -1) - (a.risk_score ?? -1)
             : +new Date(b.timestamp) - +new Date(a.timestamp),
         ),
-    [m.alerts, search, level, platform, chat, review, period, sort, snapshotTime],
+    [m.alerts, offTopicView, search, level, platform, chat, review, period, sort, snapshotTime],
   )
   const maxPage = Math.max(1, Math.ceil(filtered.length / 6)),
     currentPage = Math.min(page, maxPage)
@@ -127,6 +133,20 @@ export function Dashboard({
       setSettingsError(e instanceof Error ? e.message : 'Не удалось сохранить настройку.')
     }
   }
+  async function changeVisibility(alert: Alert) {
+    if (m.settings.mode !== 'api' || changingId) return
+    const restore = alert.status === 'OFF_TOPIC'
+    if (!restore && !window.confirm('Скрыть это сообщение из основной очереди? Его можно будет восстановить.')) return
+    setChangingId(alert.id)
+    setSettingsError('')
+    try {
+      m.updateAlert(await saveVisibility(m.settings, alert.id, !restore))
+    } catch (e) {
+      setSettingsError(e instanceof Error ? e.message : 'Не удалось изменить видимость сообщения.')
+    } finally {
+      setChangingId('')
+    }
+  }
   return (
     <>
       <div className="page-heading inbox-heading">
@@ -158,11 +178,11 @@ export function Dashboard({
         </p>
       )}
       <div className="inbox-layout">
-        <section className="inbox" aria-label="Сообщения для проверки">
+        <section className="inbox" aria-label={offTopicView ? 'Нерелевантные сообщения' : 'Сообщения для проверки'}>
           <div className="inbox-title">
-            <h2>Входящие</h2>
+            <h2>{offTopicView ? 'Нерелевантные сообщения' : 'Входящие'}</h2>
             <span>
-              {m.alerts.length} сообщений · {chats.length} источников
+              {viewAlerts.length} сообщений · {chats.length} источников
             </span>
           </div>
           <div className="inbox-tabs" aria-label="Фильтр риска">
@@ -171,7 +191,7 @@ export function Dashboard({
               className={!level ? 'selected' : ''}
               onClick={() => filter('level', '')}
             >
-              Все <span>{m.alerts.length}</span>
+              Все <span>{viewAlerts.length}</span>
             </button>
             {levels.map((l) => (
               <button
@@ -182,9 +202,16 @@ export function Dashboard({
               >
                 <i className={`risk-tick ${l.toLowerCase()}`} />
                 {levelLabels[l]}
-                <span>{m.stats.by_level[l]}</span>
+                <span>{viewAlerts.filter((a) => a.risk_level === l).length}</span>
               </button>
             ))}
+            <button
+              aria-pressed={offTopicView}
+              className={offTopicView ? 'selected' : ''}
+              onClick={() => filter('view', offTopicView ? '' : 'off_topic')}
+            >
+              Нерелевантные <span>{hiddenCount}</span>
+            </button>
           </div>
           <div className="inbox-toolbar">
             <label className="search-field">
@@ -277,7 +304,7 @@ export function Dashboard({
                     <option value="all">Всё время</option>
                   </select>
                 </label>
-                <button className="text-button" onClick={() => applyParams({ period: 'all' })}>
+                <button className="text-button" onClick={() => applyParams({ period: 'all', ...(offTopicView ? { view: 'off_topic' } : {}) })}>
                   Очистить фильтры
                 </button>
               </div>
@@ -306,7 +333,7 @@ export function Dashboard({
           {filterCount > 0 && rows.length > 0 && (
             <div className="active-filter-note">
               Найдено: {filtered.length}
-              <button className="text-button" onClick={() => applyParams({ period })}>
+              <button className="text-button" onClick={() => applyParams({ period, ...(offTopicView ? { view: 'off_topic' } : {}) })}>
                 Сбросить фильтры
               </button>
             </div>
@@ -321,7 +348,7 @@ export function Dashboard({
               title="Сообщений не найдено"
               text={m.error ? 'Проверьте подключение.' : 'Измените запрос или сбросьте фильтры.'}
               action={
-                <button className="button" onClick={() => applyParams({ period: 'all' })}>
+                <button className="button" onClick={() => applyParams({ period: 'all', ...(offTopicView ? { view: 'off_topic' } : {}) })}>
                   Сбросить фильтры
                 </button>
               }
@@ -353,6 +380,9 @@ export function Dashboard({
                         alert.id === (rows.find((row) => row.id === selectedId) || rows[0])?.id
                       }
                       onSelect={() => setSelectedId(alert.id)}
+                      onVisibilityChange={() => void changeVisibility(alert)}
+                      visibilityBusy={changingId === alert.id}
+                      canChangeVisibility={m.settings.mode === 'api'}
                     />
                   ))}
                 </tbody>
@@ -426,10 +456,16 @@ function AlertRow({
   alert: a,
   selected,
   onSelect,
+  onVisibilityChange,
+  visibilityBusy,
+  canChangeVisibility,
 }: {
   alert: Alert
   selected: boolean
   onSelect: () => void
+  onVisibilityChange: () => void
+  visibilityBusy: boolean
+  canChangeVisibility: boolean
 }) {
   return (
     <tr className={selected ? 'is-selected' : ''}>
@@ -466,6 +502,11 @@ function AlertRow({
         <span>{dateTime(a.timestamp).split(',')[0]}</span>
       </td>
       <td>
+        {canChangeVisibility && (a.status === 'PROCESSED' || a.status === 'OFF_TOPIC') && (
+          <button className="text-button" onClick={onVisibilityChange} disabled={visibilityBusy}>
+            {a.status === 'OFF_TOPIC' ? 'Восстановить' : 'Не по теме'}
+          </button>
+        )}
         <Link
           className="row-open"
           aria-label={`Открыть сообщение ${a.id}`}

@@ -59,7 +59,7 @@ export function EvidencePreview({ alert, demo, settings }: { alert?: Alert; demo
               ))
             ) : (
               <p>
-                {alert.status === 'PROCESSED'
+                {alert.status === 'PROCESSED' || alert.status === 'OFF_TOPIC'
                   ? 'Существенные признаки не выделены.'
                   : 'Объяснение появится после обработки.'}
               </p>

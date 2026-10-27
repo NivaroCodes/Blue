@@ -286,7 +286,7 @@ def serialize_to_alert_dict(message: MessageRecord) -> Dict[str, Any]:
     review = analysis.review if analysis else None
     done = bool(
         analysis
-        and message.status == "PROCESSED"
+        and message.status in {"PROCESSED", "OFF_TOPIC"}
         and analysis.risk_score is not None
         and analysis.risk_level is not None
     )
