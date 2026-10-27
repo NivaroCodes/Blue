@@ -5,12 +5,13 @@ import { Link } from 'react-router-dom'
 import { ActivityChart } from '../components/charts'
 import { Empty, ErrorBox, Platform } from '../components/ui'
 import { calculateStats, levelLabels, levels, reasonLabels } from '../lib/model'
+import { isPublicDemoSession } from '../lib/auth'
 import { reasonSummaries, selectAnalytics, sourceSummaries } from '../lib/analytics'
 import type { Period, PlatformFilter } from '../lib/analytics'
 import type { Monitor } from '../lib/useMonitor'
 
 export function Analytics({ monitor: m }: { monitor: Monitor }) {
-  const [period, setPeriod] = useState<Period>('24')
+  const [period, setPeriod] = useState<Period>(isPublicDemoSession() ? 'all' : '24')
   const [platform, setPlatform] = useState<PlatformFilter>('all')
   const reduce = useReducedMotion()
   const now = m.lastUpdate ? Date.parse(m.lastUpdate) : Date.now()

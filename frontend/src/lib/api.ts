@@ -1,7 +1,7 @@
 import { z } from 'zod'
 import { demoAlerts, reviewDemo } from '../data/demo'
 import { AlertSchema, calculateStats, StatsSchema } from './model'
-import { getAccessToken } from './auth'
+import { getAccessToken, isPublicDemoSession } from './auth'
 import type { Review, Settings } from './model'
 import { isSyntheticAlert } from './dataOrigin'
 
@@ -56,7 +56,8 @@ export async function getAlerts(settings: Settings, signal?: AbortSignal) {
   if (!result.success)
     throw new Error('Сервис вернул неполные данные сообщений. Попробуйте обновить выборку.')
   const alerts = Array.isArray(result.data) ? result.data : result.data.items
-  return alerts.filter((alert) => !isSyntheticAlert(alert))
+  const publicDemo = isPublicDemoSession()
+  return alerts.filter((alert) => publicDemo ? isSyntheticAlert(alert) : !isSyntheticAlert(alert))
 }
 export async function getAlert(settings: Settings, id: string, signal?: AbortSignal) {
   if (settings.mode === 'demo') {
@@ -69,7 +70,10 @@ export async function getAlert(settings: Settings, id: string, signal?: AbortSig
   )
   if (!result.success)
     throw new Error('Сервис вернул неполные данные сообщения. Попробуйте открыть его позже.')
-  if (isSyntheticAlert(result.data))
+  const publicDemo = isPublicDemoSession()
+  if (publicDemo && !isSyntheticAlert(result.data))
+    throw new Error('Сообщение недоступно для этого аккаунта.')
+  if (!publicDemo && isSyntheticAlert(result.data))
     throw new Error('Синтетическое сообщение недоступно в режиме рабочих данных.')
   return result.data
 }
@@ -111,6 +115,7 @@ export async function saveReview(
   reviewer_note: string,
 ) {
   if (settings.mode === 'demo') return reviewDemo(id, review_status, reviewer_note)
+  if (isPublicDemoSession()) throw new Error('Публичный демо-аккаунт доступен только для просмотра.')
   const result = AlertSchema.safeParse(
     await request(settings, `/alerts/${encodeURIComponent(id)}/review`, {
       method: 'POST',
@@ -126,6 +131,7 @@ export async function saveReview(
 
 export async function saveVisibility(settings: Settings, id: string, offTopic: boolean) {
   if (settings.mode !== 'api') throw new Error('Скрытие доступно только для сообщений с сервера.')
+  if (isPublicDemoSession()) throw new Error('Публичный демо-аккаунт доступен только для просмотра.')
   const result = AlertSchema.safeParse(
     await request(settings, `/alerts/${encodeURIComponent(id)}/visibility`, {
       method: 'POST',

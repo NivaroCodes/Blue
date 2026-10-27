@@ -12,6 +12,16 @@ from fastapi import HTTPException, Request
 
 logger = logging.getLogger("blue.auth")
 
+# Public identifier of the team-owned Supabase Auth demo user, not a credential.
+PUBLIC_DEMO_USER_ID = "2966cfdd-a65f-45de-83fe-18cd0674bc63"
+
+
+def is_public_demo_user(auth: Dict[str, Any]) -> bool:
+    return auth.get("role") != "service_role" and (
+        auth.get("sub") == PUBLIC_DEMO_USER_ID
+        or str(auth.get("email") or "").casefold() == "info@gmail.com"
+    )
+
 
 def get_bearer_token(request: Request) -> Optional[str]:
     auth_header = request.headers.get("Authorization", "").strip()

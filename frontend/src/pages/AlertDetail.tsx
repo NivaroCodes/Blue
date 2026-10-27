@@ -13,6 +13,7 @@ import {
 } from 'lucide-react'
 import { Link, useParams } from 'react-router-dom'
 import { getAlert, saveReview, saveVisibility } from '../lib/api'
+import { isPublicDemoSession } from '../lib/auth'
 import { dateTime, reasonLabels, reviewLabels } from '../lib/model'
 import type { Alert, Review } from '../lib/model'
 import type { Monitor } from '../lib/useMonitor'
@@ -43,6 +44,7 @@ export function AlertDetail({
   const [changingVisibility, setChangingVisibility] = useState(false)
   const [visibilityError, setVisibilityError] = useState('')
   async function changeVisibility(current: Alert) {
+    if (isPublicDemoSession()) return
     const restore = current.status === 'OFF_TOPIC'
     if (!restore && !window.confirm('Скрыть это сообщение из основной очереди? Его можно будет восстановить.')) return
     setChangingVisibility(true)
@@ -223,7 +225,7 @@ export function AlertDetail({
                 </p>
               </div>
             </Panel>
-            {m.settings.mode === 'api' && (alert.status === 'PROCESSED' || alert.status === 'OFF_TOPIC') && (
+            {m.settings.mode === 'api' && !isPublicDemoSession() && (alert.status === 'PROCESSED' || alert.status === 'OFF_TOPIC') && (
               <Panel title="Основная очередь" description="Это действие не удаляет сообщение, анализ или решение аналитика.">
                 {visibilityError && <p className="form-error" role="alert">{visibilityError}</p>}
                 <button className="button" disabled={changingVisibility} onClick={() => void changeVisibility(alert)}>
@@ -266,8 +268,10 @@ function ReviewForm({
   const [status, setStatus] = useState<Review>(alert.review_status)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
+  const readOnly = m.settings.mode === 'api' && isPublicDemoSession()
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
+    if (readOnly) return
     setSaving(true)
     setError('')
     try {
@@ -286,7 +290,7 @@ function ReviewForm({
           id="review-status"
           value={status}
           onChange={(e) => setStatus(e.target.value as Review)}
-          disabled={saving || alert.status !== 'PROCESSED'}
+          disabled={readOnly || saving || alert.status !== 'PROCESSED'}
         >
           {Object.entries(reviewLabels).map(([value, label]) => (
             <option value={value} key={value}>
@@ -304,7 +308,7 @@ function ReviewForm({
           placeholder="Что удалось установить при проверке?"
           maxLength={2000}
           rows={4}
-          disabled={saving || alert.status !== 'PROCESSED'}
+          disabled={readOnly || saving || alert.status !== 'PROCESSED'}
         />
         <small>{note.length} / 2000</small>
         {error && (
@@ -312,7 +316,7 @@ function ReviewForm({
             {error}
           </p>
         )}
-        <button className="button button-primary" disabled={saving || alert.status !== 'PROCESSED'}>
+        <button className="button button-primary" disabled={readOnly || saving || alert.status !== 'PROCESSED'}>
           {saving ? (
             <RefreshCw size={16} className="spin" />
           ) : status === 'REVIEWED' ? (
@@ -324,7 +328,9 @@ function ReviewForm({
         </button>
         <p className="form-caption">
           <FileText size={13} />
-          {alert.status !== 'PROCESSED'
+          {readOnly
+            ? 'Публичный демо-аккаунт доступен только для просмотра.'
+            : alert.status !== 'PROCESSED'
             ? alert.status === 'OFF_TOPIC' ? 'Восстановите сообщение, чтобы изменить решение аналитика.' : 'Дождитесь успешного анализа сообщения.'
             : m.settings.mode === 'demo'
               ? 'Демо: решение сохранится в этом браузере.'

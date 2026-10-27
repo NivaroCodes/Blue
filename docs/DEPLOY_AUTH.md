@@ -31,6 +31,8 @@ npx wrangler pages deploy dist --project-name blue-omnis-demo --branch pre-main 
 
 ## Контроль
 
+Публичный demo-вход `info@gmail.com` принадлежит команде и предзаполнен на странице входа без автоматической авторизации. Его Supabase Auth user ID зафиксирован в backend/frontend как публичный идентификатор. Backend показывает этому пользователю только канонические записи `blue_demo_synthetic_v1`; чтение рабочих сообщений и медиа, граф рабочих связей, изменение review/видимости и ingestion ему недоступны. Изоляция выполняется сервером, поэтому не полагайтесь на фильтр frontend. Перед новой публикацией проверьте этот доступ запросами от demo-пользователя и убедитесь, что штатные аналитики по-прежнему видят рабочие данные. Не добавляйте разрешающие RLS policies или доступ `authenticated` к рабочим таблицам Supabase для этого входа.
+
 1. В Supabase **Authentication → Users** должен быть подтверждённый пользователь аналитика. Участник организации Supabase не становится пользователем Auth автоматически. Самостоятельная регистрация в проекте отключена.
 2. `flyctl deploy --config fly.toml -a blue-omnis-demo --strategy rolling` запускайте из корня. Затем `flyctl status -a blue-omnis-demo`: API и worker должны быть `started`, health check API — `passing`.
 3. `/health` должен вернуть `{"status":"ok"}`. `/api/alerts` и `/api/messages` без Bearer должны вернуть `401`; запрос Pages origin на `/api/alerts` должен пройти CORS preflight.

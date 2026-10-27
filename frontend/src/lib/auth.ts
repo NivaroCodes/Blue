@@ -6,6 +6,7 @@ type AuthSession = {
 }
 
 const SESSION_KEY = 'blue.auth.session.v1'
+const PUBLIC_DEMO_USER_ID = '2966cfdd-a65f-45de-83fe-18cd0674bc63'
 const supabaseUrl = (import.meta.env.VITE_SUPABASE_URL || '').replace(/\/$/, '')
 const publishableKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY || ''
 
@@ -29,6 +30,10 @@ function readSession(): AuthSession | null {
   } catch {
     return null
   }
+}
+
+export function isPublicDemoSession() {
+  return readSession()?.user.id === PUBLIC_DEMO_USER_ID
 }
 
 function writeSession(session: AuthSession) {
@@ -59,12 +64,17 @@ export async function signOut() {
 
 async function authRequest(path: string, body: Record<string, string>) {
   if (!authConfigured) throw new Error('Вход не настроен: добавьте публичные переменные Supabase в сборку сайта.')
-  const response = await fetch(`${supabaseUrl}/auth/v1/${path}`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', apikey: publishableKey },
-    body: JSON.stringify(body),
-    signal: AbortSignal.timeout(12_000),
-  })
+  let response: Response
+  try {
+    response = await fetch(`${supabaseUrl}/auth/v1/${path}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', apikey: publishableKey },
+      body: JSON.stringify(body),
+      signal: AbortSignal.timeout(12_000),
+    })
+  } catch {
+    throw new Error('Не удалось подключиться к сервису входа. Попробуйте ещё раз.')
+  }
   const data = await response.json().catch(() => ({}))
   if (!response.ok) {
     const message = response.status === 400 || response.status === 401

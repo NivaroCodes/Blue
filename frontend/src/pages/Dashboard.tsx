@@ -22,6 +22,7 @@ import {
 import { EvidencePreview } from '../components/EvidencePreview'
 import { RiskSummary } from '../components/RiskSummary'
 import { saveVisibility } from '../lib/api'
+import { isPublicDemoSession } from '../lib/auth'
 import { dateTime, levelLabels, levels, time } from '../lib/model'
 import type { Alert } from '../lib/model'
 import type { Monitor } from '../lib/useMonitor'
@@ -48,7 +49,7 @@ export function Dashboard({
     chat = params.get('chat') || '',
     review = params.get('review') || '',
     offTopicView = params.get('view') === 'off_topic',
-    period = params.get('period') || (offTopicView ? 'all' : '24')
+    period = params.get('period') || (offTopicView || isPublicDemoSession() ? 'all' : '24')
   const [page, setPage] = useState(1)
   const [sort, setSort] = useState<'latest' | 'risk'>('latest')
   const [settingsError, setSettingsError] = useState('')
@@ -134,7 +135,7 @@ export function Dashboard({
     }
   }
   async function changeVisibility(alert: Alert) {
-    if (m.settings.mode !== 'api' || changingId) return
+    if (m.settings.mode !== 'api' || isPublicDemoSession() || changingId) return
     const restore = alert.status === 'OFF_TOPIC'
     if (!restore && !window.confirm('Скрыть это сообщение из основной очереди? Его можно будет восстановить.')) return
     setChangingId(alert.id)
@@ -382,7 +383,7 @@ export function Dashboard({
                       onSelect={() => setSelectedId(alert.id)}
                       onVisibilityChange={() => void changeVisibility(alert)}
                       visibilityBusy={changingId === alert.id}
-                      canChangeVisibility={m.settings.mode === 'api'}
+                      canChangeVisibility={m.settings.mode === 'api' && !isPublicDemoSession()}
                     />
                   ))}
                 </tbody>

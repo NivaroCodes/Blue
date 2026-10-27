@@ -4,8 +4,8 @@ import { LockKeyhole, RefreshCw, ShieldCheck } from 'lucide-react'
 import { authConfigured, signIn } from '../lib/auth'
 
 export function Login({ onSignedIn }: { onSignedIn: () => void }) {
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
+  const [email, setEmail] = useState('info@gmail.com')
+  const [password, setPassword] = useState('info67')
   const [error, setError] = useState('')
   const [busy, setBusy] = useState(false)
 
