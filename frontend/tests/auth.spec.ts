@@ -57,7 +57,7 @@ test('wrong password and connection errors remain visible without signing in', a
   await expect(page.getByRole('alert')).toContainText('Не удалось подключиться к сервису входа')
 })
 
-test('public demo login displays only synthetic data with server actions disabled', async ({ page }) => {
+test('public demo login restores working data with server actions disabled', async ({ page }) => {
   await page.addInitScript(() => localStorage.setItem('blue.settings.v1', JSON.stringify({
     mode: 'api', baseUrl: '', polling: false,
   })))
@@ -69,7 +69,7 @@ test('public demo login displays only synthetic data with server actions disable
     confidence: 0.8, review_status: 'NEW', reviewer_note: '', model_version: 'test-double',
   }
   const synthetic = { ...base, id: 'alert_synthetic', text: '[SYNTHETIC / ВЫМЫШЛЕННЫЕ ДАННЫЕ] Вымышленный пример' }
-  const live = { ...base, id: 'alert_live', chat_id: 'real-chat', message_id: 'live-1', text: 'Private working message' }
+  const live = { ...base, id: 'alert_live', chat_id: 'real-chat', message_id: 'live-1', text: 'Прежнее рабочее сообщение' }
   await page.route('https://blue-test.supabase.co/auth/v1/token?grant_type=password', async (route) => {
     expect(route.request().postDataJSON()).toEqual({ email: 'info@gmail.com', password: 'info67' })
     await route.fulfill({ json: {
@@ -90,12 +90,12 @@ test('public demo login displays only synthetic data with server actions disable
   })
   await page.goto('/')
   await page.getByRole('button', { name: 'Войти' }).click()
-  await expect(page.locator('.alerts-table')).toContainText('Вымышленный пример')
-  await expect(page.locator('.alerts-table')).not.toContainText('Private working message')
+  await expect(page.locator('.alerts-table')).toContainText('Прежнее рабочее сообщение')
+  await expect(page.locator('.alerts-table')).not.toContainText('Вымышленный пример')
   await expect(page.getByRole('button', { name: 'Не по теме' })).toHaveCount(0)
-  await page.goto('/alerts/alert_synthetic')
+  await page.goto('/alerts/alert_live')
   await expect(page.getByRole('button', { name: 'Сохранить решение' })).toBeDisabled()
   await expect(page.getByRole('button', { name: 'Не по теме — скрыть из очереди' })).toHaveCount(0)
-  await page.goto('/alerts/alert_live')
-  await expect(page.getByText('Сообщение недоступно для этого аккаунта.')).toBeVisible()
+  await page.goto('/alerts/alert_synthetic')
+  await expect(page.getByText('Синтетическое сообщение недоступно в режиме рабочих данных.')).toBeVisible()
 })

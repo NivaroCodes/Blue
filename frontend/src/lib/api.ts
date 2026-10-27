@@ -56,8 +56,7 @@ export async function getAlerts(settings: Settings, signal?: AbortSignal) {
   if (!result.success)
     throw new Error('Сервис вернул неполные данные сообщений. Попробуйте обновить выборку.')
   const alerts = Array.isArray(result.data) ? result.data : result.data.items
-  const publicDemo = isPublicDemoSession()
-  return alerts.filter((alert) => publicDemo ? isSyntheticAlert(alert) : !isSyntheticAlert(alert))
+  return alerts.filter((alert) => !isSyntheticAlert(alert))
 }
 export async function getAlert(settings: Settings, id: string, signal?: AbortSignal) {
   if (settings.mode === 'demo') {
@@ -70,10 +69,7 @@ export async function getAlert(settings: Settings, id: string, signal?: AbortSig
   )
   if (!result.success)
     throw new Error('Сервис вернул неполные данные сообщения. Попробуйте открыть его позже.')
-  const publicDemo = isPublicDemoSession()
-  if (publicDemo && !isSyntheticAlert(result.data))
-    throw new Error('Сообщение недоступно для этого аккаунта.')
-  if (!publicDemo && isSyntheticAlert(result.data))
+  if (isSyntheticAlert(result.data))
     throw new Error('Синтетическое сообщение недоступно в режиме рабочих данных.')
   return result.data
 }

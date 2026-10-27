@@ -27,7 +27,7 @@ from .worker import process_pending_messages
 from .graph_analysis import analyze_network_graph
 from .media import save_image, read_stored_image, MediaError, MediaStorageError
 from .auth import require_dashboard_auth, is_public_demo_user
-from .demo_access import is_demo_record
+from .demo_access import is_public_working_record, redact_public_alert
 from .webhooks import (
     WebhookPayloadError, constant_time_token_match,
     normalize_green_message, normalize_telegram_message,
@@ -417,8 +417,10 @@ def get_alerts(
         query = query.filter(MessageRecord.status == "OFF_TOPIC")
     records = query.order_by(MessageRecord.timestamp.desc()).all()
     if is_public_demo_user(_auth):
-        records = [rec for rec in records if is_demo_record(rec)]
+        records = [rec for rec in records if is_public_working_record(rec)]
     alerts = [serialize_to_alert_dict(rec) for rec in records]
+    if is_public_demo_user(_auth):
+        alerts = [redact_public_alert(alert) for alert in alerts]
 
     if level:
         alerts = [a for a in alerts if a.get("risk_level") == level]
@@ -432,9 +434,10 @@ def get_alert_detail(alert_id: str, db: Session = Depends(get_db), _auth: Dict[s
     Returns single alert details by alert_id.
     """
     rec = _find_message(db, alert_id)
-    if is_public_demo_user(_auth) and not is_demo_record(rec):
+    if is_public_demo_user(_auth) and not is_public_working_record(rec):
         raise HTTPException(status_code=404, detail="Alert not found.")
-    return serialize_to_alert_dict(rec)
+    alert = serialize_to_alert_dict(rec)
+    return redact_public_alert(alert) if is_public_demo_user(_auth) else alert
 
 
 @app.get("/api/stats", response_model=StatsResponse)
@@ -444,7 +447,7 @@ def get_stats(db: Session = Depends(get_db), _auth: Dict[str, Any] = Depends(req
     """
     all_messages = db.query(MessageRecord).all()
     if is_public_demo_user(_auth):
-        all_messages = [rec for rec in all_messages if is_demo_record(rec)]
+        all_messages = [rec for rec in all_messages if is_public_working_record(rec)]
     since = utc_now() - timedelta(hours=24)
 
     pending = 0
@@ -605,7 +608,7 @@ def get_media_file(filename: str, db: Session = Depends(get_db), _auth: Dict[str
     """Serves persisted images through the local or private R2 storage adapter."""
     if is_public_demo_user(_auth):
         records = db.query(MessageRecord).filter(MessageRecord.image_url == f"/api/media/{filename}").all()
-        if not any(is_demo_record(rec) for rec in records):
+        if not any(is_public_working_record(rec) for rec in records):
             raise HTTPException(status_code=404, detail="Media not found.")
     try:
         data, mime = read_stored_image(filename)
@@ -621,8 +624,10 @@ def export_alerts(format: str = "json", db: Session = Depends(get_db), _auth: Di
     """
     records = db.query(MessageRecord).order_by(MessageRecord.timestamp.desc()).all()
     if is_public_demo_user(_auth):
-        records = [rec for rec in records if is_demo_record(rec)]
+        records = [rec for rec in records if is_public_working_record(rec)]
     alerts = [serialize_to_alert_dict(rec) for rec in records]
+    if is_public_demo_user(_auth):
+        alerts = [redact_public_alert(alert) for alert in alerts]
 
     if format.lower() == "csv":
         output = io.StringIO()
